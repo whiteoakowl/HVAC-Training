@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Events</h1>
+  <p class="hint">Upcoming classes, workshops, and events.</p>
+
+  <% if (events.length === 0) { %>
+    <p class="roster-empty">No upcoming events right now.</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% events.forEach(function(e) { %>
+        <div class="card">
+          <span class="hint"><%= e.starts_at %></span>
+          <h3><a href="/events/<%= e.id %>"><%= e.title %></a></h3>
+          <% if (e.category) { %><span class="badge-pill"><%= e.category %></span><% } %>
+          <% if (e.location) { %><p class="hint"><%= e.location %></p><% } %>
+          <% if (e.capacity != null) { %><p class="hint"><%= e.registeredCount %>/<%= e.capacity %> registered</p><% } %>
+          <% if (e.registered) { %><span class="badge-pill" style="background:#2e7d32;">You're registered</span><% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <p><a href="/training/manage">&larr; Manage Training</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <div class="grid-box-header">
+    <h1><%= training.title %> <span class="badge-pill<%= training.status === 'published' ? '' : ' badge-pill-gray' %>"><%= training.status %></span></h1>
+    <div class="btn-row">
+      <% if (training.status !== 'published') { %>
+        <form method="POST" action="/training/manage/<%= training.id %>/status" class="inline-form"><input type="hidden" name="status" value="published" /><button type="submit" class="primary-btn">Publish</button></form>
+      <% } %>
+      <% if (training.status !== 'archived') { %>
+        <form method="POST" action="/training/manage/<%= training.id %>/status" class="inline-form"><input type="hidden" name="status" value="archived" /><button type="submit" class="btn-secondary">Archive</button></form>
+      <% } %>
+      <form method="POST" action="/training/manage/<%= training.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this training? Only allowed if nobody is assigned.');"><button type="submit" class="btn-danger">Delete</button></form>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="/training/manage/<%= training.id %>/edit" class="form-grid">
+      <label class="full">Title <input type="text" name="title" value="<%= training.title %>" required /></label>
+      <label class="full">Description <textarea name="description"><%= training.description || '' %></textarea></label>
+      <label>Estimated Minutes <input type="number" name="estimatedMinutes" min="1" value="<%= training.estimated_minutes || '' %>" /></label>
+      <label>Passing Score (%) <input type="number" name="passingScore" min="0" max="100" value="<%= training.passing_score %>" /></label>
+      <label><input type="checkbox" name="sequentialLessons" value="1" <%= training.sequential_lessons ? 'checked' : '' %> style="width:auto;" /> Require lessons in order</label>
+      <label><input type="checkbox" name="requireVideoCompletion" value="1" <%= training.require_video_completion ? 'checked' : '' %> style="width:auto;" /> Require watching required videos</label>
+      <div class="full"><button type="submit" class="btn-secondary">Save Changes</button></div>
+    </form>
+  </div>
+
+  <h2>Lessons</h2>
+  <% training.lessons.forEach(function(lesson, i) { %>
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div class="grid-box-header">
+        <h3><%= i + 1 %>. <%= lesson.title %> <span class="badge-pill badge-pill-gray"><%= lesson.type %></span><% if (!lesson.required) { %> <span class="hint">(optional)</span><% } %></h3>
+        <form method="POST" action="/training/manage/<%= training.id %>/lessons/<%= lesson.id %>/delete" class="inline-form" onsubmit="return confirm('Remove this lesson?');">
+          <button type="submit" class="btn-danger">Remove</button>
+        </form>
+      </div>
+      <% if (lesson.description) { %><p class="hint"><%= lesson.description %></p><% } %>
+      <% if (lesson.type === 'video') { %><p class="hint">Video URL: <%= lesson.video_url %></p><% } %>
+      <% if (lesson.type === 'text') { %><div><%- lesson.content %></div><% } %>
+
+      <% if (lesson.type === 'quiz') { %>
+        <h4>Questions</h4>
+        <% (lesson.questions || []).forEach(function(q, qi) { %>
+          <div style="border-top:1px solid var(--border); padding-top:0.5rem; margin-top:0.5rem;">
+            <div class="grid-box-header">
+              <strong>Q<%= qi + 1 %>: <%= q.question %></strong>
+              <form method="POST" action="/training/manage/<%= training.id %>/lessons/<%= lesson.id %>/questions/<%= q.id %>/delete" class="inline-form">
+                <button type="submit" class="btn-danger">Delete</button>
+              </form>
+            </div>
+            <ul>
+              <% q.options.forEach(function(o) { %><li><%= o.option_text %><% if (o.is_correct) { %> &mdash; <strong>correct</strong><% } %></li><% }); %>
+            </ul>
+          </div>
+        <% }); %>
+        <details style="margin-top:0.5rem;">
+          <summary>+ Add Question</summary>
+          <form method="POST" action="/training/manage/<%= training.id %>/lessons/<%= lesson.id %>/questions" class="stack-form" style="margin-top:0.5rem;">
+            <label>Question <input type="text" name="question" required /></label>
+            <label>Points <input type="number" name="points" value="1" min="1" /></label>
+            <% for (let oi = 0; oi < 4; oi++) { %>
+              <label>Option <%= oi + 1 %>
+                <span class="btn-row">
+                  <input type="text" name="optionText" <%= oi < 2 ? 'required' : '' %> />
+                  <label style="flex-direction:row; font-weight:400;"><input type="radio" name="correctIndex" value="<%= oi %>" style="width:auto;" <%= oi === 0 ? 'checked' : '' %> /> Correct</label>
+                </span>
+              </label>
+            <% } %>
+            <button type="submit" class="btn-secondary">Add Question</button>
+          </form>
+        </details>
+      <% } %>
+    </div>
+  <% }); %>
+
+  <details>
+    <summary>+ Add Lesson</summary>
+    <form method="POST" action="/training/manage/<%= training.id %>/lessons" class="form-grid" style="margin-top:0.5rem;">
+      <label class="full">Lesson Title <input type="text" name="title" required /></label>
+      <label>Type
+        <select name="type" onchange="document.querySelectorAll('.lesson-type-field').forEach(f => f.style.display = f.dataset.type === this.value ? '' : 'none')">
+          <option value="text">Text</option>
+          <option value="video">Video</option>
+          <option value="quiz">Quiz</option>
+        </select>
+      </label>
+      <label><input type="checkbox" name="required" value="1" checked style="width:auto;" /> Required</label>
+      <label class="full lesson-type-field" data-type="video" style="display:none;">Video URL <input type="text" name="videoUrl" /></label>
+      <label class="full lesson-type-field" data-type="text">Content (HTML) <textarea name="content"></textarea></label>
+      <div class="full"><button type="submit" class="btn-secondary">Add Lesson</button></div>
+    </form>
+  </details>
+
+  <h2>Assignments</h2>
+  <table class="data-table">
+    <thead><tr><th>Member</th><th>Status</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+      <% assignments.forEach(function(a) { %>
+        <tr>
+          <td><%= a.memberName %> <span class="hint">(<%= a.memberRole %>)</span></td>
+          <td><span class="badge-pill<%= a.status === 'passed' ? '' : ' badge-pill-gray' %>"><%= a.status.replace('_',' ') %></span></td>
+          <td><%= a.latest_score != null ? a.latest_score + '%' : '-' %></td>
+          <td>
+            <form method="POST" action="/training/manage/<%= training.id %>/assignments/<%= a.id %>/remove" class="inline-form">
+              <button type="submit" class="btn-danger">Remove</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <details>
+    <summary>+ Assign to Members</summary>
+    <form method="POST" action="/training/manage/<%= training.id %>/assign" class="stack-form" style="margin-top:0.5rem; max-width:400px;">
+      <label>Due Date (optional) <input type="date" name="dueAt" /></label>
+      <label>Members
+        <select name="memberIds" multiple size="6">
+          <% members.forEach(function(m) { %><option value="<%= m.id %>"><%= m.name %> (<%= m.role %>)</option><% }); %>
+        </select>
+      </label>
+      <button type="submit" class="primary-btn">Assign</button>
+    </form>
+  </details>
+<%- include('partials/footer') %>
+</body>
+</html>

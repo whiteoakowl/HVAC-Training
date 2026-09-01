@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <p><a href="/training/mine">&larr; All my training</a></p>
+  <h1><%= state.assignment.title %></h1>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <div class="progress-bar"><div class="progress-bar-fill" style="width: <%= state.percentComplete %>%;"></div></div>
+  <p class="hint">Progress: <%= state.percentComplete %>%</p>
+
+  <% if (state.attempt && state.attempt.completed_at) { %>
+    <div class="card" style="margin-bottom:1rem;">
+      <h2>Training Complete</h2>
+      <p style="font-size:2rem; font-weight:800; color:<%= state.attempt.passed === 1 ? '#2e7d32' : '#c62828' %>;"><%= state.attempt.score %>%</p>
+      <p class="hint">Passing score: <%= state.assignment.passingScore %>%</p>
+      <% if (state.attempt.passed === 1) { %>
+        <p><strong>PASSED</strong> &mdash; training completed successfully.</p>
+      <% } else { %>
+        <p><strong>NOT PASSED</strong> &mdash; you must retake this training.</p>
+        <form method="POST" action="/training/<%= state.assignment.id %>/retake"><button type="submit" class="primary-btn">Retake Training</button></form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <div class="player-layout">
+    <nav>
+      <% state.lessons.forEach(function(l) { %>
+        <%
+          const isLocked = l.status === 'locked';
+          const isCompleted = l.status === 'completed';
+          const isCurrent = selected && selected.id === l.id;
+          const icon = isLocked ? 'lock' : isCompleted ? 'check-circle' : 'circle';
+          const cls = ['outline-item'];
+          if (isCurrent) cls.push('current');
+          if (isCompleted) cls.push('completed');
+          if (isLocked) cls.push('locked');
+        %>
+        <% if (isLocked) { %>
+          <span class="<%= cls.join(' ') %>"><svg class="icon" style="width:14px;height:14px;"><use href="#icon-<%= icon %>"/></svg> <%= l.lesson_title_snapshot %></span>
+        <% } else { %>
+          <a class="<%= cls.join(' ') %>" href="/training/<%= state.assignment.id %>/play?lesson=<%= l.lesson_id %>"><svg class="icon" style="width:14px;height:14px;"><use href="#icon-<%= icon %>"/></svg> <%= l.lesson_title_snapshot %></a>
+        <% } %>
+      <% }); %>
+    </nav>
+
+    <div>
+      <% if (!selected) { %>
+        <p class="roster-empty">Nothing left to do here right now.</p>
+      <% } else { %>
+        <h2><%= selected.lesson_title_snapshot %></h2>
+        <% if (lessonRow && lessonRow.description) { %><p class="hint"><%= lessonRow.description %></p><% } %>
+
+        <% if (selected.status === 'completed') { %>
+          <p style="color:#2e7d32;"><svg class="icon" style="width:16px;height:16px;"><use href="#icon-check-circle"/></svg> Completed</p>
+        <% } %>
+
+        <% if (selected.lesson_type_snapshot === 'video' && lessonRow) { %>
+          <video id="training-video" src="<%= lessonRow.video_url %>" controls style="width:100%; max-width:640px; border-radius:8px;"
+            data-assignment-id="<%= state.assignment.id %>" data-lesson-id="<%= selected.lesson_id %>"></video>
+          <p class="hint" id="training-video-status"><%= selected.video_completed ? 'Watched' : 'Watch to the end to continue' %></p>
+        <% } %>
+
+        <% if (lessonRow && lessonRow.content) { %>
+          <div><%- lessonRow.content %></div>
+        <% } %>
+
+        <% if (selected.lesson_type_snapshot === 'quiz' && questions && selected.status !== 'completed') { %>
+          <form method="POST" action="/training/<%= state.assignment.id %>/lessons/<%= selected.lesson_id %>/quiz">
+            <% questions.forEach(function(q, qi) { %>
+              <fieldset style="border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem; margin-bottom:0.75rem;">
+                <legend>Question <%= qi + 1 %>: <%= q.question %></legend>
+                <% q.options.forEach(function(o) { %>
+                  <label style="display:flex; align-items:center; gap:0.4rem; font-weight:400;">
+                    <input type="radio" name="answer_<%= q.id %>" value="<%= o.id %>" required style="width:auto;" /> <%= o.option_text %>
+                  </label>
+                <% }); %>
+              </fieldset>
+            <% }); %>
+            <button type="submit" class="primary-btn">Submit Quiz</button>
+          </form>
+        <% } %>
+
+        <% if (selected.lesson_type_snapshot !== 'quiz' && selected.status !== 'completed') { %>
+          <%
+            const videoBlocked = selected.lesson_type_snapshot === 'video' && state.assignment.requireVideoCompletion === 1 && selected.lesson_required_snapshot === 1 && selected.video_completed !== 1;
+          %>
+          <form method="POST" action="/training/<%= state.assignment.id %>/lessons/<%= selected.lesson_id %>/complete" style="margin-top:1rem;">
+            <button type="submit" class="primary-btn" id="training-complete-btn" <%= videoBlocked ? 'disabled' : '' %>><%= videoBlocked ? 'Watch the video to continue' : 'Mark Complete & Continue' %></button>
+          </form>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+<%- include('partials/footer') %>
+<script src="/js/training-player.js"></script>
+</body>
+</html>

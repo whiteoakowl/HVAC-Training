@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>New Training</h1>
+  <p><a href="/training/manage">&larr; Manage Training</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="POST" action="/training/manage/new" class="form-grid">
+    <label class="full">Title <input type="text" name="title" required /></label>
+    <label class="full">Description <textarea name="description"></textarea></label>
+    <label>Estimated Minutes <input type="number" name="estimatedMinutes" min="1" /></label>
+    <label>Passing Score (%) <input type="number" name="passingScore" min="0" max="100" value="80" /></label>
+    <label><input type="checkbox" name="sequentialLessons" value="1" checked style="width:auto;" /> Require lessons in order</label>
+    <label><input type="checkbox" name="requireVideoCompletion" value="1" checked style="width:auto;" /> Require watching required videos</label>
+    <div class="full"><button type="submit" class="primary-btn">Create Training</button></div>
+  </form>
+<%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <div class="grid-box-header">
+    <h1>Manage Training</h1>
+    <a class="primary-btn" href="/training/manage/new">+ New Training</a>
+  </div>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <table class="data-table">
+    <thead><tr><th>Title</th><th>Lessons</th><th>Assigned</th><th>Status</th></tr></thead>
+    <tbody>
+      <% trainings.forEach(function(t) { %>
+        <tr>
+          <td><a href="/training/manage/<%= t.id %>"><%= t.title %></a></td>
+          <td><%= t.lessonCount %></td>
+          <td><%= t.assignmentCount %></td>
+          <td><span class="badge-pill<%= t.status === 'published' ? '' : ' badge-pill-gray' %>"><%= t.status %></span></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<%- include('partials/footer') %>
+</body>
+</html>

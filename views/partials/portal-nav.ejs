@@ -1,0 +1,53 @@
+<%
+// One flat nav for every role, rather than the reference app's
+// per-portal navLinks arrays - this app has a single member-facing
+// portal (not three separate Student/Parent/Teacher portals), so there
+// is only ever one nav to define. Instructor/admin get extra "Manage"
+// links appended; admin additionally gets Manage Members.
+const isInstructor = member.role === 'instructor' || member.role === 'admin';
+const isAdmin = member.role === 'admin';
+const navLinks = [
+  { href: '/portal', icon: 'home', label: 'Home' },
+  { href: '/events', icon: 'calendar', label: 'Events' },
+  { href: '/training/mine', icon: 'graduation-cap', label: 'Training' },
+  { href: '/member-directory', icon: 'user', label: 'Members' },
+  { href: '/forums', icon: 'users', label: 'Chat' },
+  { href: '/documents', icon: 'file-text', label: 'Documents' },
+  { href: '/notifications', icon: 'bell', label: 'Notifications', badge: unreadNotifications },
+];
+const manageLinks = [];
+if (isInstructor) {
+  manageLinks.push({ href: '/events/manage', icon: 'calendar', label: 'Manage Events' });
+  manageLinks.push({ href: '/training/manage', icon: 'graduation-cap', label: 'Manage Training' });
+  manageLinks.push({ href: '/documents/manage', icon: 'upload', label: 'Manage Documents' });
+}
+if (isAdmin) {
+  manageLinks.push({ href: '/portal/members', icon: 'gear', label: 'Manage Members' });
+  manageLinks.push({ href: '/member-directory/settings', icon: 'gear', label: 'Directory Settings' });
+}
+%>
+<%- include('icon-sprite') %>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <a class="brand" href="/portal">HVAC Training</a>
+    <p class="sidebar-role">Signed in as <strong><%= member.name %></strong> &middot; <%= member.role %></p>
+    <nav>
+      <% navLinks.forEach(function(link) { %>
+        <a href="<%= link.href %>"><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %><% if (link.badge) { %> <span class="badge-count"><%= link.badge %></span><% } %></a>
+      <% }); %>
+    </nav>
+    <% if (manageLinks.length) { %>
+      <p class="sidebar-section-title">Manage</p>
+      <nav>
+        <% manageLinks.forEach(function(link) { %>
+          <a href="<%= link.href %>"><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %></a>
+        <% }); %>
+      </nav>
+    <% } %>
+    <div class="sidebar-bottom">
+      <form method="POST" action="/logout">
+        <button type="submit"><svg class="icon"><use href="#icon-log-out"/></svg> Log out</button>
+      </form>
+    </div>
+  </aside>
+  <main class="app-main">

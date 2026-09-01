@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <p><a href="/events">&larr; All Events</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <h1><%= event.title %></h1>
+  <% if (event.category) { %><span class="badge-pill"><%= event.category %></span><% } %>
+  <p class="hint"><%= event.starts_at %><% if (event.ends_at) { %> &ndash; <%= event.ends_at %><% } %></p>
+  <% if (event.location) { %><p class="hint"><svg class="icon"><use href="#icon-map-pin"/></svg> <%= event.location %></p><% } %>
+  <% if (event.description) { %><p><%= event.description %></p><% } %>
+  <% if (event.capacity != null) { %><p class="hint"><%= registrations.length %>/<%= event.capacity %> registered</p><% } %>
+
+  <div class="btn-row">
+    <% if (isRegistered) { %>
+      <form method="POST" action="/events/<%= event.id %>/unregister">
+        <button type="submit" class="btn-danger">Cancel Registration</button>
+      </form>
+    <% } else { %>
+      <form method="POST" action="/events/<%= event.id %>/register">
+        <button type="submit" class="primary-btn">Register</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (member.role !== 'student') { %>
+    <h2>Registered</h2>
+    <% if (registrations.length === 0) { %>
+      <p class="roster-empty">No one has registered yet.</p>
+    <% } else { %>
+      <ul>
+        <% registrations.forEach(function(r) { %><li><%= r.name %></li><% }); %>
+      </ul>
+    <% } %>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

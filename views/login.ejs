@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1>HVAC Training Portal</h1>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="POST" action="/login" class="stack-form">
+        <input type="hidden" name="next" value="<%= next %>" />
+        <label>Email <input type="email" name="email" required autofocus /></label>
+        <label>Password <input type="password" name="password" required /></label>
+        <button type="submit" class="primary-btn">Log In</button>
+      </form>
+      <p class="hint">No account? <a href="/register">Register here</a>.</p>
+    </div>
+  </div>
+</body>
+</html>

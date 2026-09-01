@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1>Create an Account</h1>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="POST" action="/register" class="stack-form">
+        <label>Full Name <input type="text" name="name" required autofocus /></label>
+        <label>Email <input type="email" name="email" required /></label>
+        <label>Password <input type="password" name="password" minlength="8" required /></label>
+        <button type="submit" class="primary-btn">Register</button>
+      </form>
+      <p class="hint">Already have an account? <a href="/login">Log in</a>.</p>
+    </div>
+  </div>
+</body>
+</html>

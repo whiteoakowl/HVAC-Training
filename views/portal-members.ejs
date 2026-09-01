@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Manage Members</h1>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <table class="data-table">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th></tr></thead>
+    <tbody>
+      <% members.forEach(function(m) { %>
+        <tr>
+          <td><%= m.name %></td>
+          <td><%= m.email %></td>
+          <td>
+            <form method="POST" action="/portal/members/<%= m.id %>/role" class="inline-form">
+              <select name="role" onchange="this.form.submit()">
+                <option value="student" <%= m.role === 'student' ? 'selected' : '' %>>Student</option>
+                <option value="instructor" <%= m.role === 'instructor' ? 'selected' : '' %>>Instructor</option>
+                <option value="admin" <%= m.role === 'admin' ? 'selected' : '' %>>Admin</option>
+              </select>
+            </form>
+          </td>
+          <td>
+            <form method="POST" action="/portal/members/<%= m.id %>/active" class="inline-form">
+              <input type="hidden" name="active" value="<%= m.active ? '0' : '1' %>" />
+              <button type="submit" class="btn-secondary"><%= m.active ? 'Deactivate' : 'Activate' %></button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<%- include('partials/footer') %>
+</body>
+</html>

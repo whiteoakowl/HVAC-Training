@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Chat</h1>
+
+  <% if (categories.length === 0) { %>
+    <p class="roster-empty">No chats yet.</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% categories.forEach(function(c) { %>
+        <div class="card">
+          <h3><a href="/forums/<%= c.id %>"><%= c.name %></a></h3>
+          <% if (c.is_locked) { %><span class="badge-pill badge-pill-gray">Locked</span><% } %>
+          <% if (c.description) { %><p class="hint"><%= c.description %></p><% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <% if (member.role === 'admin') { %>
+    <details style="margin-top:1.5rem;">
+      <summary>+ New Category</summary>
+      <form method="POST" action="/forums/categories" class="stack-form" style="max-width:360px; margin-top:0.5rem;">
+        <label>Name <input type="text" name="name" required /></label>
+        <label>Description <input type="text" name="description" /></label>
+        <button type="submit" class="btn-secondary">Create</button>
+      </form>
+    </details>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

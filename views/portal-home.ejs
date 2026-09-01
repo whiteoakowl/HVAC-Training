@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Welcome, <%= member.name %></h1>
+  <p class="hint">HVAC Training Portal &middot; signed in as <%= member.role %></p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="grid-box-header"><h2>Upcoming Events</h2><a href="/events">View all</a></div>
+      <% if (upcomingEvents.length === 0) { %><p class="roster-empty">Nothing scheduled.</p><% } %>
+      <% upcomingEvents.forEach(function(e) { %>
+        <p><a href="/events/<%= e.id %>"><%= e.title %></a><br /><span class="hint"><%= e.starts_at %></span></p>
+      <% }); %>
+    </div>
+
+    <div class="card">
+      <div class="grid-box-header"><h2>My Training</h2><a href="/training/mine">View all</a></div>
+      <% if (myTraining.length === 0) { %><p class="roster-empty">Nothing outstanding.</p><% } %>
+      <% myTraining.forEach(function(a) { %>
+        <p><a href="/training/<%= a.id %>/play"><%= a.title %></a><br /><span class="hint"><%= a.status.replace('_',' ') %></span></p>
+      <% }); %>
+    </div>
+
+    <div class="card">
+      <div class="grid-box-header"><h2>Notifications</h2><a href="/notifications">View all</a></div>
+      <% if (recentNotifications.length === 0) { %><p class="roster-empty">Nothing new.</p><% } %>
+      <% recentNotifications.forEach(function(n) { %>
+        <p><%= n.title %><br /><span class="hint"><%= n.created_at %></span></p>
+      <% }); %>
+    </div>
+  </div>
+<%- include('partials/footer') %>
+</body>
+</html>

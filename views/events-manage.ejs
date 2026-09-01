@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <div class="grid-box-header">
+    <h1>Manage Events</h1>
+    <a class="primary-btn" href="/events/new">+ New Event</a>
+  </div>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <table class="data-table">
+    <thead><tr><th>Title</th><th>Starts</th><th>Visibility</th><th></th></tr></thead>
+    <tbody>
+      <% events.forEach(function(e) { %>
+        <tr>
+          <td><a href="/events/<%= e.id %>"><%= e.title %></a></td>
+          <td><%= e.starts_at %></td>
+          <td><span class="badge-pill<%= e.visibility === 'public' ? '' : ' badge-pill-gray' %>"><%= e.visibility %></span></td>
+          <td class="btn-row">
+            <a class="btn-secondary" href="/events/<%= e.id %>/edit">Edit</a>
+            <form method="POST" action="/events/<%= e.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this event?');">
+              <button type="submit" class="btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<%- include('partials/footer') %>
+</body>
+</html>

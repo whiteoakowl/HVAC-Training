@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1><%= event ? 'Edit Event' : 'New Event' %></h1>
+  <p><a href="/events/manage">&larr; Manage Events</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="POST" action="<%= event ? `/events/${event.id}/edit` : '/events/new' %>" class="form-grid">
+    <label class="full">Title <input type="text" name="title" value="<%= event ? event.title : '' %>" required /></label>
+    <label class="full">Description <textarea name="description"><%= event ? event.description || '' : '' %></textarea></label>
+    <label>Location <input type="text" name="location" value="<%= event ? event.location || '' : '' %>" /></label>
+    <label>Category <input type="text" name="category" value="<%= event ? event.category || '' : '' %>" /></label>
+    <label>Starts <input type="datetime-local" name="startsAt" value="<%= event ? event.starts_at.slice(0,16).replace(' ','T') : '' %>" required /></label>
+    <label>Ends <input type="datetime-local" name="endsAt" value="<%= event && event.ends_at ? event.ends_at.slice(0,16).replace(' ','T') : '' %>" /></label>
+    <label>Capacity <input type="number" name="capacity" min="1" value="<%= event && event.capacity != null ? event.capacity : '' %>" /></label>
+    <label>Visibility
+      <select name="visibility">
+        <option value="members" <%= !event || event.visibility === 'members' ? 'selected' : '' %>>Members</option>
+        <option value="public" <%= event && event.visibility === 'public' ? 'selected' : '' %>>Public</option>
+      </select>
+    </label>
+    <div class="full"><button type="submit" class="primary-btn"><%= event ? 'Save Changes' : 'Create Event' %></button></div>
+  </form>
+<%- include('partials/footer') %>
+</body>
+</html>

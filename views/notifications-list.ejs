@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <div class="grid-box-header">
+    <h1>Notifications</h1>
+    <% if (items.some(function(i) { return !i.read_at; })) { %>
+      <form method="POST" action="/notifications/read-all"><button type="submit" class="btn-secondary">Mark All Read</button></form>
+    <% } %>
+  </div>
+
+  <% if (items.length === 0) { %>
+    <p class="roster-empty">No notifications yet.</p>
+  <% } else { %>
+    <% items.forEach(function(i) { %>
+      <div class="card" style="<%= i.read_at ? '' : 'border-left: 3px solid var(--brand);' %> margin-bottom:0.6rem;">
+        <h3><%= i.title %></h3>
+        <% if (i.body) { %><p><%= i.body %></p><% } %>
+        <p class="hint"><%= i.created_at %></p>
+        <div class="btn-row">
+          <% if (i.link_url) { %><a class="btn-secondary" href="<%= i.link_url %>">View</a><% } %>
+          <% if (!i.read_at) { %>
+            <form method="POST" action="/notifications/<%= i.id %>/read" class="inline-form"><button type="submit" class="btn-secondary">Mark Read</button></form>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <p><a href="/member-directory">&larr; All Members</a></p>
+  <% if (member.photoUrl) { %><img src="<%= member.photoUrl %>" alt="" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:1rem;" /><% } %>
+  <h1><%= member.name %></h1>
+  <p class="hint"><%= member.role %></p>
+  <% if (member.phone) { %><p><%= member.phone %></p><% } %>
+  <% if (member.email) { %><p><%= member.email %></p><% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

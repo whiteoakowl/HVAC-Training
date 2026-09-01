@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Directory Settings</h1>
+  <p class="hint">Choose which fields show in the Member Directory.</p>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <form method="POST" action="/member-directory/settings" class="stack-form" style="max-width:320px;">
+    <% fieldSettings.forEach(function(f) { %>
+      <label style="flex-direction:row; align-items:center; gap:0.5rem; font-weight:400;">
+        <input type="checkbox" name="visibleFields" value="<%= f.key %>" <%= f.visible ? 'checked' : '' %> style="width:auto;" /> <%= f.label %>
+      </label>
+    <% }); %>
+    <button type="submit" class="primary-btn">Save</button>
+  </form>
+<%- include('partials/footer') %>
+</body>
+</html>

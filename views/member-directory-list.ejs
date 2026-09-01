@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <div class="grid-box-header">
+    <h1>Member Directory</h1>
+    <a class="btn-secondary" href="/member-directory/mine">My Privacy</a>
+  </div>
+  <p class="hint">Fields shown here are chosen by an admin - you can remove yourself entirely under My Privacy.</p>
+
+  <% if (members.length === 0) { %>
+    <p class="roster-empty">No members to show yet.</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% members.forEach(function(m) { %>
+        <div class="card">
+          <% if (m.photoUrl) { %><img src="<%= m.photoUrl %>" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;margin-bottom:0.4rem;" /><% } %>
+          <h3><a href="/member-directory/<%= m.id %>"><%= m.name %></a></h3>
+          <p class="hint"><%= m.role %></p>
+          <% if (m.phone) { %><p class="hint"><%= m.phone %></p><% } %>
+          <% if (m.email) { %><p class="hint"><%= m.email %></p><% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

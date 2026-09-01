@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <div class="grid-box-header">
+    <h1><%= category.name %></h1>
+    <% if (!category.is_locked || canModerate) { %><a class="primary-btn" href="/forums/<%= category.id %>/new">+ New Thread</a><% } %>
+  </div>
+  <p><a href="/forums">&larr; All Chats</a></p>
+  <% if (category.description) { %><p class="hint"><%= category.description %></p><% } %>
+  <% if (category.is_locked) { %><p class="hint">This chat is locked - only moderators can start new threads.</p><% } %>
+
+  <% if (threads.length === 0) { %>
+    <p class="roster-empty">No threads yet &mdash; start one above.</p>
+  <% } else { %>
+    <table class="data-table">
+      <thead><tr><th>Thread</th><th>Started By</th><th>Replies</th><th>Last Activity</th></tr></thead>
+      <tbody>
+        <% threads.forEach(function(t) { %>
+          <tr>
+            <td>
+              <a href="/forums/threads/<%= t.id %>"><%= t.title %></a>
+              <% if (t.is_pinned) { %> <span class="badge-pill">Pinned</span><% } %>
+              <% if (t.is_locked) { %> <span class="badge-pill badge-pill-gray">Locked</span><% } %>
+              <% if (t.status === 'archived') { %> <span class="badge-pill badge-pill-gray">Archived</span><% } %>
+            </td>
+            <td><%= t.authorName || 'Unknown' %></td>
+            <td><%= t.postCount - 1 %></td>
+            <td><%= t.lastActivityAt %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Directory Privacy</h1>
+  <p class="hint">Choose whether you appear in the Member Directory. This is separate from which fields are shown - an admin controls that.</p>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+  <p><strong><%= optedOut ? 'You are not shown in the directory.' : 'You are shown in the directory.' %></strong></p>
+  <% if (optedOut) { %>
+    <form method="POST" action="/member-directory/opt-in"><button type="submit" class="primary-btn">Show Me</button></form>
+  <% } else { %>
+    <form method="POST" action="/member-directory/opt-out"><button type="submit" class="btn-danger">Remove Me</button></form>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

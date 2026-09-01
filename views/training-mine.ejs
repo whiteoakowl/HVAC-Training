@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>My Training</h1>
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <% if (assignments.length === 0) { %>
+    <p class="roster-empty">You don't have any assigned training right now.</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% assignments.forEach(function(a) { %>
+        <div class="card">
+          <h3><%= a.title %></h3>
+          <p class="hint"><%= a.lessonCount %> lesson<%= a.lessonCount === 1 ? '' : 's' %><% if (a.estimatedMinutes) { %> &bull; <%= a.estimatedMinutes %> min<% } %></p>
+          <span class="badge-pill<%= a.status === 'passed' ? '' : a.status === 'retry_required' ? ' badge-pill-gray' : '' %>" style="<%= a.status === 'passed' ? 'background:#2e7d32;' : a.status === 'retry_required' ? 'background:#c62828;' : '' %>">
+            <%= a.status.replace('_', ' ') %>
+          </span>
+          <% if (a.due_at) { %><p class="hint">Due <%= a.due_at %></p><% } %>
+          <div style="margin-top:0.6rem;">
+            <% if (a.status === 'in_progress' || a.status === 'not_started') { %>
+              <a class="primary-btn" href="/training/<%= a.id %>/play"><%= a.status === 'not_started' ? 'Start Training' : 'Continue Training' %></a>
+            <% } else if (a.status === 'retry_required') { %>
+              <form method="POST" action="/training/<%= a.id %>/retake"><button type="submit" class="primary-btn">Retake Training</button></form>
+            <% } else { %>
+              <a class="btn-secondary" href="/training/<%= a.id %>/play">Review Training</a>
+            <% } %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

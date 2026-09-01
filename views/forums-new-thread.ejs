@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>New Thread &mdash; <%= category.name %></h1>
+  <p><a href="/forums/<%= category.id %>">&larr; Back</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="POST" action="/forums/<%= category.id %>/threads" class="form-grid">
+    <label class="full">Title <input type="text" name="title" required /></label>
+    <label class="full">Message <textarea name="body" required></textarea></label>
+    <div class="full"><button type="submit" class="primary-btn">Post Thread</button></div>
+  </form>
+<%- include('partials/footer') %>
+</body>
+</html>

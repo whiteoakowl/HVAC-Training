@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Manage Documents</h1>
+  <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <div class="card">
+    <h2>Upload a Document</h2>
+    <form method="POST" action="/documents/manage/upload" enctype="multipart/form-data" class="form-grid">
+      <label class="full">File <input type="file" name="file" required /></label>
+      <label class="full">Title <input type="text" name="title" /></label>
+      <label class="full">Description <textarea name="description"></textarea></label>
+      <label>Category
+        <select name="categoryId">
+          <option value="">None</option>
+          <% categories.forEach(function(c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
+        </select>
+      </label>
+      <label>Visible To
+        <select name="visibility">
+          <option value="members">All Members</option>
+          <option value="instructors">Instructors & Admins</option>
+          <option value="admins">Admins Only</option>
+        </select>
+      </label>
+      <div class="full"><button type="submit" class="primary-btn">Upload</button></div>
+    </form>
+  </div>
+
+  <details style="margin:1rem 0;">
+    <summary>+ New Category</summary>
+    <form method="POST" action="/documents/manage/categories" class="stack-form" style="max-width:320px; margin-top:0.5rem;">
+      <label>Name <input type="text" name="name" required /></label>
+      <button type="submit" class="btn-secondary">Create</button>
+    </form>
+  </details>
+
+  <h2>All Documents</h2>
+  <table class="data-table">
+    <thead><tr><th>Title</th><th>Category</th><th>Visibility</th><th>Uploaded By</th><th></th></tr></thead>
+    <tbody>
+      <% documents.forEach(function(d) { %>
+        <tr>
+          <td><%= d.title %></td>
+          <td><%= d.categoryName || '-' %></td>
+          <td><span class="badge-pill badge-pill-gray"><%= d.visibility %></span></td>
+          <td><%= d.uploadedByName || '-' %></td>
+          <td class="btn-row">
+            <a class="btn-secondary" href="/documents/<%= d.id %>/download">Download</a>
+            <form method="POST" action="/documents/manage/<%= d.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this document?');">
+              <button type="submit" class="btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<%- include('partials/footer') %>
+</body>
+</html>

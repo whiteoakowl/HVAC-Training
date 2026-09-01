@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <p><a href="/forums/<%= category.id %>">&larr; <%= category.name %></a></p>
+  <h1><%= thread.title %>
+    <% if (thread.is_pinned) { %> <span class="badge-pill">Pinned</span><% } %>
+    <% if (thread.is_locked) { %> <span class="badge-pill badge-pill-gray">Locked</span><% } %>
+    <% if (thread.status === 'archived') { %> <span class="badge-pill badge-pill-gray">Archived</span><% } %>
+  </h1>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <% if (canModerate) { %>
+    <div class="btn-row" style="margin-bottom:1rem;">
+      <% if (thread.is_pinned) { %><form method="POST" action="/forums/threads/<%= thread.id %>/unpin" class="inline-form"><button type="submit" class="btn-secondary">Unpin</button></form>
+      <% } else { %><form method="POST" action="/forums/threads/<%= thread.id %>/pin" class="inline-form"><button type="submit" class="btn-secondary">Pin</button></form><% } %>
+      <% if (thread.is_locked) { %><form method="POST" action="/forums/threads/<%= thread.id %>/unlock" class="inline-form"><button type="submit" class="btn-secondary">Unlock</button></form>
+      <% } else { %><form method="POST" action="/forums/threads/<%= thread.id %>/lock" class="inline-form"><button type="submit" class="btn-secondary">Lock</button></form><% } %>
+      <% if (thread.status === 'archived') { %><form method="POST" action="/forums/threads/<%= thread.id %>/unarchive" class="inline-form"><button type="submit" class="btn-secondary">Unarchive</button></form>
+      <% } else { %><form method="POST" action="/forums/threads/<%= thread.id %>/archive" class="inline-form"><button type="submit" class="btn-danger">Archive</button></form><% } %>
+    </div>
+  <% } %>
+
+  <% posts.forEach(function(p) { %>
+    <div class="thread-post <%= p.status === 'removed' ? 'thread-post-removed' : '' %>">
+      <div class="thread-post-header">
+        <span class="thread-post-author"><%= p.authorName || 'Unknown' %></span>
+        <span class="hint"><%= p.created_at %></span>
+        <% if (p.edited_at) { %><span class="hint">(edited)</span><% } %>
+        <% if (p.status === 'removed') { %><span class="badge-pill badge-pill-gray">Removed</span><% } %>
+      </div>
+      <% if (p.status === 'active') { %>
+        <p><%= p.body %></p>
+      <% } else { %>
+        <p class="hint">This post was removed by a moderator.</p>
+      <% } %>
+      <div class="btn-row">
+        <% if (p.member_id === selfMemberId && p.status === 'active') { %>
+          <button type="button" class="btn-secondary" onclick="document.getElementById('edit-post-<%= p.id %>').style.display='block'">Edit</button>
+        <% } %>
+        <% if (canModerate) { %>
+          <% if (p.status === 'active') { %>
+            <form method="POST" action="/forums/threads/<%= thread.id %>/posts/<%= p.id %>/remove" class="inline-form"><button type="submit" class="btn-danger">Remove</button></form>
+          <% } else { %>
+            <form method="POST" action="/forums/threads/<%= thread.id %>/posts/<%= p.id %>/restore" class="inline-form"><button type="submit" class="btn-secondary">Restore</button></form>
+          <% } %>
+        <% } %>
+      </div>
+      <% if (p.status === 'active') { %>
+        <form method="POST" action="/forums/threads/<%= thread.id %>/posts/<%= p.id %>/edit" id="edit-post-<%= p.id %>" style="display:none; margin-top:0.5rem;">
+          <textarea name="body"><%= p.body %></textarea>
+          <button type="submit" class="btn-secondary">Save</button>
+        </form>
+      <% } %>
+    </div>
+  <% }); %>
+
+  <% if (thread.status === 'active' && (!thread.is_locked || canModerate)) { %>
+    <div class="card">
+      <h2>Reply</h2>
+      <form method="POST" action="/forums/threads/<%= thread.id %>/posts">
+        <textarea name="body" required></textarea>
+        <button type="submit" class="primary-btn" style="margin-top:0.6rem;">Post Reply</button>
+      </form>
+    </div>
+  <% } else { %>
+    <p class="hint">This thread is locked - no new replies.</p>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

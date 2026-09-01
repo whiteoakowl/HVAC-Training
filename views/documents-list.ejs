@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Documents</h1>
+  <p class="hint">Reference materials, safety data sheets, and handouts.</p>
+
+  <% if (documents.length === 0) { %>
+    <p class="roster-empty">No documents available yet.</p>
+  <% } else { %>
+    <table class="data-table">
+      <thead><tr><th>Title</th><th>Category</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>
+        <% documents.forEach(function(d) { %>
+          <tr>
+            <td><%= d.title %><% if (d.description) { %><br /><span class="hint"><%= d.description %></span><% } %></td>
+            <td><%= d.categoryName || '-' %></td>
+            <td><%= d.created_at %></td>
+            <td><a class="btn-secondary" href="/documents/<%= d.id %>/download"><svg class="icon" style="width:14px;height:14px;"><use href="#icon-download"/></svg> Download</a></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+<%- include('partials/footer') %>
+</body>
+</html>

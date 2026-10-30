@@ -11,11 +11,15 @@ async function ensureMember(name, email, password, role) {
   return createMember({ name, email, password, role });
 }
 
+// Set SEED_PASSWORD on a public deployment so the demo admin account
+// doesn't keep the well-known default password.
+const PASSWORD = process.env.SEED_PASSWORD || 'password123';
+
 async function main() {
-  const adminId = await ensureMember('Pat Reyes', 'admin@hvactraining.test', 'password123', 'admin');
-  const instructorId = await ensureMember('Sam Kowalski', 'instructor@hvactraining.test', 'password123', 'instructor');
-  const studentId = await ensureMember('Jordan Lee', 'student@hvactraining.test', 'password123', 'student');
-  await ensureMember('Casey Nguyen', 'student2@hvactraining.test', 'password123', 'student');
+  const adminId = await ensureMember('Pat Reyes', 'admin@hvactraining.test', PASSWORD, 'admin');
+  const instructorId = await ensureMember('Sam Kowalski', 'instructor@hvactraining.test', PASSWORD, 'instructor');
+  const studentId = await ensureMember('Jordan Lee', 'student@hvactraining.test', PASSWORD, 'student');
+  await ensureMember('Casey Nguyen', 'student2@hvactraining.test', PASSWORD, 'student');
 
   if (!(await db.prepare('SELECT 1 FROM events LIMIT 1').get())) {
     const info = await db
@@ -64,10 +68,16 @@ async function main() {
     }
   }
 
-  console.log('Seed complete. Login with admin@hvactraining.test / instructor@hvactraining.test / student@hvactraining.test, password: password123');
+  console.log(`Seed complete. Login with admin@hvactraining.test / instructor@hvactraining.test / student@hvactraining.test, password: ${process.env.SEED_PASSWORD ? '(SEED_PASSWORD)' : PASSWORD}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = main;
+
+if (require.main === module) {
+  main()
+    .then(() => db.close())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

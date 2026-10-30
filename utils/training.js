@@ -80,7 +80,7 @@ async function createLesson(trainingId, data) {
   const title = (data.title || '').trim();
   if (!title) throw new Error('Lesson title is required.');
   const type = ['video', 'text', 'quiz'].includes(data.type) ? data.type : 'text';
-  const row = await db.prepare('SELECT MAX(position) AS maxPos FROM training_lessons WHERE training_id = ?').get(trainingId);
+  const row = await db.prepare('SELECT MAX(position) AS "maxPos" FROM training_lessons WHERE training_id = ?').get(trainingId);
   const position = (row && row.maxPos != null ? row.maxPos : -1) + 1;
   const info = await db
     .prepare('INSERT INTO training_lessons (training_id, title, description, type, position, required, video_url, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
@@ -103,7 +103,7 @@ async function createQuizQuestion(lessonId, data) {
   const options = (data.options || []).map((o) => ({ text: (o.text || '').trim(), correct: !!o.correct })).filter((o) => o.text);
   if (options.length < 2) throw new Error('At least two answer options are required.');
   if (!options.some((o) => o.correct)) throw new Error('One option must be marked correct.');
-  const row = await db.prepare('SELECT MAX(position) AS maxPos FROM training_quiz_questions WHERE lesson_id = ?').get(lessonId);
+  const row = await db.prepare('SELECT MAX(position) AS "maxPos" FROM training_quiz_questions WHERE lesson_id = ?').get(lessonId);
   const position = (row && row.maxPos != null ? row.maxPos : -1) + 1;
   const points = Math.max(1, parseInt(data.points, 10) || 1);
 

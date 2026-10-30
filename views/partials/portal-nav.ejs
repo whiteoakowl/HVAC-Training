@@ -25,22 +25,36 @@ if (isAdmin) {
   manageLinks.push({ href: '/portal/members', icon: 'gear', label: 'Manage Members' });
   manageLinks.push({ href: '/member-directory/settings', icon: 'gear', label: 'Directory Settings' });
 }
+// Longest matching href wins, so /events/manage highlights "Manage
+// Events" rather than "Events".
+const activeHref = navLinks.concat(manageLinks)
+  .map(function(l) { return l.href; })
+  .filter(function(h) { return currentPath === h || currentPath.indexOf(h + '/') === 0; })
+  .sort(function(a, b) { return b.length - a.length; })[0];
 %>
 <%- include('icon-sprite') %>
 <div class="app-shell">
-  <aside class="app-sidebar">
+  <%# On narrow screens the sidebar collapses into this top bar + a
+      dropdown that starts closed on every page load. %>
+  <header class="app-topbar">
     <a class="brand" href="/portal">HVAC Training</a>
+    <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="app-sidebar">
+      <span class="menu-toggle-bars" aria-hidden="true"></span> Menu<% if (unreadNotifications) { %> <span class="badge-count"><%= unreadNotifications %></span><% } %>
+    </button>
+  </header>
+  <aside class="app-sidebar" id="app-sidebar">
+    <a class="brand sidebar-brand" href="/portal">HVAC Training</a>
     <p class="sidebar-role">Signed in as <strong><%= member.name %></strong> &middot; <%= member.role %></p>
     <nav>
       <% navLinks.forEach(function(link) { %>
-        <a href="<%= link.href %>"><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %><% if (link.badge) { %> <span class="badge-count"><%= link.badge %></span><% } %></a>
+        <a href="<%= link.href %>"<%- link.href === activeHref ? ' class="active" aria-current="page"' : '' %>><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %><% if (link.badge) { %> <span class="badge-count"><%= link.badge %></span><% } %></a>
       <% }); %>
     </nav>
     <% if (manageLinks.length) { %>
       <p class="sidebar-section-title">Manage</p>
       <nav>
         <% manageLinks.forEach(function(link) { %>
-          <a href="<%= link.href %>"><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %></a>
+          <a href="<%= link.href %>"<%- link.href === activeHref ? ' class="active" aria-current="page"' : '' %>><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %></a>
         <% }); %>
       </nav>
     <% } %>
@@ -50,4 +64,26 @@ if (isAdmin) {
       </form>
     </div>
   </aside>
+  <script>
+    (function () {
+      var toggle = document.querySelector('.menu-toggle');
+      var sidebar = document.getElementById('app-sidebar');
+      function setOpen(open) {
+        sidebar.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        setOpen(!sidebar.classList.contains('open'));
+      });
+      document.addEventListener('click', function (e) {
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') setOpen(false);
+      });
+      // Closes it when coming back via the browser's back button too.
+      window.addEventListener('pageshow', function () { setOpen(false); });
+    })();
+  </script>
   <main class="app-main">

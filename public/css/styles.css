@@ -52,7 +52,56 @@ h1, h2, h3 { color: var(--text); }
   background: none; border: none; color: #e7edf5; padding: 0.5rem 0.6rem; cursor: pointer; font-size: 0.9rem;
 }
 .sidebar-bottom button:hover { background: rgba(255,255,255,0.1); border-radius: var(--radius); }
-.app-main { flex: 1; padding: 1.75rem 2rem; max-width: 1100px; }
+.app-sidebar nav a.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 600; }
+.app-main { flex: 1; min-width: 0; padding: 1.75rem 2rem; max-width: 1100px; }
+.app-topbar { display: none; }
+
+/* Phones/narrow tablets: sidebar becomes a top bar + dropdown menu so
+   page content gets the full width. */
+@media (max-width: 860px) {
+  .app-shell { flex-direction: column; }
+  .app-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20;
+    background: var(--brand-dark); color: #fff; padding: 0.6rem 1rem;
+  }
+  .app-topbar .brand { color: #fff; font-weight: 800; font-size: 1.05rem; }
+  .menu-toggle {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.45rem 0.8rem; border-radius: var(--radius); font-size: 0.95rem; cursor: pointer;
+  }
+  .menu-toggle:hover { background: rgba(255,255,255,0.2); }
+  .menu-toggle .badge-count {
+    background: #e0521b; color: #fff; border-radius: 999px; font-size: 0.7rem; padding: 0.05rem 0.4rem;
+  }
+  .menu-toggle-bars, .menu-toggle-bars::before, .menu-toggle-bars::after {
+    display: block; width: 16px; height: 2px; background: currentColor; border-radius: 1px; position: relative;
+  }
+  .menu-toggle-bars::before, .menu-toggle-bars::after { content: ""; position: absolute; left: 0; }
+  .menu-toggle-bars::before { top: -5px; }
+  .menu-toggle-bars::after { top: 5px; }
+  .menu-toggle[aria-expanded="true"] .menu-toggle-bars { background: transparent; }
+  .menu-toggle[aria-expanded="true"] .menu-toggle-bars::before { top: 0; transform: rotate(45deg); }
+  .menu-toggle[aria-expanded="true"] .menu-toggle-bars::after { top: 0; transform: rotate(-45deg); }
+
+  .app-sidebar {
+    display: none;
+    position: fixed; top: 52px; left: 0; right: 0; z-index: 19;
+    width: auto; max-height: calc(100vh - 52px); overflow-y: auto;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  }
+  .app-sidebar.open { display: flex; }
+  .app-sidebar .sidebar-brand { display: none; }
+  .app-sidebar nav a { padding: 0.7rem 0.6rem; }
+  .sidebar-bottom { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 0.5rem; }
+
+  .app-main { padding: 1rem; max-width: none; }
+  .app-main h1 { font-size: 1.5rem; margin-top: 0.25rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .player-layout { grid-template-columns: 1fr; }
+  table.data-table { display: block; overflow-x: auto; white-space: nowrap; }
+}
 
 /* Public / auth pages */
 .auth-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }

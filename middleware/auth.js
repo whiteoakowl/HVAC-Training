@@ -8,6 +8,7 @@ const { unreadCount } = require('../utils/notifications');
 async function loadSession(req, res, next) {
   res.locals.member = null;
   res.locals.unreadNotifications = 0;
+  res.locals.currentPath = req.path;
   const id = req.session && req.session.memberId;
   if (!id) return next();
   const member = await findById(id);

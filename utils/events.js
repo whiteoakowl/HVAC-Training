@@ -6,12 +6,15 @@
 const db = require('../db');
 
 async function listUpcoming() {
+  // Computed here (same 'YYYY-MM-DD HH:MM:SS' text format as now_text())
+  // so the query runs unchanged on SQLite and Postgres.
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
   return db
     .prepare(
       `SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id = e.id AND r.status = 'registered') AS "registeredCount"
-       FROM events e WHERE e.starts_at >= datetime('now', '-1 day') ORDER BY e.starts_at`
+       FROM events e WHERE e.starts_at >= ? ORDER BY e.starts_at`
     )
-    .all();
+    .all(since);
 }
 
 async function listAll() {

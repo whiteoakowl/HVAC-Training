@@ -41,6 +41,7 @@ async function getDocument(id) {
 }
 
 async function createDocument(data, uploadedBy) {
+  await db.prepare('INSERT INTO document_files (file_path, content) VALUES (?, ?)').run(data.filePath, data.content);
   const info = await db
     .prepare('INSERT INTO documents (title, description, category_id, file_path, original_name, file_size, visibility, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .run(data.title, data.description || null, data.categoryId || null, data.filePath, data.originalName || null, data.fileSize || null, data.visibility || 'members', uploadedBy);
@@ -50,7 +51,13 @@ async function createDocument(data, uploadedBy) {
 async function deleteDocument(id) {
   const doc = await getDocument(id);
   await db.prepare('DELETE FROM documents WHERE id = ?').run(id);
+  if (doc) await db.prepare('DELETE FROM document_files WHERE file_path = ?').run(doc.file_path);
   return doc;
 }
 
-module.exports = { listCategories, createCategory, listForRole, listAll, getDocument, createDocument, deleteDocument, visibleToRole };
+async function getFileContent(doc) {
+  const row = await db.prepare('SELECT content FROM document_files WHERE file_path = ?').get(doc.file_path);
+  return row ? row.content : null;
+}
+
+module.exports = { listCategories, createCategory, listForRole, listAll, getDocument, createDocument, deleteDocument, getFileContent, visibleToRole };

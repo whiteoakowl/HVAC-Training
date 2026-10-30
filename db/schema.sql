@@ -1,4 +1,6 @@
--- HVAC Training Portal schema (SQLite).
+-- HVAC Training Portal schema. Written for SQLite; db/postgres.js
+-- rewrites the few SQLite-only bits (AUTOINCREMENT, datetime('now'),
+-- BLOB) when running against Postgres/Supabase.
 -- Single-role-per-account model: members.role is one of 'student',
 -- 'instructor', 'admin' - simpler than the reference app's many-to-many
 -- roles/permissions system, since this portal doesn't need a member to
@@ -219,4 +221,11 @@ CREATE TABLE IF NOT EXISTS documents (
   visibility TEXT NOT NULL DEFAULT 'members' CHECK (visibility IN ('members','instructors','admins')),
   uploaded_by INTEGER REFERENCES members(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- File contents live in the database (not on disk) so uploads persist on
+-- serverless hosts like Netlify, where the filesystem is temporary.
+CREATE TABLE IF NOT EXISTS document_files (
+  file_path TEXT PRIMARY KEY,
+  content BLOB NOT NULL
 );

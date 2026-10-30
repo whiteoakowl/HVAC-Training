@@ -7,7 +7,7 @@
   <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
 
   <table class="data-table">
-    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th></tr></thead>
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead>
     <tbody>
       <% members.forEach(function(m) { %>
         <tr>
@@ -28,6 +28,7 @@
               <button type="submit" class="btn-secondary"><%= m.active ? 'Deactivate' : 'Activate' %></button>
             </form>
           </td>
+          <td><a class="btn-secondary" href="/portal/members/<%= m.id %>/edit">Edit</a></td>
         </tr>
       <% }); %>
     </tbody>

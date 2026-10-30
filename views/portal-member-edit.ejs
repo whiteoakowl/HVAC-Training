@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/portal-nav') %>
+  <h1>Edit Member</h1>
+  <p><a href="/portal/members">&larr; Manage Members</a></p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="POST" action="/portal/members/<%= editMember.id %>/edit" class="form-grid">
+    <label>Name <input type="text" name="name" value="<%= editMember.name %>" required /></label>
+    <label>Email <input type="email" name="email" value="<%= editMember.email %>" required /></label>
+    <label>Phone <input type="tel" name="phone" value="<%= editMember.phone || '' %>" /></label>
+    <label>Role
+      <select name="role" <%= isSelf ? 'disabled' : '' %>>
+        <option value="student" <%= editMember.role === 'student' ? 'selected' : '' %>>Student</option>
+        <option value="instructor" <%= editMember.role === 'instructor' ? 'selected' : '' %>>Instructor</option>
+        <option value="admin" <%= editMember.role === 'admin' ? 'selected' : '' %>>Admin</option>
+      </select>
+    </label>
+    <label>Status
+      <select name="active" <%= isSelf ? 'disabled' : '' %>>
+        <option value="1" <%= editMember.active ? 'selected' : '' %>>Active</option>
+        <option value="0" <%= !editMember.active ? 'selected' : '' %>>Deactivated</option>
+      </select>
+    </label>
+    <label>New password <input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current" /></label>
+    <% if (isSelf) { %><p class="full">You can't change your own role or deactivate your own account.</p><% } %>
+    <div class="full"><button type="submit" class="primary-btn">Save Changes</button></div>
+  </form>
+<%- include('partials/footer') %>
+</body>
+</html>

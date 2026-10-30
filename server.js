@@ -8,6 +8,9 @@ const { UPLOADS_DIR } = require('./utils/paths');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Registered explicitly (rather than letting Express require('ejs') by
+// name at render time) so serverless bundlers see the dependency.
+app.engine('ejs', require('ejs').__express);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 

@@ -1,9 +1,9 @@
 const path = require('path');
 const express = require('express');
-const session = require('express-session');
-const MemoryStore = require('memorystore')(session);
+const session = require('cookie-session');
 
 const { loadSession } = require('./middleware/auth');
+const { UPLOADS_DIR } = require('./utils/paths');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,16 +13,18 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
+  // Signed-cookie sessions (only memberId is stored) rather than a
+  // server-side store, so a login survives across serverless instances.
   session({
-    store: new MemoryStore({ checkPeriod: 1000 * 60 * 60 * 24 }),
+    name: 'hvac.sid',
     secret: process.env.SESSION_SECRET || 'hvac-training-dev-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 * 14 },
+    maxAge: 1000 * 60 * 60 * 24 * 14,
+    sameSite: 'lax',
+    httpOnly: true,
   })
 );
 
@@ -46,6 +48,8 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something went wrong: ' + err.message);
 });
 
-app.listen(PORT, () => console.log(`HVAC Training Portal listening on http://localhost:${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`HVAC Training Portal listening on http://localhost:${PORT}`));
+}
 
 module.exports = app;

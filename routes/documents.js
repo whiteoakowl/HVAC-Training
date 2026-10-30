@@ -8,7 +8,7 @@ const documents = require('../utils/documents');
 const notifications = require('../utils/notifications');
 const db = require('../db');
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'documents');
+const UPLOAD_DIR = path.join(require('../utils/paths').UPLOADS_DIR, 'documents');
 
 // Stores under a random filename (never the client-supplied original
 // name) so a path-traversal or overwrite attempt via a crafted filename

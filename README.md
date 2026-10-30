@@ -40,3 +40,25 @@ Role management lives at `/portal/members` (admin only).
 
 SQLite database lives at `data/hvac_training.sqlite` (gitignored, created on
 first run/seed). Uploaded documents go to `uploads/documents/`.
+
+## Deploying to Netlify
+
+`netlify.toml` runs the Express app as a single Netlify Function
+(`netlify/functions/app.js`, via `serverless-http`); `public/` is served
+from the CDN and every other path is rewritten to the function. No build
+settings need to be entered in the Netlify UI.
+
+Set a `SESSION_SECRET` environment variable in Netlify (Site configuration
+-> Environment variables) - sessions are signed cookies.
+
+**Limitations - Netlify is a demo host for this app, not a production one:**
+- Functions have no persistent disk, so the SQLite DB and uploads live in
+  `/tmp` and are **reset on every cold start** (each fresh instance is
+  re-seeded with the demo accounts). Registrations, quiz progress, posts
+  and uploaded documents will disappear, and can differ between instances.
+- Request bodies are capped at ~6 MB, so larger document uploads fail.
+
+For real use, either host it on a platform with a persistent disk
+(Render, Railway, Fly.io - `npm start` works as-is) or move the data to a
+hosted database (e.g. Netlify DB/Postgres, Turso) and files to object
+storage (e.g. Netlify Blobs).

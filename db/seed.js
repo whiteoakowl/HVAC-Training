@@ -67,7 +67,11 @@ async function main() {
   console.log('Seed complete. Login with admin@hvactraining.test / instructor@hvactraining.test / student@hvactraining.test, password: password123');
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = main;
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

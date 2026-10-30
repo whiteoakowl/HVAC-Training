@@ -1,0 +1,19 @@
+[build]
+  command = "echo 'No build step - Express app runs as a Netlify Function'"
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  # zisi keeps the repo's file layout, so __dirname-relative paths
+  # (views/, db/schema.sql) and the better-sqlite3 native binary just work.
+  node_bundler = "zisi"
+  included_files = ["views/**", "db/schema.sql"]
+
+# Static assets in public/ are served by the CDN; everything else goes to Express.
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/app"
+  status = 200

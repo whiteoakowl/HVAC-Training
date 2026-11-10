@@ -1,0 +1,14 @@
+<%- include('partials/page-start') %>
+<h1><%= other.name %></h1>
+<p><a href="/messages">&larr; All messages</a></p>
+<% if (!thread.length) { %><p class="empty">No messages yet. Say hello.</p><% } %>
+<% thread.forEach(function(m) { var mine = m.from_id === member.id; %>
+  <div style="display:flex; justify-content:<%= mine ? 'flex-end' : 'flex-start' %>; margin:0.35rem 0;">
+    <div class="card" style="max-width:75%; padding:0.5rem 0.75rem; <%= mine ? 'background:#eaf1fd;' : '' %>"><p style="margin:0; white-space:pre-wrap;"><%= m.body %></p><p class="hint" style="margin:0.2rem 0 0;"><%= fmt.shortDateTime(m.created_at) %><%= mine && m.read_at ? ' · read' : '' %></p></div>
+  </div>
+<% }); %>
+<form method="POST" action="/messages/<%= other.id %>" class="stack-form mt" id="end">
+  <textarea name="body" required style="min-height:70px;" placeholder="Message <%= other.name %>..."></textarea>
+  <button type="submit">Send</button>
+</form>
+<%- include('partials/page-end') %>

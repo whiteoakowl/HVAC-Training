@@ -107,8 +107,13 @@ async function totalQty(tx, itemId) {
 async function receive({ itemId, locationId, qty, unitCostCents, fundingCode = '2000', reference = null, memberId }) {
   if (!(qty > 0)) throw new Error('Received quantity must be greater than zero.');
   if (!(unitCostCents >= 0)) throw new Error('Enter the unit cost.');
-  if (!['1000', '2000'].includes(fundingCode)) throw new Error('Choose how the purchase was paid.');
-  return db.withTransaction(async (tx) => {
+  if (!['1000', '2000', '2050'].includes(fundingCode)) throw new Error('Choose how the purchase was paid.');
+  return receiveTx(null, { itemId, locationId, qty, unitCostCents, fundingCode, reference, memberId });
+}
+
+// Same as receive(), inside an existing transaction when tx is given.
+async function receiveTx(outerTx, { itemId, locationId, qty, unitCostCents, fundingCode, reference, memberId }) {
+  const body = async (tx) => {
     const item = await getItem(itemId, tx);
     if (!item) throw new Error('Item not found.');
     const onHand = Math.max(0, await totalQty(tx, itemId));
@@ -124,7 +129,8 @@ async function receive({ itemId, locationId, qty, unitCostCents, fundingCode = '
       });
     }
     return r;
-  });
+  };
+  return outerTx ? body(outerTx) : db.withTransaction(body);
 }
 
 async function transfer({ itemId, fromId, toId, qty, note = null, memberId }) {
@@ -229,5 +235,5 @@ async function transactions({ itemId = null, locationId = null, jobId = null, li
 
 module.exports = {
   warehouse, listLocations, getLocation, truckLocation, getItem, listItems, categories, stockAt, stockForItem, quantity, setMin,
-  move, receive, transfer, adjust, useOnJob, returnFromJob, lowStock, valueByLocation, transactions, fmt,
+  move, receive, receiveTx, transfer, adjust, useOnJob, returnFromJob, lowStock, valueByLocation, transactions, fmt,
 };

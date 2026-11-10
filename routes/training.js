@@ -94,6 +94,13 @@ router.post('/training/:assignmentId/retake', async (req, res) => {
 
 // --- Admin/instructor Training Builder ---
 
+// Category and renewal period (training center additions).
+async function saveExtras(id, body) {
+  const db = require('../db');
+  const months = parseInt(body.renewMonths, 10);
+  await db.prepare('UPDATE trainings SET category = ?, renew_months = ? WHERE id = ?').run((body.category || '').trim().slice(0, 100) || null, months > 0 ? Math.min(months, 120) : null, id);
+}
+
 router.get('/training/manage', requirePermission('training.manage'), async (req, res) => {
   res.render('training-manage', { title: 'Manage Training', trainings: await T.listTrainings(), notice: req.query.notice || null });
 });
@@ -112,6 +119,7 @@ router.post('/training/manage/new', requirePermission('training.manage'), async 
       sequentialLessons: req.body.sequentialLessons === '1',
       requireVideoCompletion: req.body.requireVideoCompletion === '1',
     });
+    await saveExtras(id, req.body);
     res.redirect(`/training/manage/${id}`);
   } catch (e) {
     res.redirect('/training/manage/new?error=' + encodeURIComponent(e.message));
@@ -141,6 +149,7 @@ router.post('/training/manage/:id/edit', requirePermission('training.manage'), a
       sequentialLessons: req.body.sequentialLessons === '1',
       requireVideoCompletion: req.body.requireVideoCompletion === '1',
     });
+    await saveExtras(req.params.id, req.body);
     res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Saved.'));
   } catch (e) {
     res.redirect(`/training/manage/${req.params.id}?error=` + encodeURIComponent(e.message));

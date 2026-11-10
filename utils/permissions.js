@@ -73,6 +73,8 @@ async function setRolePermissions(roleKey, keys) {
 
 // Where "Home" goes for a role.
 function homeFor(can) {
+  if (can('system.admin')) return '/manage';
+  if (can('portal.customer')) return '/my';
   if (can('portal.management')) return '/manage';
   if (can('portal.service')) return '/service';
   if (can('portal.employee')) return '/employee';

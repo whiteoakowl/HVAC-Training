@@ -15,6 +15,14 @@ const RULES = {
   automation_notify_job_assigned: 'Notify technicians when they are assigned to a job',
   automation_draft_invoice_on_completion: 'Create a draft invoice (for review) when a job is completed',
   automation_low_stock_alerts: 'Alert inventory managers when stock falls to its minimum',
+  automation_job_from_approved_estimate: 'Create a job (ready to schedule) when a customer approves an estimate',
+  automation_estimate_followups: 'Daily: expire out-of-date estimates and remind the office about estimates awaiting a decision for 3+ days',
+  automation_maintenance_jobs: 'Daily: create jobs for maintenance-agreement visits coming due and notify customer service',
+  automation_overdue_invoice_alerts: 'Daily: notify accounting about overdue invoices',
+  automation_customer_payment_reminders: 'Daily: email/text customers a reminder for invoices 7, 14 and 30 days overdue (needs a messaging provider)',
+  automation_certification_alerts: 'Daily: remind employees and managers about certifications expiring within 30 days',
+  automation_training_alerts: 'Daily: assign required training by role and remind about overdue or expiring training',
+  automation_recurring_expense_alerts: 'Daily: notify accounting when recurring expenses are due to be posted (never posted automatically)',
 };
 
 async function record(ruleKey, entityType, entityId, result) {

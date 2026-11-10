@@ -4,6 +4,9 @@
   <div class="card form-grid">
     <h2 class="full">Company</h2>
     <label>Company name <input name="company_name" value="<%= s.company_name || '' %>" /></label>
+    <label>Timezone (IANA name) <input name="company_timezone" list="tzs" value="<%= s.company_timezone || 'UTC' %>" required />
+      <datalist id="tzs"><option>America/New_York</option><option>America/Chicago</option><option>America/Denver</option><option>America/Phoenix</option><option>America/Los_Angeles</option><option>America/Anchorage</option><option>Pacific/Honolulu</option><option>UTC</option></datalist>
+    </label>
     <label>Phone (shown on invoices and confirmations) <input name="company_phone" value="<%= s.company_phone || '' %>" /></label>
     <label>Email <input name="company_email" value="<%= s.company_email || '' %>" /></label>
     <label>Address <input name="company_address" value="<%= s.company_address || '' %>" /></label>
@@ -18,7 +21,15 @@
     <p class="full hint">Tax rates and what is taxable (labor vs. materials) differ by state and city - confirm with your tax professional.</p>
   </div>
   <div class="card form-grid">
+    <h2 class="full">Estimates &amp; maintenance</h2>
+    <label>Estimates valid for (days) <input name="estimate_valid_days" inputmode="numeric" value="<%= s.estimate_valid_days || '30' %>" /></label>
+    <label>Create maintenance visit jobs (days before due) <input name="maintenance_job_lead_days" inputmode="numeric" value="<%= s.maintenance_job_lead_days || '30' %>" /></label>
+    <label class="full">Default estimate terms <textarea name="estimate_terms" style="min-height:60px;"><%= s.estimate_terms || '' %></textarea></label>
+    <label class="full">Default warranty text <textarea name="estimate_warranty" style="min-height:60px;"><%= s.estimate_warranty || '' %></textarea></label>
+  </div>
+  <div class="card form-grid">
     <h2 class="full">Time &amp; security</h2>
+    <label>Paid-leave hours per day <input name="pto_hours_per_day" inputmode="numeric" value="<%= s.pto_hours_per_day || '8' %>" /></label>
     <label>Weekly overtime threshold (hours) <input name="overtime_weekly_hours" inputmode="numeric" value="<%= s.overtime_weekly_hours || '40' %>" /></label>
     <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="gps_clock_enabled" value="1" <%= s.gps_clock_enabled === '1' ? 'checked' : '' %> style="width:auto;" /> Record GPS location at clock-in/out (only at those moments; tell employees and follow your state's notice rules)</label>
     <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="allow_registration" value="1" <%= s.allow_registration === '1' ? 'checked' : '' %> style="width:auto;" /> Allow public self-registration as Trainee (original training portal feature; recommended OFF for a business)</label>

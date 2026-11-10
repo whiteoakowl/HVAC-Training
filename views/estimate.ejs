@@ -1,0 +1,75 @@
+<%- include('partials/page-start') %>
+<% const editable = ['draft','sent'].includes(e.status) && can('estimates.manage'); %>
+<div class="page-header no-print">
+  <div>
+    <h1><%= e.estimate_number %> <span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></h1>
+    <p class="hint">Revision <%= e.revision %> · created <%= fmt.dateOnly(e.created_at) %><%= e.createdByName ? ' by ' + e.createdByName : '' %><% if (e.job_id) { %> · job <a href="/jobs/<%= e.job_id %>"><%= e.job_number %></a><% } %></p>
+  </div>
+  <div class="btn-row"><button type="button" class="btn-secondary" onclick="window.print()">Print / Save PDF</button><a class="btn btn-secondary" href="/customers/<%= e.customer_id %>">Customer</a><a class="btn btn-secondary" href="/estimates">&larr; Estimates</a></div>
+</div>
+<% if (e.revisions.length > 1) { %><p class="hint no-print">Versions: <% e.revisions.forEach(function(r) { %><a href="/estimates/<%= r.id %>"><%= r.estimate_number %></a> (<%= r.status %>) <% }); %></p><% } %>
+
+<%- include('partials/estimate-doc', { e: e, company: company, editable: editable }) %>
+
+<div class="card-grid no-print">
+  <% if (editable) { %>
+    <div class="card" id="add-line">
+      <h2>Add item</h2>
+      <form method="POST" action="/estimates/<%= e.id %>/lines" class="stack-form">
+        <label>Type <select name="kind"><% kinds.forEach(function(k) { %><option value="<%= k %>"><%= fmt.label(k) %></option><% }); %></select></label>
+        <label>From catalog (optional) <select name="item_id"><option value="">-</option><% items.forEach(function(i) { %><option value="<%= i.id %>"><%= i.name %> - <%= fmt.money(i.price_cents) %></option><% }); %></select></label>
+        <label>Description <input name="description" placeholder="Blank = catalog item name" /></label>
+        <div class="inline-fields"><label>Qty <input name="quantity" value="1" inputmode="decimal" required /></label><label>Unit price <input name="unit_price" inputmode="decimal" placeholder="Blank = catalog price" /></label></div>
+        <label style="flex-direction:row; align-items:center; font-weight:400;"><input type="checkbox" name="taxable" value="1" checked style="width:auto;" /> Taxable</label>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+    <details class="card">
+      <summary><strong>Details, pricing &amp; terms</strong></summary>
+      <form method="POST" action="/estimates/<%= e.id %>/edit" class="stack-form mt">
+        <label>Title <input name="title" value="<%= e.title %>" required /></label>
+        <label>Job location <select name="property_id"><option value="">-</option><% properties.forEach(function(p) { %><option value="<%= p.id %>" <%= e.property_id === p.id ? 'selected' : '' %>><%= p.address %></option><% }); %></select></label>
+        <label>Scope of work <textarea name="scope"><%= e.scope || '' %></textarea></label>
+        <div class="inline-fields"><label>Discount ($) <input name="discount" value="<%= fmt.centsInput(e.discount_cents) %>" /></label><label>Tax rate (%) <input name="tax_rate" value="<%= (e.tax_rate_bp / 100).toFixed(2) %>" /></label></div>
+        <div class="inline-fields"><label>Deposit ($) <input name="deposit" value="<%= fmt.centsInput(e.deposit_cents) %>" /></label><label>Valid until <input type="date" name="expires_on" value="<%= e.expires_on || '' %>" /></label></div>
+        <label>Payment schedule <input name="payment_schedule" value="<%= e.payment_schedule || '' %>" placeholder="50% deposit, balance on completion" /></label>
+        <label>Warranty <textarea name="warranty" style="min-height:60px;"><%= e.warranty || '' %></textarea></label>
+        <label>Terms &amp; conditions <textarea name="terms" style="min-height:60px;"><%= e.terms || '' %></textarea></label>
+        <button type="submit" class="btn-secondary">Save</button>
+      </form>
+    </details>
+    <div class="card">
+      <h2>Send to customer</h2>
+      <p class="small">Customer approval link: <input readonly value="/e/<%= e.public_token %>" onclick="this.value = location.origin + '/e/<%= e.public_token %>'; this.select();" /></p>
+      <form method="POST" action="/estimates/<%= e.id %>/send" class="btn-row">
+        <button name="channel" value="email">Email</button><button name="channel" value="sms" class="btn-secondary">Text</button><button name="channel" value="both" class="btn-secondary">Both</button>
+      </form>
+      <p class="hint">The customer can review, sign and approve (or decline) from the link - no login needed.</p>
+    </div>
+    <div class="card">
+      <h2>Record the customer's decision</h2>
+      <form method="POST" action="/estimates/<%= e.id %>/decision" class="stack-form">
+        <label>Approved by (name) <input name="approved_name" /></label>
+        <label>Or decline reason <input name="reason" /></label>
+        <div class="btn-row"><button name="decision" value="approve" class="btn-success">Approved (signed paper / phone)</button><button name="decision" value="reject" class="btn-danger">Declined</button></div>
+      </form>
+    </div>
+  <% } %>
+  <% if (can('estimates.manage') && !['converted','superseded'].includes(e.status)) { %>
+    <div class="card"><h2>Revise</h2><p class="hint">Copies this estimate into a new revision you can edit and resend.</p><form method="POST" action="/estimates/<%= e.id %>/revise"><button type="submit" class="btn-secondary">Create revision</button></form></div>
+  <% } %>
+  <% if (e.status === 'approved') { %>
+    <div class="card">
+      <h2>Next steps</h2>
+      <% if (can('jobs.manage')) { %><form method="POST" action="/estimates/<%= e.id %>/convert" style="margin-bottom:0.5rem;"><button type="submit" class="btn-success">Convert to job</button></form><% } %>
+    </div>
+  <% } %>
+  <% if (['approved','converted'].includes(e.status) && e.deposit_cents && can('invoices.manage')) { %>
+    <div class="card"><h2>Deposit</h2>
+      <% if (e.depositInvoice) { %><p><a href="/invoices/<%= e.depositInvoice.id %>"><%= e.depositInvoice.invoice_number %></a> <span class="status status-<%= e.depositInvoice.status %>"><%= e.depositInvoice.status %></span></p>
+      <% } else { %><form method="POST" action="/estimates/<%= e.id %>/deposit"><button type="submit">Create deposit invoice (<%= fmt.money(e.deposit_cents) %>)</button></form><% } %>
+      <p class="hint">Deposits are held as a liability and deducted from the final job invoice.</p>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

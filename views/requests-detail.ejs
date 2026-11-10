@@ -2,7 +2,7 @@
 <div class="page-header">
   <div>
     <h1><%= sr.request_number %> <span class="status status-<%= sr.status %>"><%= sr.status %></span></h1>
-    <p class="hint"><span class="<%= sr.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(sr.kind) %></span> · received <%= fmt.shortDateTime(sr.created_at) %> UTC via <%= sr.source %><%= sr.createdByName ? ' by ' + sr.createdByName : '' %></p>
+    <p class="hint"><span class="<%= sr.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(sr.kind) %></span> · received <%= fmt.shortDateTime(sr.created_at) %> via <%= sr.source %><%= sr.createdByName ? ' by ' + sr.createdByName : '' %></p>
   </div>
   <p><a href="/requests">&larr; Service Requests</a></p>
 </div>

@@ -1,5 +1,69 @@
 # Implementation log
 
+## Stage 2 (second change): remaining modules
+
+Migration `003_stage2_modules` adds new tables and columns only. It was tested on SQLite and on Postgres 16, including upgrading a copy of a database created by the original app.
+
+**What was added** (see ROADMAP.md for the full list):
+* Estimates with customer e-signature, revisions and deposits.
+* Change orders.
+* Credits and refunds.
+* Vendors, purchase orders with approval and partial receiving, vendor bills, A/P.
+* Expenses and recurring expenses.
+* Maintenance plans and agreements.
+* Payroll runs and pay stubs.
+* Time off.
+* Announcements, employee messaging, end-of-day reports.
+* Job checklists and inspection forms.
+* Tools and equipment.
+* Documents attached to records.
+* Training center: categories, renewals, required courses by role, completion matrix.
+* Customer self-service portal.
+* Two-step verification, password reset, forced temporary-password change.
+* Company timezone.
+* Daily scheduled automations.
+* Dashboard and report additions.
+
+**New accounts:**
+* 2050 Goods Received Not Invoiced
+* 2400 Credit Card Payable
+* 4910 Customer Credits
+* 6010 Payroll Taxes
+* 6050 Employee Reimbursements
+
+**New permissions:** estimates, purchasing (manage and approve), bills, expenses, agreements, payroll (view and manage), time-off approval, announcements, messages, end-of-day reports, checklists, assets, customer portal. Each is granted to sensible default roles and editable in Role Permissions.
+
+**Controls built in:**
+* Purchase orders, payroll, time off and timesheets can't be approved by the person who created or requested them.
+* Payroll needs a second approver before it can be posted.
+* Recurring expenses and auto-renewals never post money on their own; renewals produce draft invoices only.
+* Customer payment reminders are off by default and need an email provider.
+
+**Tests:** `test/stage2.test.js` covers 12 scenarios, each checked against the ledger:
+1. Estimate → customer signs on the public page → job created automatically.
+2. Deposit invoice → change order signed on site → checklist → final invoice deducts the deposit and carries the discount → paid → credit and refund.
+3. Purchase order: self-approval refused, second-person approval, partial receipt and backorder, over-receipt refused, bill clears GRNI, paid.
+4. Expenses, a void, and a recurring expense the daily run does not post.
+5. Agreement visit job auto-created, covered visit not invoiced, agreement invoice to 4200.
+6. Payroll: regular, overtime and PTO computed; preparer can't approve; posted; stubs private.
+7. Time off with balances, messaging permissions, announcements.
+8. Customer portal isolation.
+9. Record-document permissions.
+10. Two-step login and forced password change.
+11. Required training by role.
+12. Trial balance and balance sheet balance at the end.
+
+The smoke test now also crawls as the customer login. **35 tests pass on SQLite, and the same suites pass on Postgres 16.**
+
+**Known limitations, Stage 2:**
+* The payroll module records pay but does not calculate tax withholding or pay anyone; enter withholdings from your payroll provider.
+* Overtime is weekly only.
+* Paid leave balances are set by a manager; there is no automatic accrual.
+* Only one bill per purchase-order receipt batch is supported. A bill always covers everything received and not yet billed.
+* SQLite (local development only) stores `created_at` defaults in UTC. Postgres uses the company timezone throughout.
+
+## Stage 1
+
 ## Stage 1 (this change): foundation and core operations
 
 ### What was built

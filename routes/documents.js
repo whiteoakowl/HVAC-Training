@@ -19,7 +19,8 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 
 router.use(requireAuth, requirePermission('documents.view', 'documents.manage'));
 
 router.get('/', async (req, res) => {
-  res.render('documents-list', { title: 'Documents', documents: await documents.listForRole(req.can) });
+  const q = (req.query.q || '').trim();
+  res.render('documents-list', { title: 'Documents', documents: await documents.listForRole(req.can, q || null), q });
 });
 
 router.get('/manage', requirePermission('documents.manage'), async (req, res) => {
@@ -64,6 +65,7 @@ router.post('/manage/:id/delete', requirePermission('documents.manage'), async (
 
 router.get('/:id/download', async (req, res) => {
   const doc = await documents.getDocument(req.params.id);
+  if (doc && Object.values(documents.TARGET_COLUMN).some((c) => doc[c])) return res.redirect(`/files/${doc.id}`);
   if (!doc || !documents.visibleToRole(doc, req.can)) return res.status(404).render('404', { title: 'Not Found' });
   const content = await documents.getFileContent(doc);
   if (!content) return res.status(404).render('404', { title: 'Not Found' });

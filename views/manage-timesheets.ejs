@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Timesheets</h1><p class="hint">Week of <%= start %> · overtime over <%= threshold %> h/week · times in UTC</p></div>
+  <div><h1>Timesheets</h1><p class="hint">Week of <%= start %> · overtime over <%= threshold %> h/week · times in <%= fmt.timezone() %></p></div>
   <div class="btn-row">
     <a class="btn btn-secondary" href="/manage/timesheets?week=<%= prev %>">&larr; Prev</a><a class="btn btn-secondary" href="/manage/timesheets">This week</a><a class="btn btn-secondary" href="/manage/timesheets?week=<%= next %>">Next &rarr;</a>
     <a class="btn btn-secondary" href="/manage/timesheets?week=<%= start %>&format=csv">Payroll export (CSV)</a>

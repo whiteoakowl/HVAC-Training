@@ -4,6 +4,7 @@
 <body>
 <%- include('partials/portal-nav') %>
   <h1>Documents</h1>
+  <form class="toolbar" method="GET" action="/documents"><input type="search" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Search manuals, policies, forms..." /><button type="submit">Search</button></form>
   <p class="hint">Reference materials, safety data sheets, and handouts.</p>
 
   <% if (documents.length === 0) { %>

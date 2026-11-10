@@ -11,11 +11,14 @@ let db;
 test.before(async () => {
   ctx = await start({ demo: true });
   db = ctx.db;
+  await require('../utils/settings').applyTimezone(true);
+  today = fmt.today();
 });
 test.after(async () => ctx.stop());
 
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-const today = new Date().toISOString().slice(0, 10);
+const fmt = require('../utils/format');
+let today;
 
 async function wix(body, secret = 'wix-test-secret') {
   const r = await fetch(ctx.base + '/api/integrations/wix/service-request', {
@@ -160,7 +163,7 @@ test('technician works the job from the field', async () => {
   assert.strictEqual(dl.status, 200);
 
   // Backdate the time entry 2 hours so labor is measurable, then clock out.
-  await db.prepare("UPDATE time_entries SET clock_in = ? WHERE member_id = ? AND status = 'open'").run(new Date(Date.now() - 2 * 3600e3).toISOString().slice(0, 19).replace('T', ' '), state.techId);
+  await db.prepare("UPDATE time_entries SET clock_in = ? WHERE member_id = ? AND status = 'open'").run(fmt.nowText(new Date(Date.now() - 2 * 3600e3)), state.techId);
   assert.match(flashOf(await t.post('/employee/time/out', { lat: '39.78', lng: '-89.65' })), /Clocked out/);
   const entry = await db.prepare('SELECT * FROM time_entries WHERE member_id = ? ORDER BY id DESC').get(state.techId);
   assert.strictEqual(entry.status, 'pending');
@@ -197,7 +200,7 @@ test('completion creates a draft invoice; accounting issues it and records payme
   const inv2 = await db.prepare('SELECT * FROM invoices WHERE id = ?').get(inv.id);
   assert.strictEqual(inv2.status, 'issued');
   assert.strictEqual(inv2.subtotal_cents - inv2.discount_cents + inv2.tax_cents, inv2.total_cents);
-  assert.strictEqual(inv2.due_date, new Date(Date.parse(today) + 15 * 864e5).toISOString().slice(0, 10));
+  assert.strictEqual(inv2.due_date, fmt.addDays(today, 15));
   assert.strictEqual(await balance('1100'), ar0 + inv2.total_cents, 'A/R up by invoice total');
   assert.strictEqual((await balance('4000')) + (await balance('4100')) + (await balance('4900')), rev0 + inv2.subtotal_cents - inv2.discount_cents, 'net revenue recognized');
   assert.strictEqual(await balance('2100'), tax0 + inv2.tax_cents, 'sales tax liability');

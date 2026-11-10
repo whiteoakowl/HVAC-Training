@@ -2,6 +2,15 @@
 <h1>Good day, <%= member.name.split(' ')[0] %></h1>
 <p class="hint"><%= today %><%= profile && profile.job_title ? ' · ' + profile.job_title : '' %><%= truck ? ' · Truck: ' + truck.name : '' %></p>
 
+<% announcements.forEach(function(a) { %>
+  <div class="card" style="margin-bottom:0.6rem; border-left:4px solid var(--brand);"><strong><%= a.title %></strong><p class="small" style="margin:0.2rem 0; white-space:pre-wrap;"><%= a.body.length > 280 ? a.body.slice(0, 280) + '...' : a.body %></p><a class="small" href="/announcements">All announcements</a></div>
+<% }); %>
+<div class="btn-row" style="margin-bottom:0.75rem;">
+  <a class="btn <%= reportDone ? 'btn-secondary' : '' %>" href="/employee/report"><%= reportDone ? 'Update' : 'Submit' %> end-of-day report</a>
+  <a class="btn btn-secondary" href="/employee/time-off">Request time off</a>
+  <a class="btn btn-secondary" href="/employee/pay">Pay stubs</a>
+  <% if (can('messages.use')) { %><a class="btn btn-secondary" href="/messages">Messages</a><% } %>
+</div>
 <% if (can('timeclock.use')) { %>
   <div class="card">
     <h2>Time clock</h2>

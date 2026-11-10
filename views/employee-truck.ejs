@@ -15,6 +15,9 @@
   </table>
   <% } %>
   <p class="mt"><a class="btn" href="/employee/parts">Request restock / parts</a></p>
+  <h2 class="mt">Tools &amp; equipment</h2>
+  <% if (!tools.length) { %><p class="empty">No tools assigned.</p><% } %>
+  <% tools.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= t.name %><%= t.serial_number ? ' #' + t.serial_number : '' %> · <%= fmt.label(t.status) %><%= t.next_service_on ? ' · service due ' + t.next_service_on : '' %></p><% }); %>
   <h2 class="mt">Recent activity</h2>
   <% if (!history.length) { %><p class="empty">None.</p><% } %>
   <% history.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.shortDateTime(t.created_at) %> · <%= fmt.label(t.kind) %> · <%= t.itemName %> <%= t.quantity_change > 0 ? '+' : '' %><%= Number(t.quantity_change) %><%= t.job_number ? ' · ' + t.job_number : '' %></p><% }); %>

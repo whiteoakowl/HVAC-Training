@@ -188,7 +188,7 @@ async function followUpsDue(onOrBefore) {
 
 async function balance(customerId) {
   const row = await db
-    .prepare("SELECT COALESCE(SUM(total_cents - amount_paid_cents), 0) AS due FROM invoices WHERE customer_id = ? AND status IN ('issued','partial')")
+    .prepare("SELECT COALESCE(SUM(total_cents - amount_paid_cents - credited_cents), 0) AS due FROM invoices WHERE customer_id = ? AND status IN ('issued','partial')")
     .get(customerId);
   return Number(row.due);
 }

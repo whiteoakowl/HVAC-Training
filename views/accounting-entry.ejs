@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <h1>Journal entry #<%= entry.id %></h1>
-<p class="hint"><%= entry.entry_date %> · <%= fmt.label(entry.source_type) %><%= entry.source_id ? ' #' + entry.source_id : '' %> · posted <%= fmt.shortDateTime(entry.created_at) %> UTC<%= entry.createdByName ? ' by ' + entry.createdByName : '' %></p>
+<p class="hint"><%= entry.entry_date %> · <%= fmt.label(entry.source_type) %><%= entry.source_id ? ' #' + entry.source_id : '' %> · posted <%= fmt.shortDateTime(entry.created_at) %><%= entry.createdByName ? ' by ' + entry.createdByName : '' %></p>
 <p><strong><%= entry.memo %></strong></p>
 <% if (entry.reverses_entry_id) { %><p>Reverses <a href="/accounting/journal/<%= entry.reverses_entry_id %>">entry #<%= entry.reverses_entry_id %></a>.</p><% } %>
 <% if (entry.reversedBy) { %><p class="alert alert-error">Reversed by <a href="/accounting/journal/<%= entry.reversedBy.id %>">entry #<%= entry.reversedBy.id %></a>.</p><% } %>

@@ -18,3 +18,9 @@
   from = "/*"
   to = "/.netlify/functions/app"
   status = 200
+
+# Daily automations (estimate follow-ups, maintenance visit jobs, overdue
+# invoices, certification and training reminders). 11:00 UTC each day;
+# the function itself skips a second run on the same company-local date.
+[functions."daily"]
+  schedule = "0 11 * * *"

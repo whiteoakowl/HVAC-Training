@@ -9,6 +9,8 @@
   <div class="stat"><div class="stat-label">Job revenue</div><div class="stat-value"><%= fmt.money(totals.revenue) %></div></div>
   <div class="stat"><div class="stat-label">Average job value</div><div class="stat-value"><%= fmt.money(rows.length ? totals.revenue / rows.length : 0) %></div></div>
   <div class="stat <%= totals.revenue - totals.cost < 0 ? 'bad' : 'good' %>"><div class="stat-label">Gross profit</div><div class="stat-value"><%= fmt.money(totals.revenue - totals.cost) %></div><div class="stat-sub"><%= totals.revenue ? Math.round((totals.revenue - totals.cost) / totals.revenue * 1000) / 10 + '% margin' : '' %></div></div>
+  <div class="stat"><div class="stat-label">Estimate close rate</div><div class="stat-value"><%= estimateStats.decided ? Math.round(estimateStats.won / estimateStats.decided * 100) + '%' : '-' %></div><div class="stat-sub"><%= estimateStats.won %> of <%= estimateStats.decided %> decided · <%= fmt.money(estimateStats.wonValue) %> won</div></div>
+  <div class="stat"><div class="stat-label">Repeat customers</div><div class="stat-value"><%= retention.served ? Math.round(retention.repeat / retention.served * 100) + '%' : '-' %></div><div class="stat-sub"><%= retention.repeat %> of <%= retention.served %> served had prior work</div></div>
   <div class="stat"><div class="stat-label">Request → job conversion</div><div class="stat-value"><%= requests.total ? Math.round(requests.converted / requests.total * 100) : 0 %>%</div><div class="stat-sub"><%= requests.converted %> of <%= requests.total %> requests</div></div>
 </div>
 <div class="two-col" style="grid-template-columns: 1fr 1fr;">

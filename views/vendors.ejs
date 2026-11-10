@@ -1,0 +1,15 @@
+<%- include('partials/page-start') %>
+<div class="page-header"><div><h1>Vendors &amp; Suppliers</h1></div><div class="btn-row"><% if (can('purchasing.manage')) { %><a class="btn btn-secondary" href="/purchasing">Purchase orders</a><% } %><% if (can('bills.manage')) { %><a class="btn btn-secondary" href="/bills">Vendor bills</a><% } %></div></div>
+<details class="card" style="margin-bottom:1rem;"><summary><strong>+ Add vendor</strong></summary>
+  <form method="POST" action="/vendors" class="form-grid mt"><%- include('partials/vendor-fields', { v: {} }) %><div class="full"><button type="submit">Add vendor</button></div></form>
+</details>
+<% if (!vendors.length) { %><p class="empty">No vendors yet.</p><% } %>
+<% vendors.forEach(function(v) { %>
+  <details class="card" style="margin-bottom:0.5rem;">
+    <summary><strong><%= v.name %></strong> <span class="hint"><%= [v.contact_name, v.phone, v.email].filter(Boolean).join(' · ') %> · terms Net <%= v.terms_days %><%= v.owed ? ' · owed ' + fmt.money(v.owed) : '' %></span><% if (!v.active) { %> <span class="status status-cancelled">inactive</span><% } %></summary>
+    <form method="POST" action="/vendors" class="form-grid mt"><input type="hidden" name="id" value="<%= v.id %>" /><%- include('partials/vendor-fields', { v: v }) %>
+      <label>Status <select name="active"><option value="1" <%= v.active ? 'selected' : '' %>>Active</option><option value="0" <%= !v.active ? 'selected' : '' %>>Inactive</option></select></label>
+      <div class="full"><button type="submit" class="btn-secondary">Save</button></div></form>
+  </details>
+<% }); %>
+<%- include('partials/page-end') %>

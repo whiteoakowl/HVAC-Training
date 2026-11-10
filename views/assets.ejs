@@ -1,0 +1,14 @@
+<%- include('partials/page-start') %>
+<h1>Tools &amp; Equipment</h1>
+<p class="hint">Company-owned tools and equipment (gauges, recovery machines, vacuum pumps, ladders, meters...) and who or which truck has them.</p>
+<details class="card" style="margin-bottom:1rem;"><summary><strong>+ Add tool / equipment</strong></summary>
+  <form method="POST" action="/assets" class="form-grid mt"><%- include('partials/asset-fields', { a: {}, staff: staff, trucks: trucks }) %><div class="full"><button type="submit">Add</button></div></form>
+</details>
+<% if (!rows.length) { %><p class="empty">Nothing tracked yet.</p><% } %>
+<% rows.forEach(function(a) { %>
+  <details class="card" style="margin-bottom:0.5rem;"><summary><strong><%= a.name %></strong> <span class="hint"><%= [a.category, a.serial_number && '#' + a.serial_number].filter(Boolean).join(' · ') %> · <%= a.memberName || a.truckName || 'unassigned' %></span>
+    <span class="status status-<%= a.status === 'in_service' ? 'approved' : a.status === 'repair' ? 'pending' : 'cancelled' %>"><%= fmt.label(a.status) %></span><% if (a.next_service_on && a.next_service_on <= today) { %> <span class="status status-rejected">service due</span><% } %></summary>
+    <form method="POST" action="/assets" class="form-grid mt"><input type="hidden" name="id" value="<%= a.id %>" /><%- include('partials/asset-fields', { a: a, staff: staff, trucks: trucks }) %><div class="full"><button class="btn-secondary" type="submit">Save</button></div></form>
+  </details>
+<% }); %>
+<%- include('partials/page-end') %>

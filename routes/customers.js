@@ -9,6 +9,7 @@ const serviceRequests = require('../utils/serviceRequests');
 const audit = require('../utils/audit');
 const db = require('../db');
 const { flash, action } = require('../utils/http');
+const fmt = require('../utils/format');
 
 router.use(requireAuth, requirePermission('customers.view'));
 
@@ -46,8 +47,12 @@ router.get('/:id', load, async (req, res) => {
     req.can('invoices.view', 'invoices.manage') ? invoices.list({ customerId: c.id }) : [], serviceRequests.list({ customerId: c.id }), customers.balance(c.id),
     req.can('invoices.view', 'invoices.manage') ? db.prepare('SELECT p.*, i.invoice_number FROM payments p JOIN invoices i ON i.id = p.invoice_id WHERE p.customer_id = ? ORDER BY p.id DESC').all(c.id) : [],
   ]);
+  const files = await require('../utils/documents').listFor('customer', c.id);
+  const estimateList = req.can('estimates.view', 'estimates.manage') ? await require('../utils/estimates').list({ customerId: c.id }) : [];
+  const agreementList = await require('../utils/agreements').list({ customerId: c.id });
+  const portalUser = c.member_id ? await db.prepare('SELECT id, email, active, last_login_at FROM members WHERE id = ?').get(c.member_id) : null;
   const photos = await db.prepare('SELECT f.id, f.caption, f.job_id, j.job_number FROM job_files f JOIN jobs j ON j.id = f.job_id WHERE j.customer_id = ? AND f.kind = \'photo\' ORDER BY f.id DESC LIMIT 24').all(c.id);
-  res.render('customers-detail', { title: c.name, c, properties, equipment, interactions, jobList, invoiceList, requests, balance, payments, photos, channels: customers.CHANNELS });
+  res.render('customers-detail', { title: c.name, c, properties, equipment, interactions, jobList, invoiceList, requests, balance, payments, photos, files, estimateList, agreementList, portalUser, channels: customers.CHANNELS, messaging: { email: require('../utils/messaging').emailConfigured(), sms: require('../utils/messaging').smsConfigured() } });
 });
 
 router.get('/:id/edit', requirePermission('customers.edit'), load, (req, res) => {
@@ -88,7 +93,7 @@ router.get('/:id/equipment/:eid', load, async (req, res) => {
   const history = await db
     .prepare('SELECT j.id, j.job_number, j.title, j.status, j.completed_at, j.work_performed FROM job_equipment je JOIN jobs j ON j.id = je.job_id WHERE je.equipment_id = ? ORDER BY j.id DESC')
     .all(e.id);
-  res.render('equipment-detail', { title: `${e.equipment_type} - ${req.customer.name}`, c: req.customer, e, history, properties: await customers.properties(req.customer.id) });
+  res.render('equipment-detail', { title: `${e.equipment_type} - ${req.customer.name}`, c: req.customer, e, history, properties: await customers.properties(req.customer.id), files: await require('../utils/documents').listFor('equipment', e.id) });
 });
 
 router.post('/:id/equipment/:eid/edit', requirePermission('customers.edit'), load, action(async (req, res) => {
@@ -102,6 +107,20 @@ router.post('/:id/equipment/:eid/edit', requirePermission('customers.edit'), loa
 router.post('/:id/interactions', requirePermission('customers.edit'), load, action(async (req, res) => {
   await customers.addInteraction(req.customer.id, req.body, req.member.id);
   flash(res, `/customers/${req.customer.id}#communication`, 'notice', 'Logged.');
+}, (req) => `/customers/${req.params.id}`));
+
+// Send the customer an email or text (logged in the communication history).
+router.post('/:id/message', requirePermission('customers.edit'), load, action(async (req, res) => {
+  const messaging = require('../utils/messaging');
+  const body = fmt.clean(req.body.body, 2000);
+  if (!body) throw new Error('Type a message.');
+  const channel = req.body.channel === 'sms' ? 'sms' : 'email';
+  const to = channel === 'sms' ? req.customer.phone : req.customer.email;
+  if (!to) throw new Error(`This customer has no ${channel === 'sms' ? 'phone number' : 'email'} on file.`);
+  const r = await messaging.send({ channel, to, subject: fmt.clean(req.body.subject, 200) || 'Message from your HVAC team', body, relatedType: 'customer', relatedId: req.customer.id });
+  await customers.addInteraction(req.customer.id, { channel, direction: 'outbound', summary: `${body}${r.status === 'sent' ? '' : ' [' + r.status + ']'}` }, req.member.id);
+  await audit.log(req, 'customer.message', 'customer', req.customer.id, { channel, status: r.status });
+  flash(res, `/customers/${req.customer.id}#communication`, r.status === 'sent' ? 'notice' : 'error', r.status === 'sent' ? 'Sent.' : r.status === 'not_configured' ? 'Logged, but not delivered: no messaging provider is configured.' : 'Sending failed: ' + (r.error || ''));
 }, (req) => `/customers/${req.params.id}`));
 
 router.post('/:id/interactions/:iid/done', requirePermission('customers.edit'), load, action(async (req, res) => {

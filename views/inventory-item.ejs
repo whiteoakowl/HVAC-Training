@@ -60,7 +60,7 @@
     </details>
     <details class="card"><summary><strong>Edit item</strong></summary>
       <form method="POST" action="/inventory/items/<%= item.id %>/edit" class="stack-form mt">
-        <%- include('partials/item-fields', { item: item, categories: categories }) %>
+        <%- include('partials/item-fields', { item: item, categories: categories, vendors: vendors }) %>
         <label>Status <select name="active"><option value="1" <%= item.active ? 'selected' : '' %>>Active</option><option value="0" <%= !item.active ? 'selected' : '' %>>Inactive</option></select></label>
         <button type="submit">Save</button>
       </form>

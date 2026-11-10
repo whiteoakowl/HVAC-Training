@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
   const fail = (msg) => res.redirect('/login?error=' + encodeURIComponent(msg) + (next ? '&next=' + encodeURIComponent(next) : ''));
   const member = await findByEmail(req.body.email);
   if (member && member.locked_until && member.locked_until > fmt.nowText()) {
-    return fail(`Too many failed attempts. Try again after ${member.locked_until} UTC or ask a manager to reset your password.`);
+    return fail(`Too many failed attempts. Try again after ${member.locked_until} or ask a manager to reset your password.`);
   }
   if (!member || !(await verifyPassword(member, req.body.password))) {
     if (member) {
@@ -42,11 +42,47 @@ router.post('/login', async (req, res) => {
     return fail('Invalid email or password.');
   }
   if (!member.active) return fail('This account has been deactivated.');
-  await db.prepare('UPDATE members SET failed_logins = 0, locked_until = NULL, last_login_at = now_text() WHERE id = ?').run(member.id);
+  await db.prepare('UPDATE members SET failed_logins = 0, locked_until = NULL WHERE id = ?').run(member.id);
+  if (member.mfa_enabled) {
+    // Password was right; the session is not signed in until the code is.
+    req.session.mfaPending = { id: member.id, next, at: Date.now(), tries: 0 };
+    return res.redirect('/login/mfa');
+  }
+  await completeLogin(req, member);
+  res.redirect(next || (member.must_change_password ? '/account?notice=' + encodeURIComponent('Please choose a new password.') : '/home'));
+});
+
+async function completeLogin(req, member) {
+  req.session.mfaPending = null;
   req.session.memberId = member.id;
   req.member = member;
-  await audit.log(req, 'auth.login', 'member', member.id);
-  res.redirect(next || '/home');
+  await db.prepare('UPDATE members SET last_login_at = now_text() WHERE id = ?').run(member.id);
+  await audit.log(req, 'auth.login', 'member', member.id, member.mfa_enabled ? { mfa: true } : null);
+}
+
+function pending(req) {
+  const p = req.session && req.session.mfaPending;
+  return p && Date.now() - p.at < 5 * 60000 ? p : null;
+}
+
+router.get('/login/mfa', (req, res) => {
+  if (!pending(req)) return res.redirect('/login');
+  res.render('login-mfa', { title: 'Verification code', error: req.query.error || null });
+});
+
+router.post('/login/mfa', async (req, res) => {
+  const p = pending(req);
+  if (!p) return res.redirect('/login?error=' + encodeURIComponent('Your sign-in timed out. Please log in again.'));
+  const member = await require('../utils/auth').findById(p.id);
+  if (!member || !member.active) return res.redirect('/login');
+  if (!require('../utils/mfa').verify(member.mfa_secret, req.body.code)) {
+    p.tries += 1;
+    req.session.mfaPending = p.tries >= 5 ? null : p;
+    await audit.log({ ...req, member: { id: member.id } }, 'auth.mfa_failed', 'member', member.id);
+    return res.redirect(p.tries >= 5 ? '/login?error=' + encodeURIComponent('Too many wrong codes. Log in again.') : '/login/mfa?error=' + encodeURIComponent('That code is not right. Try the current code.'));
+  }
+  await completeLogin(req, member);
+  res.redirect(p.next || '/home');
 });
 
 // Self-registration (original feature) creates a 'student' (Trainee)

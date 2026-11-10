@@ -1,0 +1,39 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Training Center</h1><p class="hint">Who has completed what. Required courses are assigned automatically by role; courses with a renewal period re-open when they expire.</p></div>
+  <div class="btn-row"><% if (can('training.manage')) { %><a class="btn btn-secondary" href="/training/manage">Course builder</a><form method="POST" action="/training/center/sync" class="inline-form"><button type="submit" class="btn-secondary">Assign required &amp; renewals now</button></form><% } %></div>
+</div>
+<% if (!m.trainings.length) { %><p class="empty">No published courses yet. Build one in the course builder.</p><% } else { %>
+<div style="overflow-x:auto;">
+<table class="data-table" style="white-space:nowrap;">
+  <thead><tr><th>Employee</th><% m.trainings.forEach(function(t) { %><th class="small" title="<%= t.category || '' %>"><%= t.title %><%= t.renew_months ? ' (' + t.renew_months + ' mo)' : '' %></th><% }); %></tr></thead>
+  <tbody>
+    <% m.rows.forEach(function(r) { %>
+      <tr><td><%= r.p.name %><br><span class="hint"><%= r.p.roleName %></span></td>
+        <% r.cells.forEach(function(c) { %>
+          <td class="small"><% if (c.state === 'passed') { %><span class="status status-<%= c.expires && c.expires < fmt.addDays(fmt.today(), 30) ? 'pending' : 'completed' %>">done <%= c.completed %></span><%= c.expires ? '<br>' : '' %><% if (c.expires) { %><span class="hint">exp <%= c.expires %></span><% } %>
+          <% } else if (c.state === 'none') { %><span class="hint">-</span>
+          <% } else { %><span class="status status-<%= ['missing','overdue','retry_required','failed'].includes(c.state) ? 'rejected' : 'pending' %>"><%= fmt.label(c.state) %></span><% } %><%= c.required ? ' *' : '' %></td>
+        <% }); %></tr>
+    <% }); %>
+  </tbody>
+</table>
+</div>
+<p class="hint">* required for the person's role.</p>
+<% } %>
+<% if (can('training.manage')) { %>
+<div class="card-grid">
+  <div class="card"><h2>Required by role</h2>
+    <% if (!reqs.length) { %><p class="empty">No requirements set.</p><% } %>
+    <% reqs.forEach(function(r) { %><form method="POST" action="/training/center/required" class="small" style="margin:0.25rem 0;"><input type="hidden" name="role_key" value="<%= r.role_key %>" /><input type="hidden" name="training_id" value="<%= r.training_id %>" /><strong><%= r.roleName %></strong>: <%= r.title %> (within <%= r.due_days %> days) <button name="action" value="remove" class="btn-secondary small">Remove</button></form><% }); %>
+    <form method="POST" action="/training/center/required" class="stack-form mt">
+      <label>Role <select name="role_key"><% roles.forEach(function(r) { %><option value="<%= r.key %>"><%= r.name %></option><% }); %></select></label>
+      <label>Course <select name="training_id"><% trainings.forEach(function(t) { %><option value="<%= t.id %>"><%= t.title %></option><% }); %></select></label>
+      <label>Complete within (days) <input name="due_days" value="30" inputmode="numeric" /></label>
+      <button type="submit" name="action" value="add">Require</button>
+    </form>
+  </div>
+  <div class="card"><h2>Categories</h2><p class="small"><%= categories.join(' · ') %></p><p class="hint">Set a course's category and renewal period in the course builder.</p></div>
+</div>
+<% } %>
+<%- include('partials/page-end') %>

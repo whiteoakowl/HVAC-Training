@@ -1,0 +1,11 @@
+<%- include('partials/page-start') %>
+<h1>Messages</h1>
+<form class="toolbar" onsubmit="if (this.to.value) { location.href = '/messages/' + this.to.value; } return false;">
+  <select name="to"><option value="">New message to...</option><% contacts.forEach(function(c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %></select><button type="submit">Open</button>
+</form>
+<% if (!convos.length) { %><p class="empty">No conversations yet.</p><% } %>
+<% convos.forEach(function(c) { %>
+  <a class="job-card" href="/messages/<%= c.other_id %>"><div class="row"><strong><%= c.name || 'Former user' %></strong><% if (Number(c.unread)) { %><span class="status status-new"><%= c.unread %> new</span><% } %></div>
+    <div class="hint"><%= c.last ? fmt.shortDateTime(c.last.created_at) + ' · ' + c.last.body.slice(0, 100) : '' %></div></a>
+<% }); %>
+<%- include('partials/page-end') %>

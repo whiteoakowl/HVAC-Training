@@ -33,7 +33,10 @@ router.get('/', requirePermission('portal.employee'), async (req, res) => {
     db.prepare('SELECT * FROM employee_profiles WHERE member_id = ?').get(req.member.id),
   ]);
   const onBreak = entry ? await timeclock.openBreak(entry.id) : null;
+  const announcements = await require('./team').visibleAnnouncements(req.member, 3);
+  const reportDone = await db.prepare('SELECT 1 AS x FROM daily_reports WHERE member_id = ? AND report_date = ?').get(req.member.id, today);
   res.render('employee-home', {
+    announcements, reportDone,
     title: 'My Day', todayJobs, upcoming: openJobs.filter((j) => !todayJobs.some((t) => t.id === j.id)).slice(0, 10), entry, onBreak, week, truck,
     trainingDue: assignments.filter((a) => a.status !== 'passed'), certs, profile, soon: fmt.addDays(today, 60), today, gps: await settings.getBool('gps_clock_enabled'),
   });
@@ -96,7 +99,8 @@ router.get('/truck', requirePermission('inventory.use'), async (req, res) => {
   const truck = await myTruck(req.member.id);
   const stock = truck ? await inventory.stockAt(truck.locationId) : [];
   const history = truck ? await inventory.transactions({ locationId: truck.locationId, limit: 50 }) : [];
-  res.render('employee-truck', { title: 'My Truck', truck, stock, history });
+  const tools = await db.prepare('SELECT * FROM assets WHERE assigned_member_id = ? OR truck_id = ? ORDER BY name').all(req.member.id, truck ? truck.id : 0);
+  res.render('employee-truck', { title: 'My Truck', truck, stock, history, tools });
 });
 
 // ---------------------------------------------------------------- parts requests

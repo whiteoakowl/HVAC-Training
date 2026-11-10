@@ -8,7 +8,7 @@ const { start, Client } = require('./helpers');
 const USERS = [
   'admin@hvactraining.test', 'instructor@hvactraining.test', 'student@hvactraining.test',
   'gm@hvacdemo.test', 'office@hvacdemo.test', 'accounting@hvacdemo.test', 'csr@hvacdemo.test', 'dispatch@hvacdemo.test',
-  'servicemgr@hvacdemo.test', 'lead@hvacdemo.test', 'tech@hvacdemo.test', 'installer@hvacdemo.test', 'warehouse@hvacdemo.test',
+  'servicemgr@hvacdemo.test', 'lead@hvacdemo.test', 'tech@hvacdemo.test', 'installer@hvacdemo.test', 'warehouse@hvacdemo.test', 'customer@hvacdemo.test',
 ];
 
 function links(html, re = /href="(\/[^"#]*)"/g) {

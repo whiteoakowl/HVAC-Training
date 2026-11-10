@@ -1,0 +1,41 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Purchase Orders</h1><p class="hint">Supply lists → approval → ordered → received (partial deliveries and backorders tracked) → vendor bill.</p></div>
+  <div class="btn-row"><a class="btn btn-secondary" href="/vendors">Vendors</a><% if (can('bills.manage')) { %><a class="btn btn-secondary" href="/bills">Vendor bills</a><% } %></div>
+</div>
+<% if (can('purchasing.manage')) { %>
+<div class="card-grid" style="margin-bottom:1rem;">
+  <div class="card">
+    <h2>New purchase order</h2>
+    <% if (!vendors.length) { %><p class="empty">Add a vendor first.</p><% } else { %>
+    <form method="POST" action="/purchasing/new" class="stack-form">
+      <label>Vendor <select name="vendor_id"><% vendors.forEach(function(v) { %><option value="<%= v.id %>"><%= v.name %></option><% }); %></select></label>
+      <label>Deliver to <select name="location_id"><% locations.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }); %></select></label>
+      <label>Expected <input type="date" name="expected_on" /></label>
+      <label>Notes <input name="notes" /></label>
+      <button type="submit">Create</button>
+    </form>
+    <% } %>
+  </div>
+  <div class="card">
+    <h2>Restock from low-stock alerts</h2>
+    <% if (!low.length) { %><p class="empty">No warehouse items at or below minimum.</p><% } else { %>
+      <% low.forEach(function(l) { %><p class="small" style="margin:0.2rem 0;"><a href="/inventory/items/<%= l.item_id %>"><%= l.name %></a>: <%= Number(l.quantity) %> on hand (min <%= Number(l.min_quantity) %>)</p><% }); %>
+      <form method="POST" action="/purchasing/from-low-stock" class="mt"><button type="submit" class="btn-secondary">Draft restock orders</button></form>
+      <p class="hint">Orders up to twice the minimum, minus what's already on order, grouped by each item's preferred vendor.</p>
+    <% } %>
+  </div>
+</div>
+<% } %>
+<div class="toolbar">
+  <a class="btn <%= open ? '' : 'btn-secondary' %>" href="/purchasing">Open</a>
+  <% statuses.forEach(function(s) { %><a class="btn <%= status === s ? '' : 'btn-secondary' %>" href="/purchasing?status=<%= s %>"><%= fmt.label(s) %></a><% }); %>
+  <a class="btn <%= !open && !status ? '' : 'btn-secondary' %>" href="/purchasing?all=1">All</a>
+</div>
+<% if (!rows.length) { %><p class="empty">No purchase orders here.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>PO</th><th>Vendor</th><th>Deliver to</th><th>Created</th><th>Expected</th><th class="num">Total</th><th>Status</th></tr></thead>
+  <tbody><% rows.forEach(function(p) { %><tr><td><a href="/purchasing/<%= p.id %>"><%= p.po_number %></a></td><td><%= p.vendorName %></td><td><%= p.locationName %></td><td><%= fmt.dateOnly(p.created_at) %></td><td><%= p.expected_on || '' %></td><td class="num"><%= fmt.money(p.total_cents) %></td><td><span class="status status-<%= p.status === 'pending_approval' ? 'pending' : p.status === 'received' ? 'completed' : p.status === 'ordered' ? 'scheduled' : p.status %>"><%= fmt.label(p.status) %></span></td></tr><% }); %></tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

@@ -1,0 +1,42 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1><%= a.agreement_number %> <span class="status status-<%= a.status === 'active' ? 'approved' : a.status === 'renewed' ? 'completed' : 'cancelled' %>"><%= a.status %></span></h1>
+    <p class="hint"><%= a.name %> · <a href="/customers/<%= a.customer_id %>"><%= a.customerName %></a> · <%= [a.address, a.city].filter(Boolean).join(', ') %></p></div>
+  <a class="btn btn-secondary" href="/agreements">&larr; Agreements</a>
+</div>
+<div class="two-col">
+  <div class="stack">
+    <div class="card"><h2>Visits</h2>
+      <table class="data-table"><thead><tr><th>#</th><th>Due</th><th>Status</th><th>Job</th><th></th></tr></thead><tbody>
+        <% a.visits.forEach(function(v) { %><tr><td><%= v.visit_number %></td><td class="<%= v.status === 'due' && v.due_date < today ? 'priority-emergency' : '' %>"><%= v.due_date %></td><td><span class="status status-<%= v.status === 'due' ? 'pending' : v.status === 'skipped' ? 'cancelled' : v.status %>"><%= v.status %></span></td>
+          <td><% if (v.job_id) { %><a href="/jobs/<%= v.job_id %>"><%= v.job_number %></a> <span class="hint"><%= fmt.label(v.jobStatus) %></span><% } %></td>
+          <td><% if (v.status === 'due' && a.status === 'active') { %><% if (can('jobs.manage')) { %><form method="POST" action="/agreements/<%= a.id %>/visits/<%= v.id %>/job" class="inline-form"><button class="small" type="submit">Create job</button></form><% } %>
+            <% if (can('agreements.manage')) { %><form method="POST" action="/agreements/<%= a.id %>/visits/<%= v.id %>/skip" class="inline-form" onsubmit="return confirm('Skip this visit?');"><button class="btn-secondary small" type="submit">Skip</button></form><% } %><% } %></td></tr><% }); %>
+      </tbody></table>
+    </div>
+    <div class="card"><h2>Coverage</h2>
+      <dl class="kv"><dt>Term</dt><dd><%= a.start_date %> to <%= a.end_date %></dd><dt>Visits / year</dt><dd><%= a.visits_per_year %></dd><dt>Price</dt><dd><%= fmt.money(a.price_cents) %></dd><dt>Renewal</dt><dd><%= a.auto_renew ? 'Automatic' : 'Manual' %></dd></dl>
+      <% if (a.included_services) { %><p style="white-space:pre-wrap;"><%= a.included_services %></p><% } %>
+      <% if (a.equipment.length) { %><p class="hint">Equipment:</p><% a.equipment.forEach(function(e) { %><p class="small" style="margin:0.15rem 0;"><%= e.equipment_type %> <%= e.manufacturer || '' %> <%= e.model_number || '' %> <%= e.serial_number ? '#' + e.serial_number : '' %></p><% }); %><% } %>
+      <% if (a.notes) { %><p class="small" style="white-space:pre-wrap;"><%= a.notes %></p><% } %>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>Billing</h2>
+      <% if (!a.invoices.length) { %><p class="empty">Not invoiced.</p><% } %>
+      <% a.invoices.forEach(function(i) { %><p><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <%= fmt.money(i.total_cents) %></p><% }); %>
+      <% if (can('invoices.manage') && !a.invoices.some(function(i) { return i.status !== 'void'; }) && a.price_cents > 0) { %><form method="POST" action="/agreements/<%= a.id %>/invoice"><button type="submit">Create agreement invoice</button></form><% } %>
+      <p class="hint">Posts to 4200 Maintenance Agreement Revenue. Covered visits aren't billed again; parts used are.</p>
+    </div>
+    <% if (['active','expired'].includes(a.status) && can('agreements.manage')) { %>
+      <div class="card"><h2>Renewal</h2>
+        <form method="POST" action="/agreements/<%= a.id %>/auto-renew" class="inline-fields"><select name="auto_renew"><option value="1" <%= a.auto_renew ? 'selected' : '' %>>Renew automatically</option><option value="0" <%= !a.auto_renew ? 'selected' : '' %>>Manual renewal</option></select><button class="btn-secondary" type="submit">Save</button></form>
+        <form method="POST" action="/agreements/<%= a.id %>/renew" class="mt"><button type="submit">Renew now</button></form>
+      </div>
+    <% } %>
+    <% if (a.status === 'active' && can('agreements.manage')) { %>
+      <div class="card"><h2>Cancel</h2><form method="POST" action="/agreements/<%= a.id %>/cancel" class="stack-form" onsubmit="return confirm('Cancel this agreement?');"><label>Reason <input name="reason" required /></label><button class="btn-danger" type="submit">Cancel agreement</button></form></div>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

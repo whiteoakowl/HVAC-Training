@@ -6,6 +6,7 @@ const invoices = require('../utils/invoices');
 const customers = require('../utils/customers');
 const settings = require('../utils/settings');
 const automation = require('../utils/automation');
+const messaging = require('../utils/messaging');
 const audit = require('../utils/audit');
 const fmt = require('../utils/format');
 const { flash, action } = require('../utils/http');
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
     return res.send(fmt.csv(rows, [
       { label: 'Invoice', value: 'invoice_number' }, { label: 'Customer', value: 'customerName' }, { label: 'Job', value: 'job_number' }, { label: 'Status', value: 'status' },
       { label: 'Issued', value: 'issue_date' }, { label: 'Due', value: 'due_date' }, { label: 'Total', value: (r) => fmt.centsInput(r.total_cents) },
-      { label: 'Paid', value: (r) => fmt.centsInput(r.amount_paid_cents) }, { label: 'Balance', value: (r) => fmt.centsInput(r.total_cents - r.amount_paid_cents) },
+      { label: 'Paid', value: (r) => fmt.centsInput(r.amount_paid_cents) }, { label: 'Balance', value: (r) => fmt.centsInput(r.total_cents - r.amount_paid_cents - r.credited_cents) },
     ]));
   }
   res.render('invoices-list', { title: 'Invoices', rows, status, overdue, q: req.query.q || '', today: fmt.today() });
@@ -79,6 +80,36 @@ router.post('/:id/payments', requirePermission('payments.record'), load, action(
   await audit.log(req, 'payment.record', 'invoice', req.inv.id, { amount, method: req.body.method, paymentId: r.paymentId });
   await automation.notifyPermission(['accounting.view'], 'payment_received', { title: `Payment ${fmt.money(amount)} on ${req.inv.invoice_number}`, body: `${req.inv.customerName} · ${req.body.method}`, linkUrl: back(req) }, req.member.id);
   flash(res, back(req), 'notice', r.status === 'paid' ? 'Payment recorded. Invoice is paid in full.' : `Payment recorded. Balance due ${fmt.money(r.balance)}.`);
+}, back));
+
+router.post('/:id/credit', requirePermission('invoices.manage'), load, action(async (req, res) => {
+  const amount = fmt.toCents(req.body.amount);
+  const r = await invoices.applyCredit(req.inv.id, { amountCents: amount, reason: req.body.reason }, req.member.id);
+  await audit.log(req, 'invoice.credit', 'invoice', req.inv.id, { amount, reason: req.body.reason });
+  flash(res, back(req), 'notice', `Credit of ${fmt.money(amount)} applied. Balance ${fmt.money(r.balance)}.`);
+}, back));
+
+router.post('/:id/refund', requirePermission('payments.record'), requirePermission('invoices.manage'), load, action(async (req, res) => {
+  const amount = fmt.toCents(req.body.amount);
+  const r = await invoices.refund(req.inv.id, { amountCents: amount, method: req.body.method, reference: req.body.reference, reason: req.body.reason, refundedOn: req.body.refunded_on }, req.member.id);
+  await audit.log(req, 'invoice.refund', 'invoice', req.inv.id, { amount, method: req.body.method, reason: req.body.reason });
+  flash(res, back(req), 'notice', `Refund of ${fmt.money(amount)} recorded. Balance ${fmt.money(r.balance)}.`);
+}, back));
+
+router.post('/:id/send', requirePermission('invoices.manage'), load, action(async (req, res) => {
+  const inv = req.inv;
+  if (!['issued', 'partial'].includes(inv.status)) throw new Error('Only issued, unpaid invoices can be sent.');
+  const base = `${req.protocol}://${req.get('host')}`;
+  const company = await settings.get('company_name', 'Our team');
+  const body = `${company}: invoice ${inv.invoice_number} for ${fmt.money(inv.total_cents)} - balance due ${fmt.money(inv.balance)} by ${inv.due_date}. View it here: ${base}/i/${inv.public_token}`;
+  const results = [];
+  if (req.body.channel !== 'sms' && inv.customerEmail) results.push(await messaging.send({ channel: 'email', to: inv.customerEmail, subject: `Invoice ${inv.invoice_number} from ${company}`, body, relatedType: 'invoice', relatedId: inv.id }));
+  if (req.body.channel !== 'email' && inv.customerPhone) results.push(await messaging.send({ channel: 'sms', to: inv.customerPhone, body, relatedType: 'invoice', relatedId: inv.id }));
+  if (!results.length) throw new Error('The customer has no email or phone on file.');
+  await customers.addInteraction(inv.customer_id, { channel: req.body.channel === 'sms' ? 'sms' : 'email', direction: 'outbound', summary: `Sent invoice ${inv.invoice_number} (${results.map((r) => r.status).join(', ')})` }, req.member.id);
+  await audit.log(req, 'invoice.send', 'invoice', inv.id, { results: results.map((r) => r.status) });
+  const notConfigured = results.every((r) => r.status === 'not_configured');
+  flash(res, back(req), notConfigured ? 'error' : 'notice', notConfigured ? 'Saved to the outbox, but no email/SMS provider is configured, so nothing was delivered. Share the customer link instead.' : `Sent (${results.map((r) => r.status).join(', ')}).`);
 }, back));
 
 router.post('/:id/void', requirePermission('invoices.manage'), load, action(async (req, res) => {

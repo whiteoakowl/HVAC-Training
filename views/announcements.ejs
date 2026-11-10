@@ -1,0 +1,24 @@
+<%- include('partials/page-start') %>
+<h1>Company Announcements</h1>
+<% if (can('announcements.manage')) { %>
+  <details class="card" style="margin-bottom:1rem;"><summary><strong>+ Post an announcement</strong></summary>
+    <form method="POST" action="/announcements" class="form-grid mt">
+      <label class="full">Title <input name="title" required /></label>
+      <label class="full">Message <textarea name="body" required></textarea></label>
+      <label>Who sees it <select name="audience_role"><option value="">All staff</option><% roles.filter(function(r) { return !['customer','student'].includes(r.key); }).forEach(function(r) { %><option value="<%= r.key %>"><%= r.name %> only</option><% }); %></select></label>
+      <label>Show until (optional) <input type="date" name="expires_on" /></label>
+      <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="pinned" value="1" style="width:auto;" /> Pin to top</label>
+      <div class="full"><button type="submit">Post &amp; notify</button></div>
+    </form>
+  </details>
+<% } %>
+<% if (!rows.length) { %><p class="empty">No announcements.</p><% } %>
+<% rows.forEach(function(a) { %>
+  <div class="card" style="margin-bottom:0.6rem;<%= a.pinned ? ' border-left:4px solid var(--brand);' : '' %>">
+    <h3><%= a.pinned ? '📌 ' : '' %><%= a.title %></h3>
+    <p style="white-space:pre-wrap;"><%= a.body %></p>
+    <p class="hint"><%= a.authorName || '' %> · <%= fmt.dateOnly(a.created_at) %><%= a.roleName ? ' · ' + a.roleName + ' only' : '' %><%= a.expires_on ? ' · until ' + a.expires_on : '' %></p>
+    <% if (can('announcements.manage')) { %><form method="POST" action="/announcements/<%= a.id %>/delete" class="inline-form" onsubmit="return confirm('Remove?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %>
+  </div>
+<% }); %>
+<%- include('partials/page-end') %>

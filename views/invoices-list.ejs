@@ -16,7 +16,7 @@
 <table class="data-table">
   <thead><tr><th>Invoice</th><th>Customer</th><th>Job</th><th>Issued</th><th>Due</th><th class="num">Total</th><th class="num">Balance</th><th>Status</th></tr></thead>
   <tbody>
-    <% rows.forEach(function(i) { var bal = i.total_cents - i.amount_paid_cents; var late = ['issued','partial'].includes(i.status) && i.due_date && i.due_date < today; %>
+    <% rows.forEach(function(i) { var bal = i.total_cents - i.amount_paid_cents - i.credited_cents; var late = ['issued','partial'].includes(i.status) && i.due_date && i.due_date < today; %>
       <tr>
         <td><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a></td><td><a href="/customers/<%= i.customer_id %>"><%= i.customerName %></a></td>
         <td><% if (i.job_id) { %><a href="/jobs/<%= i.job_id %>"><%= i.job_number %></a><% } %></td>

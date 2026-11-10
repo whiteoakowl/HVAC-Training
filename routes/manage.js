@@ -36,19 +36,22 @@ router.get('/', requirePermission('portal.management'), async (req, res) => {
       revenueMonth: month.income, revenueYear: year.income, revenueAll: all.income, netMonth: month.netIncome, netYear: year.netIncome,
       expensesMonth: month.expense, payrollMonth: (month.rows.find((r) => r.code === '6000') || { balance: 0 }).balance, cogsMonth: month.cogs,
       cash: code('1000'), arLedger: code('1100'), ap: code('2000'),
+      agreementRevenueYear: (year.rows.find((r) => r.code === '4200') || { balance: 0 }).balance,
     });
   }
   if (req.can('invoices.view', 'invoices.manage', 'accounting.view')) {
     m.openInvoices = await scalar("SELECT COUNT(*) FROM invoices WHERE status IN ('issued','partial')");
-    m.arOpen = await scalar("SELECT COALESCE(SUM(total_cents - amount_paid_cents), 0) FROM invoices WHERE status IN ('issued','partial')");
+    m.arOpen = await scalar("SELECT COALESCE(SUM(total_cents - amount_paid_cents - credited_cents), 0) FROM invoices WHERE status IN ('issued','partial')");
     m.overdue = await scalar("SELECT COUNT(*) FROM invoices WHERE status IN ('issued','partial') AND due_date < ?", today);
     m.drafts = await scalar("SELECT COUNT(*) FROM invoices WHERE status = 'draft'");
   }
   const closed = jobs.CLOSED.map((s) => `'${s}'`).join(',');
   m.activeJobs = await scalar(`SELECT COUNT(*) FROM jobs WHERE status NOT IN (${closed})`);
   m.completedMonth = await scalar("SELECT COUNT(*) FROM jobs WHERE completed_at >= ?", monthStart + ' 00:00:00');
-  m.pendingEstimates = await scalar("SELECT COUNT(*) FROM jobs WHERE status IN ('estimate_requested','estimate_scheduled','estimate_sent','awaiting_approval')");
+  m.pendingEstimates = (await scalar("SELECT COUNT(*) FROM estimates WHERE status = 'sent'")) + (await scalar("SELECT COUNT(*) FROM jobs WHERE status IN ('estimate_requested','estimate_scheduled','estimate_sent','awaiting_approval')"));
+  m.pendingEstimateValue = await scalar("SELECT COALESCE(SUM(total_cents), 0) FROM estimates WHERE status = 'sent'");
   m.approvedEstimates = await scalar("SELECT COUNT(*) FROM jobs WHERE status IN ('approved','ready_to_schedule')");
+  m.activeAgreements = await scalar("SELECT COUNT(*) FROM maintenance_agreements WHERE status = 'active'");
   m.scheduled7 = await scalar(`SELECT COUNT(*) FROM jobs WHERE scheduled_start >= ? AND scheduled_start < ? AND status NOT IN (${closed})`, today + ' 00:00:00', in7 + ' 00:00:00');
   m.waitingParts = await scalar("SELECT COUNT(*) FROM jobs WHERE status = 'waiting_on_parts'");
   m.openRequests = await scalar("SELECT COUNT(*) FROM service_requests WHERE status IN ('new','contacted')");
@@ -99,7 +102,10 @@ router.get('/employees/:id', requirePermission('employees.view'), async (req, re
     db.prepare('SELECT * FROM trucks WHERE assigned_member_id = ? AND active = 1').get(emp.id),
     jobs.list({ assignedTo: emp.id, open: true, limit: 50 }),
   ]);
-  res.render('manage-employee', { title: emp.name, emp, profile: profile || {}, certs, trainingRows, week, truck, openJobs, today: fmt.today() });
+  const files = await require('../utils/documents').listFor('member', emp.id);
+  const tools = await db.prepare('SELECT * FROM assets WHERE assigned_member_id = ? ORDER BY name').all(emp.id);
+  const leave = await db.prepare("SELECT * FROM time_off_requests WHERE member_id = ? AND status IN ('pending','approved') AND end_date >= ? ORDER BY start_date").all(emp.id, fmt.today());
+  res.render('manage-employee', { title: emp.name, emp, profile: profile || {}, certs, trainingRows, week, truck, openJobs, files, tools, leave, today: fmt.today() });
 });
 
 router.post('/employees/:id/profile', requirePermission('employees.manage'), action(async (req, res) => {
@@ -221,6 +227,13 @@ router.get('/reports', requirePermission('jobs.costing', 'accounting.view'), asy
     u.total += e.workedMinutes;
     if (e.job_id) u.onJobs += e.workedMinutes;
   }
+  const est = await db.prepare("SELECT status, COUNT(*) AS n, COALESCE(SUM(total_cents),0) AS v FROM estimates WHERE COALESCE(decided_at, sent_at) >= ? AND COALESCE(decided_at, sent_at) <= ? AND status IN ('approved','converted','rejected','expired') GROUP BY status").all(from + ' 00:00:00', to + ' 23:59:59');
+  const won = est.filter((e) => ['approved', 'converted'].includes(e.status));
+  const estimateStats = { decided: est.reduce((s, e) => s + Number(e.n), 0), won: won.reduce((s, e) => s + Number(e.n), 0), wonValue: won.reduce((s, e) => s + Number(e.v), 0) };
+  // Retention: customers served in the window who had also been served before it.
+  const served = await db.prepare("SELECT DISTINCT customer_id FROM jobs WHERE completed_at >= ? AND completed_at <= ?").all(from + ' 00:00:00', to + ' 23:59:59');
+  const repeat = served.length ? (await db.prepare(`SELECT COUNT(DISTINCT customer_id) AS c FROM jobs WHERE completed_at < ? AND customer_id IN (${served.map(() => '?').join(',')})`).get(from + ' 00:00:00', ...served.map((r) => r.customer_id))).c : 0;
+  const retention = { served: served.length, repeat: Number(repeat) };
   const requests = await db.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'converted' THEN 1 ELSE 0 END) AS converted FROM service_requests WHERE created_at >= ? AND created_at <= ?").get(from + ' 00:00:00', to + ' 23:59:59');
   if (req.query.format === 'csv') {
     res.type('text/csv').attachment(`job-profitability-${from}-${to}.csv`);
@@ -232,7 +245,7 @@ router.get('/reports', requirePermission('jobs.costing', 'accounting.view'), asy
       { label: 'Gross profit', value: (r) => fmt.centsInput(r.grossProfit) }, { label: 'Margin %', value: (r) => (r.margin === null ? '' : r.margin) },
     ]));
   }
-  res.render('manage-reports', { title: 'Operations Reports', from, to, rows, byTech, byType, totals, util: Object.values(util), requests: { total: Number(requests.total || 0), converted: Number(requests.converted || 0) } });
+  res.render('manage-reports', { title: 'Operations Reports', from, to, rows, byTech, byType, totals, util: Object.values(util), requests: { total: Number(requests.total || 0), converted: Number(requests.converted || 0) }, estimateStats, retention });
 });
 
 module.exports = router;

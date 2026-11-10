@@ -44,6 +44,15 @@
   <div class="stack">
     <div class="card"><h2>This week</h2><p><strong><%= fmt.hours(week.totalMinutes) %> h</strong><%= week.overtimeMinutes ? ' (' + fmt.hours(week.overtimeMinutes) + ' h OT)' : '' %> · <%= week.entries.filter(function(e) { return e.status === 'pending'; }).length %> pending approval</p><p>Truck: <%= truck ? truck.name : 'none' %></p></div>
     <div class="card"><h2>Open jobs</h2><% if (!openJobs.length) { %><p class="empty">None.</p><% } %><% openJobs.forEach(function(j) { %><p class="small" style="margin:0.25rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= j.title %> · <%= fmt.shortDateTime(j.scheduled_start) || 'unscheduled' %></p><% }); %></div>
+    <div class="card"><h2>Leave</h2>
+      <p class="small">PTO <strong><%= Number(profile.pto_balance_hours || 0) %> h</strong> · Sick <strong><%= Number(profile.sick_balance_hours || 0) %> h</strong></p>
+      <% leave.forEach(function(l) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.label(l.kind) %> <%= l.start_date %> to <%= l.end_date %> (<%= Number(l.hours) %> h) · <%= l.status %></p><% }); %>
+      <% if (can('employees.manage', 'timeoff.approve')) { %>
+        <form method="POST" action="/manage/employees/<%= emp.id %>/leave-balance" class="inline-fields mt"><label>PTO h <input name="pto_balance_hours" value="<%= Number(profile.pto_balance_hours || 0) %>" /></label><label>Sick h <input name="sick_balance_hours" value="<%= Number(profile.sick_balance_hours || 0) %>" /></label><button class="btn-secondary" type="submit">Set balances</button></form>
+      <% } %>
+    </div>
+    <div class="card"><h2>Tools &amp; equipment</h2><% if (!tools.length) { %><p class="empty">None assigned.</p><% } %><% tools.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= t.name %><%= t.serial_number ? ' #' + t.serial_number : '' %> · <%= fmt.label(t.status) %></p><% }); %><% if (can('assets.manage')) { %><p class="hint"><a href="/assets">Manage tools</a></p><% } %></div>
+    <%- include('partials/record-files', { files: files, target: 'member', targetId: emp.id, canEdit: can('employees.manage'), heading: 'Employee documents' }) %>
     <div class="card"><h2>Training</h2><% if (!trainingRows.length) { %><p class="empty">No training assigned.</p><% } %><% trainingRows.forEach(function(t) { %><p class="small" style="margin:0.25rem 0;"><%= t.title %> · <span class="status status-<%= t.status === 'passed' ? 'completed' : t.status === 'failed' ? 'rejected' : 'pending' %>"><%= fmt.label(t.status) %></span><%= t.best_score !== null ? ' · best ' + t.best_score + '%' : '' %></p><% }); %><% if (can('training.manage')) { %><p class="hint"><a href="/training/manage">Assign training</a></p><% } %></div>
   </div>
 </div>

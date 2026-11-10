@@ -11,7 +11,7 @@
     <div class="big-actions"><button type="submit" class="btn-success">Clock In</button></div>
   </form>
 <% } else { %>
-  <p class="clock-state">Clocked in since <%= fmt.shortDateTime(entry.clock_in).slice(11) %> UTC<%= entry.job_number ? ' on ' + entry.job_number : '' %><%= onBreak ? ' · ON BREAK' : '' %></p>
+  <p class="clock-state">Clocked in since <%= fmt.shortDateTime(entry.clock_in).slice(11) %><%= entry.job_number ? ' on ' + entry.job_number : '' %><%= onBreak ? ' · ON BREAK' : '' %></p>
   <div class="big-actions">
     <% if (onBreak) { %>
       <form method="POST" action="/employee/time/break-end"><input type="hidden" name="back" value="<%= backTo %>" /><button type="submit">End Break</button></form>

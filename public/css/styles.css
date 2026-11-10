@@ -276,3 +276,13 @@ details.card summary { cursor: pointer; }
 @media (max-width: 860px) {
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* Customer-facing documents (estimates, invoices, pay stubs): on phones,
+   wrap long descriptions so the price columns stay visible instead of
+   scrolling off-screen. */
+@media (max-width: 860px) {
+  .doc { padding: 1rem; }
+  .doc table.data-table { display: table; white-space: normal; table-layout: auto; }
+  .doc table.data-table td, .doc table.data-table th { padding: 0.4rem 0.3rem; font-size: 0.85rem; }
+  .doc table.data-table td.num, .doc table.data-table th.num { white-space: nowrap; }
+}

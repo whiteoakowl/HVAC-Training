@@ -1,0 +1,6 @@
+<label>Name <input name="name" value="<%= p.name || '' %>" required placeholder="Comfort Club - Gold" /></label>
+<label>Price per term <input name="price" inputmode="decimal" value="<%= fmt.centsInput(p.price_cents) %>" required /></label>
+<label>Visits per year <input name="visits_per_year" inputmode="numeric" value="<%= p.visits_per_year || 2 %>" required /></label>
+<label>Term (months) <input name="term_months" inputmode="numeric" value="<%= p.term_months || 12 %>" required /></label>
+<label class="full">Description <input name="description" value="<%= p.description || '' %>" /></label>
+<label class="full">Included services <textarea name="included_services" style="min-height:60px;" placeholder="Spring AC tune-up, fall furnace safety inspection, 15% off repairs, priority scheduling, no overtime fees"><%= p.included_services || '' %></textarea></label>

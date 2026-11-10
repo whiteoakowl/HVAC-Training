@@ -98,6 +98,79 @@
     <% } %>
   </div>
 
+  <div class="card" id="checklists">
+    <h2>Checklists &amp; inspections</h2>
+    <% checklists.forEach(function(c) { var fails = c.results.filter(function(r) { return r.result === 'fail'; }).length; %>
+      <details style="margin-bottom:0.4rem;"><summary><strong><%= c.name %></strong> <span class="hint"><%= fmt.shortDateTime(c.created_at) %> · <%= c.memberName || '' %></span> <% if (fails) { %><span class="status status-rejected"><%= fails %> fail</span><% } else { %><span class="status status-completed">ok</span><% } %></summary>
+        <% c.results.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><span class="status status-<%= r.result === 'pass' ? 'completed' : r.result === 'fail' ? 'rejected' : 'cancelled' %>"><%= r.result === 'na' ? 'n/a' : r.result.replace('_', ' ') %></span> <%= r.label %><%= r.note ? ' - ' + r.note : '' %></p><% }); %>
+        <% if (c.notes) { %><p class="small" style="white-space:pre-wrap;"><%= c.notes %></p><% } %>
+      </details>
+    <% }); %>
+    <% if (!checklists.length) { %><p class="empty">None completed.</p><% } %>
+    <% if (canWork && checklistTemplates.length) { %>
+      <% checklistTemplates.forEach(function(t) { var items = t.items.split('\n').map(function(x) { return x.trim(); }).filter(Boolean); %>
+        <details class="no-print" style="margin-top:0.4rem;"><summary>+ <%= t.name %></summary>
+          <form method="POST" action="/jobs/<%= job.id %>/checklists" class="stack-form mt">
+            <input type="hidden" name="template_id" value="<%= t.id %>" />
+            <% items.forEach(function(label, i) { %>
+              <div style="border-top:1px solid var(--border); padding:0.35rem 0;">
+                <div class="small" style="font-weight:600;"><%= label %></div>
+                <div class="btn-row small">
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="pass" style="width:auto;" /> Pass</label>
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="fail" style="width:auto;" /> Fail</label>
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="na" style="width:auto;" /> N/A</label>
+                  <input name="note_<%= i %>" placeholder="Reading / note" style="flex:1; min-width:120px;" />
+                </div>
+              </div>
+            <% }); %>
+            <label>Notes <textarea name="notes" style="min-height:60px;"></textarea></label>
+            <button type="submit">Save <%= t.name %></button>
+          </form>
+        </details>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <div class="card" id="change-orders">
+    <h2>Change orders</h2>
+    <% if (estimate) { %><p class="hint">Based on estimate <a href="/estimates/<%= estimate.id %>"><%= estimate.estimate_number %></a> (<%= fmt.money(estimate.total_cents) %>).</p><% } %>
+    <% if (!changeOrders.length) { %><p class="empty">None.</p><% } %>
+    <% changeOrders.forEach(function(co) { %>
+      <div style="border-top:1px solid var(--border); padding:0.4rem 0;">
+        <p style="margin:0;"><strong>#<%= co.number %></strong> <%= co.description %> · <strong><%= fmt.money(co.amount_cents) %></strong> <span class="status status-<%= co.status === 'pending' ? 'pending' : co.status === 'approved' ? 'completed' : 'rejected' %>"><%= co.status %></span><%= co.approved_name ? ' · ' + co.approved_name : '' %><%= co.invoiced ? ' · invoiced' : '' %></p>
+        <% if (co.signature_data) { %><img src="<%= co.signature_data %>" alt="signature" style="max-width:200px; border:1px solid var(--border); border-radius:6px;" /><% } %>
+        <% if (co.status === 'pending' && canWork) { %>
+          <form method="POST" action="/jobs/<%= job.id %>/change-orders/<%= co.id %>" class="stack-form no-print co-form" style="margin-top:0.4rem;">
+            <label>Customer name <input name="approved_name" /></label>
+            <canvas class="signature-pad co-sig" style="height:120px;"></canvas>
+            <input type="hidden" name="signature_data" class="co-sig-data" />
+            <div class="btn-row"><button name="decision" value="approve" class="btn-success small">Customer approves</button><button name="decision" value="reject" class="btn-danger small">Declined</button></div>
+          </form>
+        <% } %>
+      </div>
+    <% }); %>
+    <% if (canWork && !['invoiced','paid','cancelled'].includes(job.status)) { %>
+      <details class="no-print mt"><summary>+ Add change order</summary>
+        <form method="POST" action="/jobs/<%= job.id %>/change-orders" class="stack-form mt">
+          <label>Additional work / change <input name="description" required placeholder="Replace corroded drain pan" /></label>
+          <label>Price change (negative for a reduction) <input name="amount" inputmode="decimal" required /></label>
+          <button type="submit">Add</button>
+        </form>
+      </details>
+    <% } %>
+    <script>
+      document.querySelectorAll('.co-form').forEach(function (f) {
+        var c = f.querySelector('.co-sig'), ctx = c.getContext('2d'), drawing = false, dirty = false;
+        var r0 = c.getBoundingClientRect(); c.width = r0.width * 2; c.height = r0.height * 2; ctx.scale(2, 2); ctx.lineWidth = 2; ctx.lineCap = 'round';
+        function pos(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        c.addEventListener('pointerdown', function (e) { drawing = true; dirty = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); c.setPointerCapture(e.pointerId); });
+        c.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+        c.addEventListener('pointerup', function () { drawing = false; });
+        f.addEventListener('submit', function () { f.querySelector('.co-sig-data').value = dirty ? c.toDataURL('image/png') : ''; });
+      });
+    </script>
+  </div>
+
   <div class="card" id="notes">
     <h2>Job notes</h2>
     <% if (canWork) { %>
@@ -131,7 +204,7 @@
   <% if (job.completed_at) { %>
     <div class="card">
       <h2>Completion</h2>
-      <p class="hint">Completed <%= fmt.shortDateTime(job.completed_at) %> UTC</p>
+      <p class="hint">Completed <%= fmt.shortDateTime(job.completed_at) %></p>
       <p style="white-space:pre-wrap;"><%= job.work_performed %></p>
       <% if (job.signature_data) { %><p class="hint">Customer signature<%= job.signature_name ? ' - ' + job.signature_name : '' %> (<%= fmt.shortDateTime(job.signed_at) %>)</p><img src="<%= job.signature_data %>" alt="Customer signature" style="max-width:320px; border:1px solid var(--border); border-radius:8px;" /><% } else if (job.signature_name) { %><p class="hint">Acknowledged by <%= job.signature_name %></p><% } %>
     </div>

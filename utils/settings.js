@@ -26,4 +26,19 @@ async function set(key, value) {
     .run(key, value === null || value === undefined ? null : String(value));
 }
 
-module.exports = { all, get, getInt, getBool, set };
+// Keeps utils/format and the database's now_text() on the company
+// timezone. Re-read at most once a minute per server instance.
+let tzCheckedAt = 0;
+async function applyTimezone(force = false) {
+  if (!force && Date.now() - tzCheckedAt < 60000) return;
+  tzCheckedAt = Date.now();
+  const fmt = require('./format');
+  const tz = process.env.APP_TIMEZONE || (await get('company_timezone', 'UTC'));
+  if (!fmt.validTimezone(tz)) return;
+  if (tz !== fmt.timezone() || force) {
+    fmt.setTimezone(tz);
+    await db.setTimezone(tz);
+  }
+}
+
+module.exports = { all, get, getInt, getBool, set, applyTimezone };

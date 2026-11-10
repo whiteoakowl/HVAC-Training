@@ -6,6 +6,7 @@
 <label>Unit <input name="unit" value="<%= item.unit || 'each' %>" placeholder="each, lb, ft, box" /></label>
 <label>Manufacturer <input name="manufacturer" value="<%= item.manufacturer || '' %>" /></label>
 <label>Supplier <input name="supplier" value="<%= item.supplier || '' %>" /></label>
+<% if (typeof vendors !== 'undefined' && vendors.length) { %><label>Preferred vendor (restock orders) <select name="preferred_vendor_id"><option value="">-</option><% vendors.forEach(function(v) { %><option value="<%= v.id %>" <%= item.preferred_vendor_id === v.id ? 'selected' : '' %>><%= v.name %></option><% }); %></select></label><% } %>
 <label>Barcode <input name="barcode" value="<%= item.barcode || '' %>" /></label>
 <label>Selling price <input name="price" inputmode="decimal" value="<%= fmt.centsInput(item.price_cents) %>" /></label>
 <label class="full">Description <input name="description" value="<%= item.description || '' %>" /></label>

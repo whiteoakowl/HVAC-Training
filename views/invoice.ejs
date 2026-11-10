@@ -38,7 +38,8 @@
       <% if (inv.discount_cents) { %><tr><td colspan="4" class="num">Discount</td><td class="num">-<%= fmt.money(inv.discount_cents) %></td></tr><% } %>
       <tr><td colspan="4" class="num">Sales tax (<%= (inv.tax_rate_bp / 100).toFixed(2) %>% on <%= fmt.money(inv.taxable_cents) %>)</td><td class="num"><%= fmt.money(inv.tax_cents) %></td></tr>
       <tr class="total"><td colspan="4" class="num">Total</td><td class="num"><%= fmt.money(inv.total_cents) %></td></tr>
-      <% if (inv.amount_paid_cents) { %><tr><td colspan="4" class="num">Paid</td><td class="num">-<%= fmt.money(inv.amount_paid_cents) %></td></tr><% } %>
+      <% if (inv.credited_cents) { %><tr><td colspan="4" class="num">Credits</td><td class="num">-<%= fmt.money(inv.credited_cents) %></td></tr><% } %>
+      <% if (inv.amount_paid_cents) { %><tr><td colspan="4" class="num">Paid (net of refunds)</td><td class="num">-<%= fmt.money(inv.amount_paid_cents) %></td></tr><% } %>
       <% if (inv.status !== 'void') { %><tr class="total"><td colspan="4" class="num">Balance due</td><td class="num"><%= fmt.money(inv.balance) %></td></tr><% } %>
     </tbody>
   </table>
@@ -48,6 +49,8 @@
     <p class="hint mt">Payments received</p>
     <% inv.payments.forEach(function(p) { %><p class="small" style="margin:0.15rem 0;"><%= p.received_on %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %><%= p.reference ? ' #' + p.reference : '' %></p><% }); %>
   <% } %>
+  <% if (inv.credits.length) { %><p class="hint mt">Credits</p><% inv.credits.forEach(function(c) { %><p class="small" style="margin:0.15rem 0;"><%= fmt.dateOnly(c.created_at) %> · <%= fmt.money(c.amount_cents) %> · <%= c.reason %></p><% }); %><% } %>
+  <% if (inv.refunds.length) { %><p class="hint mt">Refunds</p><% inv.refunds.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><%= r.refunded_on %> · <%= fmt.money(r.amount_cents) %> · <%= r.method %> · <%= r.reason %></p><% }); %><% } %>
 </div>
 
 <div class="card-grid no-print">
@@ -94,7 +97,41 @@
       <p class="hint">Online card payments need a payment processor integration (not yet connected).</p>
     </div>
   <% } %>
-  <% if (['draft','issued'].includes(inv.status) && !inv.amount_paid_cents && can('invoices.manage')) { %>
+  <% if (['issued','partial','paid'].includes(inv.status) && can('invoices.manage')) { %>
+    <div class="card">
+      <h2>Send / share</h2>
+      <p class="small">Customer link (no login needed): <input readonly value="/i/<%= inv.public_token %>" onclick="this.value = location.origin + '/i/<%= inv.public_token %>'; this.select();" /></p>
+      <% if (inv.balance > 0) { %>
+        <form method="POST" action="/invoices/<%= inv.id %>/send" class="btn-row">
+          <button name="channel" value="email" class="btn-secondary">Email invoice / reminder</button>
+          <button name="channel" value="sms" class="btn-secondary">Text invoice / reminder</button>
+        </form>
+      <% } %>
+    </div>
+    <div class="card">
+      <h2>Credit</h2>
+      <form method="POST" action="/invoices/<%= inv.id %>/credit" class="stack-form">
+        <label>Amount <input name="amount" inputmode="decimal" required /></label>
+        <label>Reason <input name="reason" required placeholder="Goodwill, billing correction, warranty..." /></label>
+        <button type="submit" class="btn-secondary">Apply credit</button>
+      </form>
+    </div>
+    <% if (inv.amount_paid_cents > 0 && can('payments.record')) { %>
+      <div class="card">
+        <h2>Refund</h2>
+        <form method="POST" action="/invoices/<%= inv.id %>/refund" class="stack-form" onsubmit="return confirm('Record this refund?');">
+          <label>Amount (max <%= fmt.money(inv.amount_paid_cents) %>) <input name="amount" inputmode="decimal" required /></label>
+          <label>Paid by <select name="method"><% methods.forEach(function(m) { %><option value="<%= m %>"><%= fmt.label(m) %></option><% }); %></select></label>
+          <label>Reference <input name="reference" /></label>
+          <label>Reason <input name="reason" required /></label>
+          <label>Date <input type="date" name="refunded_on" value="<%= today %>" /></label>
+          <button type="submit" class="btn-danger">Record refund</button>
+        </form>
+        <p class="hint">A refund re-opens the balance unless a credit covers it - apply a credit first to refund an overpayment.</p>
+      </div>
+    <% } %>
+  <% } %>
+  <% if (['draft','issued'].includes(inv.status) && !inv.amount_paid_cents && !inv.credited_cents && can('invoices.manage')) { %>
     <div class="card">
       <h2>Void</h2>
       <form method="POST" action="/invoices/<%= inv.id %>/void" class="stack-form" onsubmit="return confirm('Void this invoice?');">

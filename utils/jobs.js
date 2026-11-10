@@ -131,7 +131,7 @@ async function setStatus(jobId, status, memberId, tx = db) {
 function endOf(job) {
   if (job.scheduled_end) return job.scheduled_end;
   const mins = job.estimated_hours ? Math.round(job.estimated_hours * 60) : DEFAULT_DURATION_MIN;
-  return fmt.nowText(new Date(fmt.parseTs(job.scheduled_start) + mins * 60000));
+  return fmt.addMinutes(job.scheduled_start, mins);
 }
 
 // Other open jobs that overlap [start, end) for any of these technicians.
@@ -190,6 +190,7 @@ async function complete(jobId, { workPerformed, signatureName, signatureData }, 
       .prepare('UPDATE jobs SET work_performed = ?, signature_name = ?, signature_data = ?, signed_at = ?, completed_at = now_text(), updated_at = now_text() WHERE id = ?')
       .run(work, fmt.clean(signatureName, 200), sig, sig || signatureName ? fmt.nowText() : null, jobId);
     await setStatus(jobId, 'completed', memberId, tx);
+    if (job.agreement_visit_id) await tx.prepare("UPDATE agreement_visits SET status = 'completed' WHERE id = ?").run(job.agreement_visit_id);
     return job;
   });
 }

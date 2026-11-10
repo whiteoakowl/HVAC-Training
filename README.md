@@ -33,6 +33,7 @@ Demo logins all use the password `password123`.
 | `lead@hvacdemo.test`, `tech@hvacdemo.test`, `installer@hvacdemo.test` | Lead Technician / Technician / Installer | My Day (employee portal) |
 | `warehouse@hvacdemo.test` | Warehouse / Inventory Manager | My Day |
 | `instructor@hvactraining.test`, `student@hvactraining.test` | Training Instructor / Trainee (original roles) | Training portal |
+| `customer@hvacdemo.test` | Customer (self-service portal) | My Account (`/my`) |
 
 ## Modules
 
@@ -42,7 +43,11 @@ Demo logins all use the password `password123`.
 | Customer service | `/service`, `/customers`, `/requests` |
 | Operations | `/jobs`, `/jobs/:id`, `/dispatch`, `/inventory`, `/trucks`, `/inventory/parts-requests` |
 | Management | `/manage`, `/manage/reports`, `/manage/timesheets`, `/manage/employees`, `/invoices`, `/accounting` (+ reports) |
-| Admin | `/portal/members` (users), `/admin/roles`, `/admin/settings`, `/admin/audit` |
+| Sales & billing | `/estimates`, `/agreements`, `/invoices` (credits, refunds, deposits) |
+| Purchasing & costs | `/purchasing`, `/vendors`, `/bills`, `/expenses`, `/payroll`, `/assets` |
+| Team | `/announcements`, `/messages`, `/employee/time-off`, `/employee/pay`, `/employee/report`, `/manage/time-off`, `/manage/daily-reports`, `/training/center` |
+| Customer-facing (no staff login) | `/my` (customer portal), `/e/:token` (approve estimate), `/i/:token` (view invoice) |
+| Admin | `/portal/members` (users), `/admin/roles`, `/admin/settings`, `/admin/audit`, `/admin/checklists`, `/account` (password, two-step verification) |
 | Training portal (original) | `/portal`, `/events`, `/training/mine`, `/member-directory`, `/forums`, `/documents`, `/notifications` |
 | Website API | `POST /api/integrations/wix/service-request` |
 
@@ -65,6 +70,9 @@ Roles and permissions are configurable (`/admin/roles`). Every page and action c
    * `SESSION_SECRET`: a long random string (**required**).
    * `SEED_PASSWORD`: the password for the original demo accounts. **Change or deactivate those accounts** once your real users exist.
    * Optional: `WIX_WEBHOOK_SECRET`, `RESEND_API_KEY` + `MAIL_FROM`, `TWILIO_*` (see docs/IMPLEMENTATION_LOG.md).
+   * Optional: `APP_TIMEZONE` overrides the timezone in Company Settings.
+   * Optional: `APP_BASE_URL` (e.g. `https://yourapp.netlify.app`) is used for links in automated reminder emails. Netlify's `URL` is used if it isn't set.
+   * Daily automations run from the scheduled function `netlify/functions/daily.js` (schedule in `netlify.toml`). There is nothing to set up beyond deploying.
 3. Redeploy. On first boot, migrations upgrade the existing database in place. Demo *business* data is never loaded in production.
 4. Sign in as the owner. Then:
    * In **Company Settings**: set the company name, labor rate, tax rate and terms; turn **off** public registration; review the automations.

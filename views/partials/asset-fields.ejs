@@ -1,0 +1,10 @@
+<label>Name <input name="name" value="<%= a.name || '' %>" required /></label>
+<label>Category <input name="category" list="asset-cats" value="<%= a.category || '' %>" /><datalist id="asset-cats"><option>Gauges / manifold</option><option>Recovery machine</option><option>Vacuum pump</option><option>Meter</option><option>Power tool</option><option>Ladder</option><option>Brazing kit</option><option>Safety equipment</option></datalist></label>
+<label>Serial # <input name="serial_number" value="<%= a.serial_number || '' %>" /></label>
+<label>Assigned to <select name="assigned_member_id"><option value="">-</option><% staff.forEach(function(s) { %><option value="<%= s.id %>" <%= a.assigned_member_id === s.id ? 'selected' : '' %>><%= s.name %></option><% }); %></select></label>
+<label>On truck <select name="truck_id"><option value="">-</option><% trucks.forEach(function(t) { %><option value="<%= t.id %>" <%= a.truck_id === t.id ? 'selected' : '' %>><%= t.name %></option><% }); %></select></label>
+<label>Status <select name="status"><% ['in_service','repair','lost','retired'].forEach(function(s) { %><option value="<%= s %>" <%= (a.status || 'in_service') === s ? 'selected' : '' %>><%= fmt.label(s) %></option><% }); %></select></label>
+<label>Purchased <input type="date" name="purchase_date" value="<%= a.purchase_date || '' %>" /></label>
+<label>Cost <input name="cost" inputmode="decimal" value="<%= fmt.centsInput(a.cost_cents) %>" /></label>
+<label>Next calibration / service <input type="date" name="next_service_on" value="<%= a.next_service_on || '' %>" /></label>
+<label>Notes <input name="notes" value="<%= a.notes || '' %>" /></label>

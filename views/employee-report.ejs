@@ -1,0 +1,13 @@
+<%- include('partials/page-start') %>
+<h1>End-of-Day Report</h1>
+<p class="hint"><%= today %><%= existing ? ' · already submitted - saving again updates it' : '' %></p>
+<% if (jobsToday.length) { %><p class="small">Today's jobs: <%= jobsToday.map(function(j) { return j.job_number + ' (' + fmt.label(j.status) + ')'; }).join(', ') %></p><% } %>
+<form method="POST" action="/employee/report" class="stack-form card">
+  <label>What did you get done? <textarea name="summary" required><%= existing ? existing.summary : '' %></textarea></label>
+  <label>Problems / follow-ups for the office <textarea name="issues" style="min-height:60px;"><%= existing && existing.issues || '' %></textarea></label>
+  <label>Materials you need for tomorrow <textarea name="materials_needed" style="min-height:60px;"><%= existing && existing.materials_needed || '' %></textarea></label>
+  <label>Miles driven <input name="mileage" inputmode="decimal" value="<%= existing && existing.mileage !== null ? existing.mileage : '' %>" /></label>
+  <button type="submit">Submit report</button>
+</form>
+<% if (recent.length) { %><h2 class="mt">Recent</h2><% recent.forEach(function(r) { %><p class="small" style="margin:0.25rem 0;"><strong><%= r.report_date %></strong> · <%= r.summary.slice(0, 160) %></p><% }); %><% } %>
+<%- include('partials/page-end') %>

@@ -11,6 +11,7 @@ const DENY = () => false;
 
 async function loadSession(req, res, next) {
   try {
+    await require('../utils/settings').applyTimezone();
     res.locals.member = null;
     res.locals.unreadNotifications = 0;
     res.locals.currentPath = req.path;

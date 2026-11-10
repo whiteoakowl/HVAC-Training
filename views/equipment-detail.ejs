@@ -29,4 +29,5 @@
     <% } %>
   </div>
 </div>
+<div class="mt"><%- include('partials/record-files', { files: files, target: 'equipment', targetId: e.id, canEdit: can('customers.edit'), heading: 'Photos, manuals & warranty documents' }) %></div>
 <%- include('partials/page-end') %>

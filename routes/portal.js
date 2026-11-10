@@ -16,6 +16,7 @@ router.get('/home', (req, res) => res.redirect(res.locals.homeHref));
 // Original training/events home page - still the landing page for the
 // Trainee and Instructor roles, and linked from every other portal.
 router.get('/portal', async (req, res) => {
+  if (req.can('portal.customer') && !req.can('training.view')) return res.redirect('/my');
   const upcomingEvents = req.can('events.view', 'events.manage') ? (await events.listUpcoming()).slice(0, 3) : [];
   const myTraining = (await training.myAssignments(req.member.id)).filter((a) => a.status !== 'passed').slice(0, 3);
   const recentNotifications = (await notifications.listForMember(req.member.id)).slice(0, 5);
@@ -51,7 +52,7 @@ router.post('/portal/members/new', requirePermission('users.manage'), async (req
   if (!(await canTouch(req, role))) return back('error', 'Only an owner can create an account with that role.');
   if (await findByEmail(email)) return back('error', 'An account with that email already exists.');
   const id = await createMember({ name, email, password, role });
-  await db.prepare('UPDATE members SET phone = ? WHERE id = ?').run((req.body.phone || '').trim() || null, id);
+  await db.prepare('UPDATE members SET phone = ?, must_change_password = 1 WHERE id = ?').run((req.body.phone || '').trim() || null, id);
   await audit.log(req, 'member.create', 'member', id, { role });
   back('notice', `Created ${name}.`);
 });
@@ -106,8 +107,11 @@ router.post('/portal/members/:id/edit', requirePermission('users.manage'), async
   if (password && password.length < 8) return back('New password must be at least 8 characters.');
 
   await db.prepare('UPDATE members SET name = ?, email = ?, phone = ?, role = ?, active = ? WHERE id = ?').run(name, email, phone, role, active, member.id);
-  if (password) await db.prepare('UPDATE members SET password_hash = ?, failed_logins = 0, locked_until = NULL WHERE id = ?').run(hashPassword(password), member.id);
-  await audit.log(req, 'member.update', 'member', member.id, { role, active, passwordReset: Boolean(password) });
+  // A password set by someone else is temporary: they must change it.
+  if (password) await db.prepare('UPDATE members SET password_hash = ?, failed_logins = 0, locked_until = NULL, must_change_password = ? WHERE id = ?').run(hashPassword(password), isSelf ? 0 : 1, member.id);
+  const resetMfa = req.body.reset_mfa === '1' && !isSelf;
+  if (resetMfa) await db.prepare('UPDATE members SET mfa_secret = NULL, mfa_enabled = 0 WHERE id = ?').run(member.id);
+  await audit.log(req, 'member.update', 'member', member.id, { role, active, passwordReset: Boolean(password), mfaReset: resetMfa });
   res.redirect('/portal/members?notice=' + encodeURIComponent(`Saved changes to ${name}.`));
 });
 

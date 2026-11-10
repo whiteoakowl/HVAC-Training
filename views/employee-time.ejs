@@ -37,7 +37,7 @@
   </tbody>
 </table>
 <% } %>
-<p class="hint">Times are in UTC. Approved entries can't be edited - request a correction instead and a manager will review it.</p>
+<p class="hint">Times are <%= fmt.timezone() %>. Approved entries can't be edited - request a correction instead and a manager will review it.</p>
 <% if (corrections.length) { %>
   <h2 class="mt">My correction requests</h2>
   <% corrections.forEach(function(c) { %><p class="small"><%= fmt.shortDateTime(c.created_at) %> · <%= c.reason %> · <span class="status status-<%= c.status %>"><%= c.status %></span></p><% }); %>

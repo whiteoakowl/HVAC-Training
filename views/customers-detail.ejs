@@ -7,6 +7,8 @@
   <div class="btn-row no-print">
     <% if (can('requests.manage')) { %><a class="btn" href="/requests/new?customer_id=<%= c.id %>">+ Service Request</a><% } %>
     <% if (can('jobs.manage')) { %><a class="btn" href="/jobs/new?customer_id=<%= c.id %>">+ Job</a><% } %>
+    <% if (can('estimates.manage')) { %><a class="btn btn-secondary" href="/estimates/new?customer_id=<%= c.id %>">+ Estimate</a><% } %>
+    <% if (can('agreements.manage')) { %><a class="btn btn-secondary" href="/agreements/new?customer_id=<%= c.id %>">+ Maintenance agreement</a><% } %>
     <% if (can('invoices.manage')) { %><form method="POST" action="/invoices/new" class="inline-form"><input type="hidden" name="customer_id" value="<%= c.id %>" /><button type="submit" class="btn-secondary">+ Invoice</button></form><% } %>
     <% if (can('customers.edit')) { %><a class="btn btn-secondary" href="/customers/<%= c.id %>/edit">Edit</a><% } %>
   </div>
@@ -129,6 +131,25 @@
       </div>
     <% } %>
 
+    <% if (estimateList.length) { %>
+      <div class="card"><h2>Estimates</h2>
+        <% estimateList.forEach(function(e) { %><p style="margin:0.3rem 0;"><a href="/estimates/<%= e.id %>"><%= e.estimate_number %></a> <%= e.title %> · <%= fmt.money(e.total_cents) %> <span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></p><% }); %>
+      </div>
+    <% } %>
+    <div class="card"><h2>Maintenance agreements</h2>
+      <% if (!agreementList.length) { %><p class="empty">None.</p><% } %>
+      <% agreementList.forEach(function(a) { %><p style="margin:0.3rem 0;"><% if (can('agreements.manage')) { %><a href="/agreements/<%= a.id %>"><%= a.agreement_number %></a><% } else { %><%= a.agreement_number %><% } %> <%= a.name %> <span class="status status-<%= a.status === 'active' ? 'approved' : 'cancelled' %>"><%= a.status %></span><br><span class="hint">to <%= a.end_date %><%= a.nextVisit ? ' · next visit ' + a.nextVisit : '' %></span></p><% }); %>
+    </div>
+    <div class="card"><h2>Customer portal</h2>
+      <% if (portalUser) { %>
+        <p class="small"><%= portalUser.email %> · <%= portalUser.active ? 'active' : 'disabled' %> · last login <%= portalUser.last_login_at || 'never' %></p>
+        <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/portal-revoke" onsubmit="return confirm('Remove portal access?');"><button class="btn-secondary small" type="submit">Remove access</button></form><% } %>
+      <% } else { %>
+        <p class="hint">Let the customer see service history, estimates, invoices and request service online.</p>
+        <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/portal-invite"><button class="btn-secondary small" type="submit" <%= c.email ? '' : 'disabled' %>>Create portal login</button></form><% if (!c.email) { %><p class="hint">Needs an email address.</p><% } %><% } %>
+      <% } %>
+    </div>
+    <%- include('partials/record-files', { files: files, target: 'customer', targetId: c.id, canEdit: can('customers.edit') }) %>
     <div class="card">
       <h2>Service requests</h2>
       <% if (!requests.length) { %><p class="empty">None.</p><% } %>
@@ -140,6 +161,14 @@
     <div class="card" id="communication">
       <h2>Communication log</h2>
       <% if (can('customers.edit')) { %>
+        <details style="margin-bottom:0.6rem;"><summary><strong>Send email / text</strong><%= !messaging.email && !messaging.sms ? ' (no provider configured - will be logged only)' : '' %></summary>
+          <form method="POST" action="/customers/<%= c.id %>/message" class="stack-form mt">
+            <label>Via <select name="channel"><option value="email">Email (<%= c.email || 'none on file' %>)</option><option value="sms">Text (<%= c.phone || 'none on file' %>)</option></select></label>
+            <label>Subject (email) <input name="subject" /></label>
+            <label>Message <textarea name="body" required style="min-height:70px;"></textarea></label>
+            <button type="submit">Send</button>
+          </form>
+        </details>
         <form method="POST" action="/customers/<%= c.id %>/interactions" class="stack-form" style="margin-bottom:0.75rem;">
           <div class="inline-fields">
             <label>Type <select name="channel"><% channels.forEach(function(ch) { %><option value="<%= ch %>"><%= fmt.label(ch) %></option><% }); %></select></label>

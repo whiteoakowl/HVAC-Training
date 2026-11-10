@@ -1,0 +1,24 @@
+<%- include('partials/page-start') %>
+<h1>New Estimate</h1>
+<p><a href="/estimates">&larr; Estimates</a></p>
+<% if (!customer) { %>
+  <div class="card">
+    <h2>1. Choose the customer</h2>
+    <form method="GET" action="/estimates/new" class="inline-fields"><input type="search" name="q" value="<%= q %>" placeholder="Name, phone, email, address..." autofocus /><button type="submit">Search</button></form>
+    <% if (q && !results.length) { %><p class="empty">No match. <a href="/customers/new">Create the customer</a> first.</p><% } %>
+    <% results.forEach(function(c) { %><p><a class="btn btn-secondary" href="/estimates/new?customer_id=<%= c.id %>">Select</a> <strong><%= c.name %></strong> <span class="hint"><%= c.customer_number %> · <%= c.phone || '' %></span></p><% }); %>
+  </div>
+<% } else { %>
+  <form method="POST" action="/estimates/new" class="form-grid card">
+    <input type="hidden" name="customer_id" value="<%= customer.id %>" />
+    <input type="hidden" name="service_request_id" value="<%= requestId %>" />
+    <p class="full"><strong>Customer:</strong> <%= customer.name %> (<%= customer.customer_number %>) · <a href="/estimates/new">change</a></p>
+    <label class="full">Job location
+      <select name="property_id"><option value="">- none -</option><% properties.forEach(function(p, i) { %><option value="<%= p.id %>" <%= i === 0 ? 'selected' : '' %>><%= p.label ? p.label + ' - ' : '' %><%= p.address %></option><% }); %></select>
+    </label>
+    <label class="full">Title <input name="title" required placeholder="Replace 3-ton AC and furnace" /></label>
+    <label class="full">Scope of work <textarea name="scope" placeholder="What will be done, what's included and excluded"></textarea></label>
+    <div class="full"><button type="submit">Create estimate</button></div>
+  </form>
+<% } %>
+<%- include('partials/page-end') %>

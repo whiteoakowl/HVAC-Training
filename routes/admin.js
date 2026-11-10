@@ -37,9 +37,9 @@ router.post('/roles/:key', requirePermission('roles.manage'), action(async (req,
 }, '/admin/roles'));
 
 const SETTING_FIELDS = [
-  ['company_name', 'text'], ['company_phone', 'text'], ['company_email', 'text'], ['company_address', 'text'],
+  ['company_timezone', 'timezone'], ['company_name', 'text'], ['company_phone', 'text'], ['company_email', 'text'], ['company_address', 'text'],
   ['labor_rate_cents', 'money'], ['default_tax_rate_bp', 'percent'], ['invoice_terms_days', 'int'], ['invoice_footer', 'text'], ['invoice_payment_instructions', 'text'],
-  ['overtime_weekly_hours', 'int'], ['gps_clock_enabled', 'bool'], ['allow_registration', 'bool'],
+  ['overtime_weekly_hours', 'int'], ['pto_hours_per_day', 'int'], ['estimate_valid_days', 'int'], ['estimate_terms', 'text'], ['estimate_warranty', 'text'], ['maintenance_job_lead_days', 'int'], ['gps_clock_enabled', 'bool'], ['allow_registration', 'bool'],
   ...Object.keys(automation.RULES).map((k) => [k, 'bool']),
 ];
 
@@ -67,11 +67,15 @@ router.post('/settings', requirePermission('settings.manage'), action(async (req
       const n = parseInt(v, 10);
       if (!Number.isFinite(n) || n < 0 || n > 365) throw new Error('Whole numbers only (0-365).');
       v = String(n);
+    } else if (type === 'timezone') {
+      v = String(v || '').trim();
+      if (!fmt.validTimezone(v)) throw new Error('Timezone must be an IANA name such as America/Chicago.');
     } else v = fmt.clean(v, 2000) || '';
     if ((await settings.get(key, null)) !== v) changed.push(key);
     await settings.set(key, v);
   }
   await audit.log(req, 'settings.update', 'settings', null, { changed });
+  if (changed.includes('company_timezone')) await settings.applyTimezone(true);
   flash(res, '/admin/settings', 'notice', 'Settings saved.');
 }, '/admin/settings'));
 
@@ -81,5 +85,31 @@ router.get('/audit', requirePermission('audit.view'), async (req, res) => {
     runs: await automation.history(200), messages: await messaging.list(200), entity: req.query.entity || '', id: req.query.id || '',
   });
 });
+
+router.post('/run-daily', requirePermission('audit.view'), requirePermission('settings.manage'), action(async (req, res) => {
+  const r = await require('../utils/scheduler').runDaily({ force: true, origin: `manual by ${req.member.name}` });
+  await audit.log(req, 'automation.daily_run', null, null, r.results);
+  flash(res, '/admin/audit', 'notice', 'Daily automations ran: ' + Object.entries(r.results).map(([k, v]) => `${k.replace('automation_', '')}: ${v === null ? 'off' : v}`).join(' | '));
+}, '/admin/audit'));
+
+// Service checklist / inspection form templates.
+router.get('/checklists', requirePermission('checklists.manage'), async (req, res) => {
+  const db = require('../db');
+  res.render('admin-checklists', { title: 'Checklists & Inspection Forms', rows: await db.prepare('SELECT * FROM checklist_templates ORDER BY active DESC, name').all() });
+});
+
+router.post('/checklists', requirePermission('checklists.manage'), action(async (req, res) => {
+  const db = require('../db');
+  const name = fmt.clean(req.body.name, 100);
+  const items = String(req.body.items || '').split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 80).join('\n');
+  if (!name || !items) throw new Error('Name and at least one item are required.');
+  const id = parseInt(req.body.id, 10);
+  const dup = await db.prepare('SELECT id FROM checklist_templates WHERE LOWER(name) = LOWER(?) AND id <> ?').get(name, id || 0);
+  if (dup) throw new Error('A checklist with that name exists.');
+  if (id) await db.prepare('UPDATE checklist_templates SET name = ?, items = ?, active = ? WHERE id = ?').run(name, items, req.body.active === '0' ? 0 : 1, id);
+  else await db.prepare('INSERT INTO checklist_templates (name, items) VALUES (?, ?)').run(name, items);
+  await audit.log(req, 'checklist.save', 'checklist_template', id || null, { name });
+  flash(res, '/admin/checklists', 'notice', 'Saved.');
+}, '/admin/checklists'));
 
 module.exports = router;

@@ -90,4 +90,12 @@ const ready = initSchema();
 ready.catch((err) => console.error('Postgres schema init failed:', err.message));
 db.ready = ready;
 
+// now_text() returns wall-clock time in the company timezone. The name
+// is validated by utils/format.validTimezone before it gets here.
+db.setTimezone = async (tz) => {
+  if (!/^[A-Za-z0-9_+\-/]+$/.test(tz)) throw new Error('Invalid timezone');
+  await ready;
+  await pool.query(`CREATE OR REPLACE FUNCTION now_text() RETURNS TEXT LANGUAGE SQL STABLE AS $$ SELECT to_char(now() AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI:SS') $$`);
+};
+
 module.exports = db;

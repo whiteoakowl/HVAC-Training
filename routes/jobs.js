@@ -114,7 +114,12 @@ router.get('/jobs/:id', loadJob, async (req, res) => {
   const costing = req.can('jobs.costing') ? await jobs.costing(job.id) : null;
   const assignedIds = job.assignees.map((a) => a.member_id);
   const conflicts = job.scheduled_start && assignedIds.length ? await jobs.conflicts(assignedIds, job.scheduled_start, job.scheduled_end, job.id) : [];
+  const checklistTemplates = await db.prepare('SELECT * FROM checklist_templates WHERE active = 1 ORDER BY name').all();
+  const checklists = (await db.prepare('SELECT c.*, m.name AS "memberName" FROM job_checklists c LEFT JOIN members m ON m.id = c.member_id WHERE c.job_id = ? ORDER BY c.id DESC').all(job.id)).map((c) => ({ ...c, results: JSON.parse(c.results) }));
+  const changeOrders = await db.prepare('SELECT * FROM change_orders WHERE job_id = ? ORDER BY number').all(job.id);
+  const estimate = job.estimate_id ? await db.prepare('SELECT id, estimate_number, total_cents FROM estimates WHERE id = ?').get(job.estimate_id) : null;
   res.render('jobs-detail', {
+    checklistTemplates, checklists, changeOrders, estimate,
     title: `${job.job_number} ${job.title}`, job, properties, equipment, locations, sourceLocation, stock, techs, trucks, costing, history, conflicts,
     canWork: req.canWork, assigned: req.assigned, statuses: jobs.STATUSES, fieldStatuses: jobs.FIELD_STATUSES, types: jobs.TYPES,
     allItems: req.can('inventory.manage', 'jobs.manage') ? await inventory.listItems() : [],
@@ -244,7 +249,8 @@ router.post('/jobs/:id/complete', loadJob, requireWork, action(async (req, res) 
   await audit.log(req, 'job.complete', 'job', req.job.id, { signed: Boolean(req.body.signature_data) });
   await automation.notifyPermission(['jobs.manage'], 'job_completed', { title: `${req.job.job_number} completed`, body: `${req.job.customerName} - ${req.job.title}`, linkUrl: `/jobs/${req.job.id}` }, req.member.id);
   await automation.run('automation_draft_invoice_on_completion', 'job', req.job.id, async () => {
-    const { id, created } = await invoices.createFromJob(req.job.id, req.member.id);
+    const { id, created, covered } = await invoices.createFromJob(req.job.id, req.member.id);
+    if (covered) return 'covered by maintenance agreement - nothing to bill';
     if (created) await automation.notifyPermission(['invoices.manage'], 'invoice_ready', { title: `Draft invoice ready: ${req.job.job_number}`, body: 'Review and issue it.', linkUrl: `/invoices/${id}` });
     return created ? `draft invoice #${id}` : `invoice #${id} already existed`;
   });
@@ -252,9 +258,37 @@ router.post('/jobs/:id/complete', loadJob, requireWork, action(async (req, res) 
 }, back));
 
 router.post('/jobs/:id/invoice', requirePermission('invoices.manage'), loadJob, action(async (req, res) => {
-  const { id, created } = await invoices.createFromJob(req.job.id, req.member.id);
+  const { id, created, covered } = await invoices.createFromJob(req.job.id, req.member.id);
+  if (covered) throw new Error('This visit is covered by a maintenance agreement and has no billable parts or extras.');
   if (created) await audit.log(req, 'invoice.create', 'invoice', id, { jobId: req.job.id });
   flash(res, `/invoices/${id}`, 'notice', created ? 'Draft invoice created from the job. Review it, then issue.' : 'This job already has an invoice.');
+}, back));
+
+// ---------------------------------------------------------------- checklists / inspections
+router.post('/jobs/:id/checklists', loadJob, requireWork, action(async (req, res) => {
+  const t = await db.prepare('SELECT * FROM checklist_templates WHERE id = ? AND active = 1').get(req.body.template_id);
+  if (!t) throw new Error('Choose a checklist.');
+  const items = t.items.split('\n').map((x) => x.trim()).filter(Boolean);
+  const results = items.map((label, i) => ({ label, result: ['pass', 'fail', 'na'].includes(req.body['item_' + i]) ? req.body['item_' + i] : 'not_checked', note: fmt.clean(req.body['note_' + i], 300) }));
+  await db.prepare('INSERT INTO job_checklists (job_id, template_id, name, results, notes, member_id) VALUES (?, ?, ?, ?, ?, ?)').run(req.job.id, t.id, t.name, JSON.stringify(results), fmt.clean(req.body.notes, 2000), req.member.id);
+  await audit.log(req, 'job.checklist', 'job', req.job.id, { template: t.name, fails: results.filter((r) => r.result === 'fail').length });
+  flash(res, back(req) + '#checklists', 'notice', `${t.name} saved${results.some((r) => r.result === 'fail') ? ' - items marked FAIL are highlighted for follow-up' : ''}.`);
+}, back));
+
+// ---------------------------------------------------------------- change orders
+router.post('/jobs/:id/change-orders', loadJob, requireWork, action(async (req, res) => {
+  const estimates = require('../utils/estimates');
+  const id = await estimates.addChangeOrder(req.job.id, { description: req.body.description, amountCents: fmt.toCents(req.body.amount) }, req.member.id);
+  await audit.log(req, 'job.change_order', 'job', req.job.id, { changeOrderId: id, amount: req.body.amount });
+  flash(res, back(req) + '#change-orders', 'notice', 'Change order added. Get the customer\'s approval below.');
+}, back));
+
+router.post('/jobs/:id/change-orders/:coId', loadJob, requireWork, action(async (req, res) => {
+  const estimates = require('../utils/estimates');
+  const approve = req.body.decision === 'approve';
+  const co = await estimates.decideChangeOrder(req.job.id, req.params.coId, { approve, name: req.body.approved_name, signatureData: req.body.signature_data });
+  await audit.log(req, approve ? 'job.change_order_approved' : 'job.change_order_rejected', 'job', req.job.id, { changeOrderId: co.id, name: req.body.approved_name });
+  flash(res, back(req) + '#change-orders', 'notice', approve ? 'Change order approved - it will be added to the invoice.' : 'Change order declined.');
 }, back));
 
 // ---------------------------------------------------------------- dispatch
@@ -285,7 +319,7 @@ router.post('/dispatch/move', requirePermission('jobs.dispatch', 'jobs.manage'),
     const time = job.scheduled_start ? job.scheduled_start.slice(11) : '08:00:00';
     const start = `${date} ${time}`;
     const durationMin = job.scheduled_end && job.scheduled_start ? fmt.minutesBetween(job.scheduled_start, job.scheduled_end) : null;
-    const end = durationMin ? fmt.nowText(new Date(fmt.parseTs(start) + durationMin * 60000)) : null;
+    const end = durationMin ? fmt.addMinutes(start, durationMin) : null;
     const { added, conflicts } = await jobs.assign(job.id, { memberIds: crew, leadId: toId, truckId: job.truck_id, start, end }, req.member.id);
     await audit.log(req, 'job.dispatch_move', 'job', job.id, { crew, start });
     for (const mid of added) {

@@ -23,7 +23,8 @@ const { migrateSqlite } = require('./migrate');
 const db = new Database(path.join(DATA_DIR, 'hvac_training.sqlite'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
-db.function('now_text', () => new Date().toISOString().slice(0, 19).replace('T', ' '));
+// now_text() = wall-clock time in the company timezone (utils/format.js).
+db.function('now_text', () => require('../utils/format').nowText());
 
 function initSchema() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
@@ -53,6 +54,7 @@ db.withTransaction = async function withTransaction(fn) {
   }
 };
 
+db.setTimezone = async () => {};
 db.driver = 'sqlite';
 db.ready = Promise.resolve();
 

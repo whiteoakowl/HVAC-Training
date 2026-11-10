@@ -1,0 +1,20 @@
+<%- include('partials/page-start') %>
+<p class="no-print"><a href="/employee/pay">&larr; My Pay</a> <button type="button" class="btn-secondary small" onclick="window.print()">Print</button></p>
+<div class="doc">
+  <div class="doc-head"><div><h1><%= company.company_name || 'Pay stub' %></h1></div><div style="text-align:right;"><strong><%= s.name %></strong><%= s.employee_number ? ' · ' + s.employee_number : '' %><br><span class="small">Period <%= s.period_start %> to <%= s.period_end %> · paid <%= s.pay_date %></span></div></div>
+  <table class="data-table"><thead><tr><th>Earnings</th><th class="num">Hours</th><th class="num">Amount</th><th class="num">Year to date</th></tr></thead><tbody>
+    <% if (s.pay_type === 'salary') { %><tr><td>Salary</td><td></td><td class="num"><%= fmt.money(s.salary_pay_cents) %></td><td></td></tr><% } else { %>
+      <tr><td>Regular (<%= fmt.money(s.rate_cents) %>/h)</td><td class="num"><%= fmt.hours(s.regular_minutes) %></td><td class="num"><%= fmt.money(s.regular_pay_cents) %></td><td></td></tr>
+      <tr><td>Overtime (1.5x)</td><td class="num"><%= fmt.hours(s.overtime_minutes) %></td><td class="num"><%= fmt.money(s.overtime_pay_cents) %></td><td></td></tr>
+      <tr><td>Paid time off</td><td class="num"><%= s.pto_hours %></td><td class="num"><%= fmt.money(s.pto_pay_cents) %></td><td></td></tr><% } %>
+    <% if (s.bonus_cents) { %><tr><td>Bonus</td><td></td><td class="num"><%= fmt.money(s.bonus_cents) %></td><td></td></tr><% } %>
+    <% if (s.commission_cents) { %><tr><td>Commission</td><td></td><td class="num"><%= fmt.money(s.commission_cents) %></td><td></td></tr><% } %>
+    <tr class="total"><td>Gross pay</td><td></td><td class="num"><%= fmt.money(s.gross_cents) %></td><td class="num"><%= fmt.money(ytd.gross) %></td></tr>
+    <tr><td>Taxes withheld</td><td></td><td class="num">-<%= fmt.money(s.withholding_cents) %></td><td class="num"><%= fmt.money(ytd.withholding) %></td></tr>
+    <tr><td>Deductions</td><td></td><td class="num">-<%= fmt.money(s.deduction_cents) %></td><td class="num"><%= fmt.money(ytd.deductions) %></td></tr>
+    <% if (s.reimbursement_cents) { %><tr><td>Reimbursements</td><td></td><td class="num"><%= fmt.money(s.reimbursement_cents) %></td><td></td></tr><% } %>
+    <tr class="total"><td>Net pay</td><td></td><td class="num"><%= fmt.money(s.net_cents) %></td><td class="num"><%= fmt.money(ytd.net) %></td></tr>
+  </tbody></table>
+  <p class="hint">Summary record. Your official pay statement comes from the company's payroll provider.</p>
+</div>
+<%- include('partials/page-end') %>

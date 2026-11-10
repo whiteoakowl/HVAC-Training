@@ -1,0 +1,26 @@
+<%- include('partials/page-start') %>
+<h1>New Maintenance Agreement</h1>
+<p><a href="/customers/<%= c.id %>">&larr; <%= c.name %></a></p>
+<% if (!props.length) { %><p class="empty">This customer has no property yet. <a href="/customers/<%= c.id %>#properties">Add one</a> first.</p><% } else { %>
+<form method="POST" action="/agreements/new" class="form-grid card">
+  <input type="hidden" name="customer_id" value="<%= c.id %>" />
+  <label>Plan <select name="plan_id"><option value="">- custom -</option><% plans.forEach(function(p) { %><option value="<%= p.id %>"><%= p.name %> (<%= p.visits_per_year %>/yr, <%= fmt.money(p.price_cents) %>)</option><% }); %></select></label>
+  <label>Property <select name="property_id"><% props.forEach(function(p) { %><option value="<%= p.id %>"><%= p.label ? p.label + ' - ' : '' %><%= p.address %></option><% }); %></select></label>
+  <label>Start date <input type="date" name="start_date" value="<%= today %>" required /></label>
+  <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="auto_renew" value="1" checked style="width:auto;" /> Renew automatically (creates the renewal and a draft invoice for review)</label>
+  <p class="full hint">Leave these blank to use the plan's values:</p>
+  <label>Name <input name="name" /></label>
+  <label>Price <input name="price" inputmode="decimal" /></label>
+  <label>Visits per year <input name="visits_per_year" inputmode="numeric" /></label>
+  <label>Term (months) <input name="term_months" inputmode="numeric" /></label>
+  <label class="full">Included services <textarea name="included_services" style="min-height:60px;"></textarea></label>
+  <% if (equipment.length) { %>
+    <fieldset class="full" style="border:1px solid var(--border); border-radius:8px;"><legend class="small">Covered equipment</legend>
+      <% equipment.forEach(function(e) { %><label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="equipment_ids" value="<%= e.id %>" checked style="width:auto;" /> <%= e.equipment_type %> <%= e.manufacturer || '' %> <%= e.serial_number ? '#' + e.serial_number : '' %> <span class="hint">(<%= e.address %>)</span></label><% }); %>
+    </fieldset>
+  <% } %>
+  <label class="full">Notes <input name="notes" /></label>
+  <div class="full"><button type="submit">Create agreement</button></div>
+</form>
+<% } %>
+<%- include('partials/page-end') %>

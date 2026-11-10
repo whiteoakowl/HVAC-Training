@@ -55,7 +55,7 @@
   <% if (overdue.length) { %>
     <div class="card">
       <h2>Overdue invoices (<%= overdue.length %>)</h2>
-      <% overdue.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> · <%= i.customerName %> · <%= fmt.money(i.total_cents - i.amount_paid_cents) %> <span class="hint">due <%= i.due_date %></span></p><% }); %>
+      <% overdue.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> · <%= i.customerName %> · <%= fmt.money(i.total_cents - i.amount_paid_cents - i.credited_cents) %> <span class="hint">due <%= i.due_date %></span></p><% }); %>
     </div>
   <% } %>
 </div>

@@ -75,6 +75,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Signed-in users with a temporary password must set their own first.
+app.use((req, res, next) => {
+  if (req.member && req.member.must_change_password && !/^\/(account|logout|css|js|login)/.test(req.path)) {
+    return res.redirect('/account?error=' + encodeURIComponent('Please choose a new password to continue.'));
+  }
+  next();
+});
+
+app.use('/', require('./routes/public'));
 app.use('/api', require('./routes/api'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/portal'));
@@ -96,6 +105,16 @@ app.use('/invoices', require('./routes/billing'));
 app.use('/accounting', require('./routes/accounting'));
 app.use('/manage', require('./routes/manage'));
 app.use('/admin', require('./routes/admin'));
+app.use('/account', require('./routes/account'));
+app.use('/estimates', require('./routes/estimates'));
+app.use('/', require('./routes/purchasing'));
+app.use('/expenses', require('./routes/expenses'));
+app.use('/agreements', require('./routes/agreements'));
+app.use('/payroll', require('./routes/payroll'));
+app.use('/', require('./routes/team'));
+app.use('/', require('./routes/customerPortal'));
+app.use('/', require('./routes/files'));
+app.use('/', require('./routes/trainingCenter'));
 
 app.get('/', (req, res) => res.redirect(req.member ? res.locals.homeHref : '/login'));
 

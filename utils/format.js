@@ -1,4 +1,38 @@
 // Shared formatting / parsing helpers (exposed to every view as `fmt`).
+//
+// Timestamps are stored as 'YYYY-MM-DD HH:MM:SS' wall-clock text in the
+// company's timezone (Company Settings -> timezone, or APP_TIMEZONE),
+// so schedules typed by the office and clock punches line up.
+
+let TZ = process.env.APP_TIMEZONE || 'UTC';
+const fmtCache = new Map();
+
+function validTimezone(tz) {
+  if (!tz || !/^[A-Za-z0-9_+\-/]+$/.test(tz)) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function setTimezone(tz) {
+  if (validTimezone(tz)) TZ = tz;
+  return TZ;
+}
+
+function timezone() {
+  return TZ;
+}
+
+function parts(date) {
+  if (!fmtCache.has(TZ)) {
+    fmtCache.set(TZ, new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }));
+  }
+  const p = Object.fromEntries(fmtCache.get(TZ).formatToParts(date).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+}
 
 function money(cents) {
   const n = Math.round(Number(cents || 0));
@@ -27,12 +61,18 @@ function toNumber(input) {
   return Number.isFinite(n) ? n : null;
 }
 
+// Current wall-clock time in the company timezone.
 function nowText(date = new Date()) {
-  return date.toISOString().slice(0, 19).replace('T', ' ');
+  return parts(date);
 }
 
 function today(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+  return parts(date).slice(0, 10);
+}
+
+// Pure arithmetic on wall-clock text (no timezone conversion).
+function addMinutes(ts, minutes) {
+  return new Date(parseTs(ts) + minutes * 60000).toISOString().slice(0, 19).replace('T', ' ');
 }
 
 function addDays(dateStr, days) {
@@ -121,6 +161,7 @@ function csv(rows, columns) {
 }
 
 module.exports = {
+  setTimezone, timezone, validTimezone, addMinutes,
   money, toCents, centsInput, toNumber, nowText, today, addDays, weekStart, fromLocalInput, toLocalInput, dateOnly,
   shortDateTime, hours, parseTs, minutesBetween, digits, phoneKey, number, label, clean, csv,
 };

@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('head', { title }) %></head>
+<body>
+<main class="app-main" style="margin:0 auto; max-width:900px;">
+<% if (typeof notice !== 'undefined' && notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+<% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>

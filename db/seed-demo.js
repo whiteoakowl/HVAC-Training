@@ -64,9 +64,10 @@ module.exports = async function seedDemo(password) {
     ['REF-410A', 'R-410A Refrigerant', 'Refrigerant', 'lb', 1100, 9500, 25],
     ['THM-T6PRO', 'Programmable Thermostat', 'Thermostats', 'each', 6500, 22500, 3],
   ];
+  const vendor = await db.prepare("INSERT INTO vendors (name, contact_name, phone, email, terms_days) VALUES ('Demo HVAC Supply', 'Counter Sales', '(555) 400-1000', 'orders@demosupply.example.com', 30)").run();
   const itemIds = {};
   for (const [sku, name, category, unit, cost, price, min] of ITEMS) {
-    const info = await db.prepare('INSERT INTO inventory_items (sku, name, category, unit, price_cents, supplier) VALUES (?, ?, ?, ?, ?, ?)').run(sku, name, category, unit, price, 'Demo HVAC Supply');
+    const info = await db.prepare('INSERT INTO inventory_items (sku, name, category, unit, price_cents, supplier, preferred_vendor_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(sku, name, category, unit, price, 'Demo HVAC Supply', vendor.lastInsertRowid);
     itemIds[sku] = info.lastInsertRowid;
     await inventory.setMin(info.lastInsertRowid, wh.id, min);
     await inventory.receive({ itemId: info.lastInsertRowid, locationId: wh.id, qty: min * 3, unitCostCents: cost, fundingCode: '2000', reference: 'Opening stock', memberId: owner });
@@ -96,5 +97,21 @@ module.exports = async function seedDemo(password) {
   await db
     .prepare("INSERT INTO service_requests (request_number, customer_id, property_id, kind, description, preferred_time, source, status) VALUES ('SR-DEMO1', ?, ?, 'maintenance', 'Would like a fall tune-up before winter.', 'Morning', 'wix', 'new')")
     .run(c3, p3);
-  console.log('Demo business data loaded (staff logins: gm@, office@, accounting@, csr@, dispatch@, servicemgr@, lead@, tech@, installer@, warehouse@ hvacdemo.test).');
+  // Maintenance plan + agreement, an estimate awaiting approval, a customer portal login.
+  await require('../utils/agreements').savePlan(null, { name: 'Comfort Club', description: 'Two tune-ups a year', included_services: 'Spring AC tune-up\nFall furnace safety inspection\n15% off repairs\nPriority scheduling', visits_per_year: '2', term_months: '12', price: '189' });
+  const plan = await db.prepare("SELECT id FROM maintenance_plans WHERE name = 'Comfort Club'").get();
+  const eq = await db.prepare('SELECT id FROM equipment WHERE property_id = ?').all(p1);
+  await require('../utils/agreements').create({ customer_id: c1, property_id: p1, plan_id: plan.id, start_date: fmt.addDays(today, -150), auto_renew: '1', equipment_ids: eq.map((e) => String(e.id)) }, owner);
+  const estimates = require('../utils/estimates');
+  const estId = await estimates.create({ customer_id: c3, property_id: p3, title: 'Replace 3-ton AC condenser and coil', scope: 'Remove existing 20-year-old R-22 condenser and evaporator coil. Install new 16 SEER2 R-454B system, new line set, pad and disconnect. Haul away old equipment.' }, ids.lead_technician);
+  await estimates.addLine(estId, { kind: 'equipment', description: '3-ton 16 SEER2 condenser + matching coil', quantity: 1, unitPriceCents: 520000, taxable: true });
+  await estimates.addLine(estId, { kind: 'labor', description: 'Installation labor (2 techs)', quantity: 10, unitPriceCents: 12500, taxable: false });
+  await estimates.addLine(estId, { kind: 'permit', description: 'Mechanical permit', quantity: 1, unitPriceCents: 8500, taxable: false });
+  await estimates.update(estId, { title: 'Replace 3-ton AC condenser and coil', scope: 'Remove existing 20-year-old R-22 condenser and evaporator coil. Install new 16 SEER2 R-454B system.', property_id: p3, discount: '0', tax_rate: '7', deposit: '1500', payment_schedule: 'Deposit to order equipment, balance on completion', expires_on: fmt.addDays(today, 30) });
+  await estimates.markSent(estId);
+  const custMember = await createMember({ name: 'Dana Whitfield', email: 'customer@hvacdemo.test', password, role: 'customer' });
+  await db.prepare('UPDATE customers SET member_id = ? WHERE id = ?').run(custMember, c1);
+  await db.prepare("INSERT INTO announcements (title, body, pinned, created_by) VALUES ('Welcome to the new system', 'Clock in from My Day, record materials on each job, and submit your end-of-day report before you leave.', 1, ?)").run(owner);
+
+  console.log('Demo business data loaded (staff logins: gm@, office@, accounting@, csr@, dispatch@, servicemgr@, lead@, tech@, installer@, warehouse@ hvacdemo.test; customer portal: customer@hvacdemo.test).');
 };

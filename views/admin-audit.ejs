@@ -1,5 +1,7 @@
 <%- include('partials/page-start') %>
-<h1>Audit &amp; Automation</h1>
+<div class="page-header"><h1>Audit &amp; Automation</h1>
+  <% if (can('settings.manage')) { %><form method="POST" action="/admin/run-daily" onsubmit="return confirm('Run the daily automations now?');"><button type="submit" class="btn-secondary">Run daily automations now</button></form><% } %></div>
+<p class="hint">Daily automations run automatically each morning on Netlify (scheduled function). Toggle each rule in Company Settings.</p>
 <form class="toolbar" method="GET">
   <label>Entity type <input name="entity" value="<%= entity %>" placeholder="job, invoice, member..." /></label>
   <label>ID <input name="id" value="<%= id %>" /></label>
@@ -8,7 +10,7 @@
 <h2>Audit log</h2>
 <% if (!rows.length) { %><p class="empty">No entries.</p><% } else { %>
 <table class="data-table">
-  <thead><tr><th>When (UTC)</th><th>Who</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+  <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
   <tbody><% rows.forEach(function(a) { %><tr><td class="small"><%= a.created_at %></td><td><%= a.memberName || (a.member_id ? '#' + a.member_id : 'system / website') %></td><td><%= a.action %></td><td class="small"><%= a.entity_type || '' %> <%= a.entity_id || '' %></td><td class="small" style="max-width:320px; overflow-wrap:anywhere;"><%= a.details || '' %></td><td class="small"><%= a.ip || '' %></td></tr><% }); %></tbody>
 </table>
 <% } %>

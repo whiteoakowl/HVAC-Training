@@ -1,0 +1,27 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Estimates &amp; Proposals</h1><p class="hint">Create, send for e-signature, revise, and convert approved estimates into jobs.</p></div>
+  <% if (can('estimates.manage')) { %><a class="primary-btn" href="/estimates/new">+ New Estimate</a><% } %>
+</div>
+<div class="stat-grid">
+  <div class="stat warn"><div class="stat-label">Awaiting customer</div><div class="stat-value"><%= stats.pending %></div><div class="stat-sub"><%= fmt.money(stats.pendingValue) %></div></div>
+  <div class="stat good"><div class="stat-label">Approved (all time)</div><div class="stat-value"><%= stats.approved %></div><div class="stat-sub"><%= fmt.money(stats.approvedValue) %></div></div>
+  <div class="stat"><div class="stat-label">Close rate</div><div class="stat-value"><%= stats.conversion === null ? '-' : stats.conversion + '%' %></div><div class="stat-sub">approved / decided</div></div>
+</div>
+<div class="toolbar">
+  <a class="btn <%= open ? '' : 'btn-secondary' %>" href="/estimates">Open</a>
+  <% statuses.forEach(function(s) { %><a class="btn <%= status === s ? '' : 'btn-secondary' %>" href="/estimates?status=<%= s %>"><%= fmt.label(s) %></a><% }); %>
+  <a class="btn <%= !open && !status ? '' : 'btn-secondary' %>" href="/estimates?all=1">All</a>
+  <form method="GET" class="inline-fields" style="margin-left:auto;"><input type="search" name="q" value="<%= q %>" placeholder="Estimate #, title, customer" /><button type="submit">Search</button></form>
+</div>
+<% if (!rows.length) { %><p class="empty">No estimates here.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Estimate</th><th>Customer</th><th>Title</th><th>Created</th><th>Expires</th><th class="num">Total</th><th>Status</th></tr></thead>
+  <tbody><% rows.forEach(function(e) { %>
+    <tr><td><a href="/estimates/<%= e.id %>"><%= e.estimate_number %></a></td><td><%= e.customerName %></td><td><%= e.title %></td><td><%= fmt.dateOnly(e.created_at) %></td>
+      <td class="<%= e.status === 'sent' && e.expires_on && e.expires_on < fmt.today() ? 'priority-emergency' : '' %>"><%= e.expires_on || '' %></td><td class="num"><%= fmt.money(e.total_cents) %></td>
+      <td><span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></td></tr>
+  <% }); %></tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

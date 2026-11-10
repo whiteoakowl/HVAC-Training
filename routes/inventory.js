@@ -19,6 +19,7 @@ function itemValues(body) {
   if (!v.sku || !v.name) throw new Error('SKU and name are required.');
   v.unit = v.unit || 'each';
   v.price_cents = fmt.toCents(body.price) || 0;
+  v.preferred_vendor_id = parseInt(body.preferred_vendor_id, 10) || null;
   if (v.price_cents < 0) throw new Error('Price cannot be negative.');
   return v;
 }
@@ -35,15 +36,15 @@ router.get('/inventory', requirePermission('inventory.view', 'inventory.manage')
 });
 
 router.get('/inventory/items/new', requirePermission('inventory.manage'), async (req, res) => {
-  res.render('inventory-item-form', { title: 'New Item', item: { unit: 'each' }, isNew: true, categories: await inventory.categories() });
+  res.render('inventory-item-form', { title: 'New Item', item: { unit: 'each' }, isNew: true, categories: await inventory.categories(), vendors: await db.prepare('SELECT id, name FROM vendors WHERE active = 1 ORDER BY name').all() });
 });
 
 router.post('/inventory/items/new', requirePermission('inventory.manage'), action(async (req, res) => {
   const v = itemValues(req.body);
   if (await db.prepare('SELECT 1 AS x FROM inventory_items WHERE LOWER(sku) = LOWER(?)').get(v.sku)) throw new Error(`SKU ${v.sku} already exists.`);
   const info = await db
-    .prepare(`INSERT INTO inventory_items (${ITEM_FIELDS.join(', ')}, price_cents) VALUES (${ITEM_FIELDS.map(() => '?').join(', ')}, ?)`)
-    .run(...ITEM_FIELDS.map((f) => v[f]), v.price_cents);
+    .prepare(`INSERT INTO inventory_items (${ITEM_FIELDS.join(', ')}, price_cents, preferred_vendor_id) VALUES (${ITEM_FIELDS.map(() => '?').join(', ')}, ?, ?)`)
+    .run(...ITEM_FIELDS.map((f) => v[f]), v.price_cents, v.preferred_vendor_id);
   const wh = await inventory.warehouse();
   const min = fmt.toNumber(req.body.min_quantity);
   if (min) await inventory.setMin(info.lastInsertRowid, wh.id, min, fmt.clean(req.body.bin, 50));
@@ -61,7 +62,7 @@ const itemBack = (req) => `/inventory/items/${req.params.id}`;
 
 router.get('/inventory/items/:id', requirePermission('inventory.view', 'inventory.manage'), loadItem, async (req, res) => {
   const [stock, history, locations, categories] = await Promise.all([inventory.stockForItem(req.item.id), inventory.transactions({ itemId: req.item.id, limit: 100 }), inventory.listLocations(), inventory.categories()]);
-  res.render('inventory-item', { title: req.item.name, item: req.item, stock, history, locations, categories });
+  res.render('inventory-item', { title: req.item.name, item: req.item, stock, history, locations, categories, vendors: await db.prepare('SELECT id, name FROM vendors WHERE active = 1 ORDER BY name').all() });
 });
 
 router.post('/inventory/items/:id/edit', requirePermission('inventory.manage'), loadItem, action(async (req, res) => {
@@ -69,8 +70,8 @@ router.post('/inventory/items/:id/edit', requirePermission('inventory.manage'), 
   const dup = await db.prepare('SELECT id FROM inventory_items WHERE LOWER(sku) = LOWER(?) AND id <> ?').get(v.sku, req.item.id);
   if (dup) throw new Error(`SKU ${v.sku} is used by another item.`);
   await db
-    .prepare(`UPDATE inventory_items SET ${ITEM_FIELDS.map((f) => `${f} = ?`).join(', ')}, price_cents = ?, active = ? WHERE id = ?`)
-    .run(...ITEM_FIELDS.map((f) => v[f]), v.price_cents, req.body.active === '0' ? 0 : 1, req.item.id);
+    .prepare(`UPDATE inventory_items SET ${ITEM_FIELDS.map((f) => `${f} = ?`).join(', ')}, price_cents = ?, preferred_vendor_id = ?, active = ? WHERE id = ?`)
+    .run(...ITEM_FIELDS.map((f) => v[f]), v.price_cents, v.preferred_vendor_id, req.body.active === '0' ? 0 : 1, req.item.id);
   await audit.log(req, 'inventory_item.update', 'inventory_item', req.item.id);
   flash(res, itemBack(req), 'notice', 'Item saved.');
 }, itemBack));

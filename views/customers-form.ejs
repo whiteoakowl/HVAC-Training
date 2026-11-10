@@ -1,0 +1,35 @@
+<%- include('partials/page-start') %>
+<h1><%= isNew ? 'New Customer' : 'Edit ' + customer.name %></h1>
+<p><a href="<%= isNew ? '/customers' : '/customers/' + customer.id %>">&larr; Back</a></p>
+<form method="POST" action="<%= isNew ? '/customers/new' : '/customers/' + customer.id + '/edit' %>" class="form-grid card">
+  <label>Account type
+    <select name="account_type">
+      <option value="residential" <%= customer.account_type !== 'commercial' ? 'selected' : '' %>>Residential</option>
+      <option value="commercial" <%= customer.account_type === 'commercial' ? 'selected' : '' %>>Commercial</option>
+    </select>
+  </label>
+  <label>Name (person or primary contact) <input name="name" value="<%= customer.name || '' %>" required maxlength="200" /></label>
+  <label>Company name <input name="company_name" value="<%= customer.company_name || '' %>" maxlength="200" /></label>
+  <label>Phone <input type="tel" name="phone" value="<%= customer.phone || '' %>" /></label>
+  <label>Alternate phone <input type="tel" name="alt_phone" value="<%= customer.alt_phone || '' %>" /></label>
+  <label>Email <input type="email" name="email" value="<%= customer.email || '' %>" /></label>
+  <label>Alternate email <input type="email" name="alt_email" value="<%= customer.alt_email || '' %>" /></label>
+  <label class="full">Billing address <input name="billing_address" value="<%= customer.billing_address || '' %>" /></label>
+  <% if (isNew) { %>
+    <p class="full hint">Service address (optional - creates the first property; more can be added later)</p>
+    <label class="full">Street address <input name="address" /></label>
+    <label>City <input name="city" /></label>
+    <div class="inline-fields"><label>State <input name="state" maxlength="40" /></label><label>ZIP <input name="zip" maxlength="20" /></label></div>
+  <% } %>
+  <label class="full">Preferences (contact times, pets, gate codes...) <textarea name="preferences"><%= customer.preferences || '' %></textarea></label>
+  <label class="full">Notes <textarea name="notes"><%= customer.notes || '' %></textarea></label>
+  <% if (!isNew) { %>
+    <label>Status
+      <select name="active"><option value="1" <%= customer.active ? 'selected' : '' %>>Active</option><option value="0" <%= !customer.active ? 'selected' : '' %>>Inactive</option></select>
+    </label>
+  <% } else { %>
+    <label class="full" style="flex-direction:row; align-items:center; font-weight:400;"><input type="checkbox" name="confirm_duplicate" value="1" style="width:auto;" /> Create anyway even if a customer with the same email/phone exists</label>
+  <% } %>
+  <div class="full"><button type="submit"><%= isNew ? 'Create Customer' : 'Save' %></button></div>
+</form>
+<%- include('partials/page-end') %>

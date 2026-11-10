@@ -1,0 +1,44 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div>
+    <h1><%= sr.request_number %> <span class="status status-<%= sr.status %>"><%= sr.status %></span></h1>
+    <p class="hint"><span class="<%= sr.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(sr.kind) %></span> · received <%= fmt.shortDateTime(sr.created_at) %> UTC via <%= sr.source %><%= sr.createdByName ? ' by ' + sr.createdByName : '' %></p>
+  </div>
+  <p><a href="/requests">&larr; Service Requests</a></p>
+</div>
+<div class="two-col">
+  <div class="card">
+    <h2>Request</h2>
+    <dl class="kv">
+      <dt>Customer</dt><dd><% if (can('customers.view')) { %><a href="/customers/<%= sr.customer_id %>"><%= sr.customerName %></a><% } else { %><%= sr.customerName %><% } %> (<%= sr.customer_number %>)</dd>
+      <dt>Phone</dt><dd><% if (sr.customerPhone) { %><a href="tel:<%= sr.customerPhone %>"><%= sr.customerPhone %></a><% } else { %>-<% } %></dd>
+      <dt>Email</dt><dd><%= sr.customerEmail || '-' %></dd>
+      <dt>Address</dt><dd><%= [sr.address, sr.city, sr.state, sr.zip].filter(Boolean).join(', ') || '-' %></dd>
+      <dt>Preferred</dt><dd><%= [sr.preferred_date, sr.preferred_time].filter(Boolean).join(' ') || 'any time' %></dd>
+      <dt>Details</dt><dd style="white-space:pre-wrap"><%= sr.description || '-' %></dd>
+      <% if (sr.job_id) { %><dt>Job</dt><dd><a href="/jobs/<%= sr.job_id %>"><%= sr.job_number %></a></dd><% } %>
+    </dl>
+  </div>
+  <div class="stack">
+    <% if (!sr.job_id && can('jobs.manage')) { %>
+      <div class="card">
+        <h2>Create a job</h2>
+        <form method="POST" action="/requests/<%= sr.id %>/convert" class="stack-form">
+          <label>Job title <input name="title" value="<%= fmt.label(sr.kind) %> - <%= sr.customerName %>" /></label>
+          <button type="submit" class="btn-success">Convert to Job</button>
+        </form>
+      </div>
+    <% } %>
+    <% if (can('requests.manage') && sr.status !== 'converted') { %>
+      <div class="card">
+        <h2>Status</h2>
+        <form method="POST" action="/requests/<%= sr.id %>/status" class="inline-fields">
+          <select name="status"><% statuses.filter(function(s) { return s !== 'converted'; }).forEach(function(s) { %><option value="<%= s %>" <%= sr.status === s ? 'selected' : '' %>><%= fmt.label(s) %></option><% }); %></select>
+          <button type="submit" class="btn-secondary">Update</button>
+        </form>
+        <% if (can('customers.edit')) { %><p class="hint mt">Log calls and follow-ups on the <a href="/customers/<%= sr.customer_id %>#communication">customer's communication log</a>.</p><% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

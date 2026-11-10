@@ -7,8 +7,10 @@
 // students, 'admins' hides it from everyone but admins.
 const db = require('../db');
 
-const RANK = { student: 1, instructor: 2, admin: 3 };
-const VISIBILITY_MIN_ROLE = { members: 'student', instructors: 'instructor', admins: 'admin' };
+// Visibility tiers map onto permissions (originally the student <
+// instructor < admin rank): 'instructors' = anyone who can manage
+// documents, 'admins' = anyone who can manage user accounts.
+const VISIBILITY_PERMISSION = { members: null, instructors: 'documents.manage', admins: 'users.manage' };
 
 async function listCategories() {
   return db.prepare('SELECT * FROM document_categories ORDER BY position, id').all();
@@ -19,15 +21,17 @@ async function createCategory(name) {
   return info.lastInsertRowid;
 }
 
-function visibleToRole(doc, role) {
-  return RANK[role] >= RANK[VISIBILITY_MIN_ROLE[doc.visibility] || 'student'];
+// `can` is a permission checker (req.can / permissions.makeChecker).
+function visibleToRole(doc, can) {
+  const needed = VISIBILITY_PERMISSION[doc.visibility];
+  return needed ? can(needed) : can('documents.view', 'documents.manage');
 }
 
-async function listForRole(role) {
+async function listForRole(can) {
   const all = await db
     .prepare(`SELECT d.*, c.name AS "categoryName", m.name AS "uploadedByName" FROM documents d LEFT JOIN document_categories c ON c.id = d.category_id LEFT JOIN members m ON m.id = d.uploaded_by ORDER BY d.created_at DESC`)
     .all();
-  return all.filter((d) => visibleToRole(d, role));
+  return all.filter((d) => visibleToRole(d, can));
 }
 
 async function listAll() {

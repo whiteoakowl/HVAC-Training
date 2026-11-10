@@ -1,0 +1,25 @@
+<%- include('partials/page-start') %>
+<h1>Audit &amp; Automation</h1>
+<form class="toolbar" method="GET">
+  <label>Entity type <input name="entity" value="<%= entity %>" placeholder="job, invoice, member..." /></label>
+  <label>ID <input name="id" value="<%= id %>" /></label>
+  <button type="submit">Filter</button>
+</form>
+<h2>Audit log</h2>
+<% if (!rows.length) { %><p class="empty">No entries.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>When (UTC)</th><th>Who</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+  <tbody><% rows.forEach(function(a) { %><tr><td class="small"><%= a.created_at %></td><td><%= a.memberName || (a.member_id ? '#' + a.member_id : 'system / website') %></td><td><%= a.action %></td><td class="small"><%= a.entity_type || '' %> <%= a.entity_id || '' %></td><td class="small" style="max-width:320px; overflow-wrap:anywhere;"><%= a.details || '' %></td><td class="small"><%= a.ip || '' %></td></tr><% }); %></tbody>
+</table>
+<% } %>
+<h2 class="mt">Automation runs</h2>
+<% if (!runs.length) { %><p class="empty">No automation has run yet.</p><% } else { %>
+<table class="data-table"><thead><tr><th>When</th><th>Rule</th><th>Entity</th><th>Result</th></tr></thead>
+  <tbody><% runs.forEach(function(r) { %><tr><td class="small"><%= r.created_at %></td><td class="small"><%= r.rule_key %></td><td class="small"><%= r.entity_type %> <%= r.entity_id %></td><td class="small"><%= r.result %></td></tr><% }); %></tbody></table>
+<% } %>
+<h2 class="mt">Outbound messages</h2>
+<% if (!messages.length) { %><p class="empty">No customer emails/texts yet.</p><% } else { %>
+<table class="data-table"><thead><tr><th>When</th><th>Channel</th><th>To</th><th>Subject / body</th><th>Status</th></tr></thead>
+  <tbody><% messages.forEach(function(m) { %><tr><td class="small"><%= m.created_at %></td><td><%= m.channel %></td><td class="small"><%= m.recipient %></td><td class="small"><%= m.subject || m.body.slice(0, 80) %></td><td><span class="status status-<%= m.status %>"><%= m.status %></span><%= m.error ? ' ' + m.error : '' %></td></tr><% }); %></tbody></table>
+<% } %>
+<%- include('partials/page-end') %>

@@ -1,0 +1,58 @@
+<%- include('partials/page-start') %>
+<h1>Good day, <%= member.name.split(' ')[0] %></h1>
+<p class="hint"><%= today %><%= profile && profile.job_title ? ' · ' + profile.job_title : '' %><%= truck ? ' · Truck: ' + truck.name : '' %></p>
+
+<% if (can('timeclock.use')) { %>
+  <div class="card">
+    <h2>Time clock</h2>
+    <%- include('partials/clock-buttons', { entry: entry, onBreak: onBreak, back: 'home', myJobs: todayJobs.concat(upcoming), gps: gps }) %>
+    <% if (week) { %><p class="hint">This week: <strong><%= fmt.hours(week.totalMinutes) %> h</strong><%= week.overtimeMinutes ? ' (' + fmt.hours(week.overtimeMinutes) + ' h overtime)' : '' %> · <a href="/employee/time">Timesheet</a></p><% } %>
+  </div>
+<% } %>
+
+<h2 class="mt">Today's jobs</h2>
+<% if (!todayJobs.length) { %><p class="empty">No jobs scheduled for you today.</p><% } %>
+<% todayJobs.forEach(function(j) { %>
+  <a class="job-card" href="/jobs/<%= j.id %>">
+    <div class="row"><strong><%= j.scheduled_start ? j.scheduled_start.slice(11,16) : '' %> · <%= j.job_number %></strong><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></div>
+    <div class="<%= 'priority-' + j.priority %>"><%= j.title %></div>
+    <div class="hint"><%= j.customerName %> · <%= [j.address, j.city].filter(Boolean).join(', ') %></div>
+  </a>
+<% }); %>
+
+<% if (upcoming.length) { %>
+  <h2 class="mt">Other open jobs</h2>
+  <% upcoming.forEach(function(j) { %>
+    <a class="job-card" href="/jobs/<%= j.id %>">
+      <div class="row"><strong><%= j.job_number %></strong><span class="hint"><%= fmt.shortDateTime(j.scheduled_start) || 'unscheduled' %></span></div>
+      <div><%= j.title %> <span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></div>
+      <div class="hint"><%= j.customerName %> · <%= j.city || j.address || '' %></div>
+    </a>
+  <% }); %>
+<% } %>
+
+<div class="card-grid">
+  <% if (can('training.view')) { %>
+    <div class="card">
+      <div class="grid-box-header"><h2>Training due</h2><a href="/training/mine">All</a></div>
+      <% if (!trainingDue.length) { %><p class="empty">All caught up.</p><% } %>
+      <% trainingDue.slice(0, 5).forEach(function(a) { %><p><a href="/training/<%= a.id %>/play"><%= a.title %></a><br><span class="hint"><%= fmt.label(a.status) %><%= a.due_at ? ' · due ' + a.due_at.slice(0,10) : '' %></span></p><% }); %>
+    </div>
+  <% } %>
+  <div class="card">
+    <h2>My certifications</h2>
+    <% if (!certs.length) { %><p class="empty">None on file.</p><% } %>
+    <% certs.forEach(function(c) { %>
+      <p><strong><%= c.name %></strong><%= c.number ? ' #' + c.number : '' %><br>
+        <span class="hint <%= c.expires_on && c.expires_on < today ? 'priority-emergency' : c.expires_on && c.expires_on < soon ? 'priority-high' : '' %>"><%= c.expires_on ? (c.expires_on < today ? 'EXPIRED ' : 'expires ') + c.expires_on : 'no expiration' %></span></p>
+    <% }); %>
+  </div>
+  <% if (can('inventory.use')) { %>
+    <div class="card">
+      <h2>Truck &amp; parts</h2>
+      <p><a href="/employee/truck"><%= truck ? truck.name + ' stock' : 'No truck assigned' %></a></p>
+      <p><a href="/employee/parts">Request parts or supplies</a></p>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

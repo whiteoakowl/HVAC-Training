@@ -3,7 +3,8 @@ const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
+const permissions = require('../utils/permissions');
 const documents = require('../utils/documents');
 const notifications = require('../utils/notifications');
 const db = require('../db');
@@ -15,23 +16,23 @@ const db = require('../db');
 // filename on download. Netlify Functions cap request bodies at ~6 MB.
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('documents.view', 'documents.manage'));
 
 router.get('/', async (req, res) => {
-  res.render('documents-list', { title: 'Documents', documents: await documents.listForRole(req.member.role) });
+  res.render('documents-list', { title: 'Documents', documents: await documents.listForRole(req.can) });
 });
 
-router.get('/manage', requireRole('instructor'), async (req, res) => {
+router.get('/manage', requirePermission('documents.manage'), async (req, res) => {
   res.render('documents-manage', { title: 'Manage Documents', documents: await documents.listAll(), categories: await documents.listCategories(), notice: req.query.notice || null, error: req.query.error || null });
 });
 
-router.post('/manage/categories', requireRole('instructor'), async (req, res) => {
+router.post('/manage/categories', requirePermission('documents.manage'), async (req, res) => {
   const name = (req.body.name || '').trim();
   if (name) await documents.createCategory(name);
   res.redirect('/documents/manage');
 });
 
-router.post('/manage/upload', requireRole('instructor'), upload.single('file'), async (req, res) => {
+router.post('/manage/upload', requirePermission('documents.manage'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.redirect('/documents/manage?error=' + encodeURIComponent('Choose a file to upload.'));
   const id = await documents.createDocument(
     {
@@ -48,7 +49,7 @@ router.post('/manage/upload', requireRole('instructor'), upload.single('file'), 
   );
   const members = await db.prepare('SELECT id, role FROM members WHERE active = 1').all();
   for (const m of members) {
-    if (documents.visibleToRole({ visibility: req.body.visibility || 'members' }, m.role) && m.id !== req.member.id) {
+    if (documents.visibleToRole({ visibility: req.body.visibility || 'members' }, permissions.makeChecker(await permissions.permissionsForRole(m.role))) && m.id !== req.member.id) {
       await notifications.notify(m.id, 'document_added', { title: 'New Document Available', body: (req.body.title || req.file.originalname).trim(), linkUrl: '/documents' });
     }
   }
@@ -56,14 +57,14 @@ router.post('/manage/upload', requireRole('instructor'), upload.single('file'), 
   void id;
 });
 
-router.post('/manage/:id/delete', requireRole('instructor'), async (req, res) => {
+router.post('/manage/:id/delete', requirePermission('documents.manage'), async (req, res) => {
   await documents.deleteDocument(req.params.id);
   res.redirect('/documents/manage?notice=' + encodeURIComponent('Document deleted.'));
 });
 
 router.get('/:id/download', async (req, res) => {
   const doc = await documents.getDocument(req.params.id);
-  if (!doc || !documents.visibleToRole(doc, req.member.role)) return res.status(404).render('404', { title: 'Not Found' });
+  if (!doc || !documents.visibleToRole(doc, req.can)) return res.status(404).render('404', { title: 'Not Found' });
   const content = await documents.getFileContent(doc);
   if (!content) return res.status(404).render('404', { title: 'Not Found' });
   res.attachment(doc.original_name || doc.title).send(Buffer.from(content));

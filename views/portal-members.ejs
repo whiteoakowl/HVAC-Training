@@ -3,11 +3,31 @@
 <head><%- include('partials/head', { title }) %></head>
 <body>
 <%- include('partials/portal-nav') %>
-  <h1>Manage Members</h1>
+  <div class="grid-box-header">
+    <h1>Users &amp; Roles</h1>
+    <% if (can('roles.manage')) { %><a class="btn-secondary" href="/admin/roles">Edit role permissions</a><% } %>
+  </div>
   <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <details class="card" style="margin-bottom:1rem;">
+    <summary><strong>+ Add a user</strong></summary>
+    <form method="POST" action="/portal/members/new" class="form-grid" style="margin-top:0.75rem;">
+      <label>Full name <input type="text" name="name" required /></label>
+      <label>Email <input type="email" name="email" required /></label>
+      <label>Phone <input type="tel" name="phone" /></label>
+      <label>Role
+        <select name="role" required>
+          <% roles.forEach(function(r) { %><option value="<%= r.key %>" <%= r.key === 'technician' ? 'selected' : '' %>><%= r.name %></option><% }); %>
+        </select>
+      </label>
+      <label>Temporary password <input type="password" name="password" minlength="8" autocomplete="new-password" required /></label>
+      <div class="full"><button type="submit">Create user</button></div>
+    </form>
+  </details>
 
   <table class="data-table">
-    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last login</th><th>Active</th><th></th></tr></thead>
     <tbody>
       <% members.forEach(function(m) { %>
         <tr>
@@ -15,17 +35,16 @@
           <td><%= m.email %></td>
           <td>
             <form method="POST" action="/portal/members/<%= m.id %>/role" class="inline-form">
-              <select name="role" onchange="this.form.submit()">
-                <option value="student" <%= m.role === 'student' ? 'selected' : '' %>>Student</option>
-                <option value="instructor" <%= m.role === 'instructor' ? 'selected' : '' %>>Instructor</option>
-                <option value="admin" <%= m.role === 'admin' ? 'selected' : '' %>>Admin</option>
+              <select name="role" onchange="this.form.submit()" <%= m.id === member.id ? 'disabled' : '' %>>
+                <% roles.forEach(function(r) { %><option value="<%= r.key %>" <%= m.role === r.key ? 'selected' : '' %>><%= r.name %></option><% }); %>
               </select>
             </form>
           </td>
+          <td class="hint"><%= m.last_login_at || 'never' %></td>
           <td>
             <form method="POST" action="/portal/members/<%= m.id %>/active" class="inline-form">
               <input type="hidden" name="active" value="<%= m.active ? '0' : '1' %>" />
-              <button type="submit" class="btn-secondary"><%= m.active ? 'Deactivate' : 'Activate' %></button>
+              <button type="submit" class="btn-secondary" <%= m.id === member.id ? 'disabled' : '' %>><%= m.active ? 'Deactivate' : 'Activate' %></button>
             </form>
           </td>
           <td><a class="btn-secondary" href="/portal/members/<%= m.id %>/edit">Edit</a></td>

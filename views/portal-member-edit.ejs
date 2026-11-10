@@ -3,19 +3,19 @@
 <head><%- include('partials/head', { title }) %></head>
 <body>
 <%- include('partials/portal-nav') %>
-  <h1>Edit Member</h1>
-  <p><a href="/portal/members">&larr; Manage Members</a></p>
+  <h1>Edit User</h1>
+  <p><a href="/portal/members">&larr; Users &amp; Roles</a><% if (can('employees.view')) { %> &middot; <a href="/manage/employees/<%= editMember.id %>">Employee record</a><% } %></p>
   <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
 
-  <form method="POST" action="/portal/members/<%= editMember.id %>/edit" class="form-grid">
+  <form method="POST" action="/portal/members/<%= editMember.id %>/edit" class="form-grid card">
     <label>Name <input type="text" name="name" value="<%= editMember.name %>" required /></label>
     <label>Email <input type="email" name="email" value="<%= editMember.email %>" required /></label>
     <label>Phone <input type="tel" name="phone" value="<%= editMember.phone || '' %>" /></label>
     <label>Role
       <select name="role" <%= isSelf ? 'disabled' : '' %>>
-        <option value="student" <%= editMember.role === 'student' ? 'selected' : '' %>>Student</option>
-        <option value="instructor" <%= editMember.role === 'instructor' ? 'selected' : '' %>>Instructor</option>
-        <option value="admin" <%= editMember.role === 'admin' ? 'selected' : '' %>>Admin</option>
+        <% roles.forEach(function(r) { %>
+          <option value="<%= r.key %>" <%= editMember.role === r.key ? 'selected' : '' %>><%= r.name %></option>
+        <% }); %>
       </select>
     </label>
     <label>Status
@@ -25,6 +25,7 @@
       </select>
     </label>
     <label>New password <input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current" /></label>
+    <p class="full hint">Last login: <%= editMember.last_login_at || 'never' %><% if (editMember.locked_until) { %> &middot; locked until <%= editMember.locked_until %> UTC (setting a new password unlocks)<% } %></p>
     <% if (isSelf) { %><p class="full">You can't change your own role or deactivate your own account.</p><% } %>
     <div class="full"><button type="submit" class="primary-btn">Save Changes</button></div>
   </form>

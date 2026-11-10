@@ -53,7 +53,7 @@ h1, h2, h3 { color: var(--text); }
 }
 .sidebar-bottom button:hover { background: rgba(255,255,255,0.1); border-radius: var(--radius); }
 .app-sidebar nav a.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 600; }
-.app-main { flex: 1; min-width: 0; padding: 1.75rem 2rem; max-width: 1100px; }
+.app-main { flex: 1; min-width: 0; padding: 1.75rem 2rem; max-width: 1280px; }
 .app-topbar { display: none; }
 
 /* Phones/narrow tablets: sidebar becomes a top bar + dropdown menu so
@@ -178,3 +178,101 @@ table.data-table th { color: var(--text-muted); font-weight: 600; }
 
 .roster-empty { color: var(--text-muted); font-style: italic; }
 .grid-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+
+/* ------------------------------------------------------------------
+   Business system components (jobs, CRM, inventory, billing, dashboards)
+   ------------------------------------------------------------------ */
+@media (min-width: 861px) {
+  .app-sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+}
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.page-header h1 { margin: 0 0 0.2rem; }
+.toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; margin: 0.5rem 0 0.75rem; }
+.toolbar input, .toolbar select { width: auto; min-width: 140px; }
+.toolbar label { font-weight: 600; font-size: 0.8rem; }
+.two-col { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.card h2 { margin: 0 0 0.6rem; font-size: 1.1rem; }
+.card + .card { margin-top: 0; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.9rem; font-size: 0.92rem; margin: 0; }
+.kv dt { color: var(--text-muted); }
+.kv dd { margin: 0; }
+.num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.total td { font-weight: 700; border-top: 2px solid var(--text); }
+.muted { color: var(--text-muted); }
+.small { font-size: 0.82rem; }
+.mt { margin-top: 1rem; }
+.empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
+
+/* Stat tiles */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin: 0.75rem 0 1rem; }
+.stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 0.95rem; display: block; color: inherit; }
+a.stat:hover { text-decoration: none; border-color: var(--brand); }
+.stat-label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.stat-value { font-size: 1.45rem; font-weight: 700; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 0.8rem; color: var(--text-muted); }
+.stat.warn { border-left: 4px solid #d97706; }
+.stat.bad { border-left: 4px solid var(--danger); }
+.stat.good { border-left: 4px solid var(--success); }
+
+/* Status pills */
+.status { display: inline-block; padding: 0.12rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: #e3e8ee; color: #334155; white-space: nowrap; }
+.status-new_lead, .status-new, .status-draft, .status-estimate_requested, .status-open { background: #e0e7ff; color: #3730a3; }
+.status-estimate_scheduled, .status-estimate_sent, .status-awaiting_approval, .status-contacted, .status-pending { background: #fef3c7; color: #92400e; }
+.status-approved, .status-ready_to_schedule { background: #dbeafe; color: #1e40af; }
+.status-scheduled, .status-dispatched, .status-issued { background: #cffafe; color: #155e75; }
+.status-in_progress, .status-partial { background: #ffedd5; color: #9a3412; }
+.status-waiting_on_parts, .status-inspection_required, .status-emergency, .status-rejected, .status-failed { background: #fee2e2; color: #991b1b; }
+.status-completed, .status-invoiced, .status-converted { background: #dcfce7; color: #166534; }
+.status-paid, .status-sent, .status-fulfilled { background: #bbf7d0; color: #14532d; }
+.status-cancelled, .status-void, .status-closed, .status-not_configured { background: #e5e7eb; color: #4b5563; }
+.priority-emergency { color: var(--danger); font-weight: 700; }
+.priority-high { color: #b45309; font-weight: 700; }
+
+/* Field (mobile) UI */
+.big-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; margin: 0.5rem 0 1rem; }
+.big-actions button, .big-actions .btn { padding: 0.9rem 1rem; font-size: 1rem; text-align: center; width: 100%; }
+.btn-success { background: var(--success); border-color: var(--success); }
+.btn-success:hover { background: #1f5f23; }
+.job-card { display: block; color: inherit; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 0.6rem; }
+a.job-card:hover { text-decoration: none; border-color: var(--brand); }
+.job-card .row { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.clock-state { font-size: 1.1rem; font-weight: 700; }
+.signature-pad { border: 2px dashed var(--border); border-radius: var(--radius); background: #fff; width: 100%; height: 180px; touch-action: none; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+.photo-grid img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); }
+
+/* Dispatch board */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.board-col { background: #eef2f6; border-radius: var(--radius); padding: 0.6rem; min-height: 200px; }
+.board-col h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+.board-col.drop-target { outline: 2px dashed var(--brand); }
+.board-item { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.6rem; margin-bottom: 0.45rem; font-size: 0.85rem; cursor: grab; }
+.board-item.conflict { border-left: 4px solid var(--danger); }
+
+details.card summary { cursor: pointer; }
+.inline-fields { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
+.inline-fields > * { flex: 1 1 140px; }
+.inline-fields > button { flex: 0 0 auto; }
+
+@media (max-width: 860px) {
+  .two-col { grid-template-columns: 1fr; }
+  .stat-value { font-size: 1.2rem; }
+}
+
+/* Printable documents (invoices, reports): use the browser's Print -> Save as PDF */
+.doc { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 900px; }
+.doc-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border-bottom: 3px solid var(--brand-dark); padding-bottom: 1rem; margin-bottom: 1rem; }
+.doc-head h1 { margin: 0; color: var(--brand-dark); }
+@media print {
+  .app-sidebar, .app-topbar, .no-print, .alert { display: none !important; }
+  .app-main { padding: 0 !important; max-width: none !important; }
+  body { background: #fff; }
+  .doc { border: none; padding: 0; }
+}
+
+/* Must come after the base .form-grid rule (an earlier media query in
+   this file is overridden by it), so phone forms stack in one column. */
+@media (max-width: 860px) {
+  .form-grid { grid-template-columns: 1fr; }
+}

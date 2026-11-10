@@ -1,0 +1,45 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Inventory</h1><p class="hint">Warehouse and truck stock, valued at moving-average cost.</p></div>
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="/inventory/transactions">History</a>
+    <% if (can('inventory.manage')) { %><a class="btn btn-secondary" href="/inventory/parts-requests">Parts requests<%= pendingParts ? ' (' + pendingParts + ')' : '' %></a><a class="primary-btn" href="/inventory/items/new">+ New Item</a><% } %>
+  </div>
+</div>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Total inventory value</div><div class="stat-value"><%= fmt.money(totalValue) %></div></div>
+  <% values.forEach(function(v) { %>
+    <a class="stat" href="/inventory/locations/<%= v.id %>"><div class="stat-label"><%= v.kind === 'truck' ? 'Truck' : 'Warehouse' %></div><div class="stat-value" style="font-size:1.1rem;"><%= fmt.money(v.value) %></div><div class="stat-sub"><%= v.name %></div></a>
+  <% }); %>
+  <div class="stat <%= low.length ? 'bad' : 'good' %>"><div class="stat-label">Low-stock alerts</div><div class="stat-value"><%= low.length %></div></div>
+</div>
+<% if (low.length) { %>
+  <div class="card" style="margin-bottom:1rem;">
+    <h2>Low stock</h2>
+    <table class="data-table"><thead><tr><th>Item</th><th>Location</th><th class="num">On hand</th><th class="num">Minimum</th></tr></thead><tbody>
+      <% low.forEach(function(l) { %><tr><td><a href="/inventory/items/<%= l.item_id %>"><%= l.name %></a> <span class="hint"><%= l.sku %></span></td><td><%= l.locationName %></td><td class="num priority-emergency"><%= Number(l.quantity) %></td><td class="num"><%= Number(l.min_quantity) %></td></tr><% }); %>
+    </tbody></table>
+  </div>
+<% } %>
+<form class="toolbar" method="GET" action="/inventory">
+  <input type="search" name="q" value="<%= q %>" placeholder="Name, SKU, barcode, manufacturer" />
+  <select name="category"><option value="">All categories</option><% categories.forEach(function(c) { %><option <%= category === c ? 'selected' : '' %>><%= c %></option><% }); %></select>
+  <button type="submit">Filter</button>
+</form>
+<% if (!items.length) { %><p class="empty">No items<%= q || category ? ' match' : ' yet' %>.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Item</th><th>SKU</th><th>Category</th><th class="num">Warehouse</th><th class="num">All locations</th><th class="num">Avg cost</th><th class="num">Price</th><th class="num">Value</th></tr></thead>
+  <tbody>
+    <% items.forEach(function(i) { %>
+      <tr>
+        <td><a href="/inventory/items/<%= i.id %>"><%= i.name %></a><% if (i.manufacturer) { %><br><span class="hint"><%= i.manufacturer %></span><% } %></td>
+        <td><%= i.sku %></td><td><%= i.category || '' %></td>
+        <td class="num"><%= Number(i.warehouseQty) %></td><td class="num"><%= Number(i.totalQty) %> <%= i.unit %></td>
+        <td class="num"><%= fmt.money(i.unit_cost_cents) %></td><td class="num"><%= fmt.money(i.price_cents) %></td>
+        <td class="num"><%= fmt.money(Number(i.totalQty) * i.unit_cost_cents) %></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

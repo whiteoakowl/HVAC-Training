@@ -1,0 +1,65 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Dispatch Board</h1><p class="hint">Drag a job onto a technician to assign it for <strong><%= date %></strong> (keeps its time; unscheduled jobs start at 08:00 - fine-tune on the job page). Red edge = overlapping jobs.</p></div>
+  <form class="toolbar" method="GET" action="/dispatch">
+    <a class="btn btn-secondary" href="/dispatch?date=<%= prev %>">&larr;</a>
+    <input type="date" name="date" value="<%= date %>" onchange="this.form.submit()" />
+    <a class="btn btn-secondary" href="/dispatch?date=<%= next %>">&rarr;</a>
+    <a class="btn btn-secondary" href="/dispatch">Today</a>
+  </form>
+</div>
+<div id="dispatch-msg"></div>
+<div class="board">
+  <div class="board-col" data-member="">
+    <h3>Unscheduled (<%= unscheduled.length %>)</h3>
+    <% unscheduled.forEach(function(j) { %>
+      <div class="board-item" draggable="true" data-job="<%= j.id %>" data-from="">
+        <a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <span class="<%= 'priority-' + j.priority %>"><%= j.priority !== 'normal' ? j.priority.toUpperCase() : '' %></span><br>
+        <%= j.title %><br><span class="hint"><%= j.customerName %> · <%= j.city || j.address || '' %></span>
+      </div>
+    <% }); %>
+    <% if (unassigned.length) { %><h3 class="mt">Scheduled, no tech</h3><% } %>
+    <% unassigned.forEach(function(j) { %>
+      <div class="board-item" draggable="true" data-job="<%= j.id %>" data-from=""><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> · <%= j.scheduled_start.slice(11,16) %><br><%= j.title %></div>
+    <% }); %>
+  </div>
+  <% columns.forEach(function(col) { %>
+    <div class="board-col" data-member="<%= col.tech.id %>">
+      <h3><%= col.tech.name %> <span class="hint">(<%= col.jobs.length %>)</span></h3>
+      <% if (!col.jobs.length) { %><p class="hint">Available</p><% } %>
+      <% col.jobs.forEach(function(j) { %>
+        <div class="board-item<%= j.conflict ? ' conflict' : '' %>" draggable="true" data-job="<%= j.id %>" data-from="<%= col.tech.id %>">
+          <strong><%= j.scheduled_start.slice(11,16) %><%= j.scheduled_end ? '-' + j.scheduled_end.slice(11,16) : '' %></strong> <a href="/jobs/<%= j.id %>"><%= j.job_number %></a><br>
+          <%= j.title %><br><span class="hint"><%= j.customerName %> · <%= j.city || j.address || '' %></span><br>
+          <span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span> <% if (j.truckName) { %><span class="hint"><%= j.truckName %></span><% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% }); %>
+  <% if (!columns.length) { %><p class="empty">No technicians yet. Give users a Technician, Lead Technician or Installer role under Users &amp; Roles.</p><% } %>
+</div>
+<script>
+  (function () {
+    var dragged = null;
+    document.querySelectorAll('.board-item').forEach(function (el) {
+      el.addEventListener('dragstart', function (e) { dragged = el; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', el.dataset.job); });
+    });
+    document.querySelectorAll('.board-col[data-member]').forEach(function (col) {
+      col.addEventListener('dragover', function (e) { if (col.dataset.member) { e.preventDefault(); col.classList.add('drop-target'); } });
+      col.addEventListener('dragleave', function () { col.classList.remove('drop-target'); });
+      col.addEventListener('drop', function (e) {
+        e.preventDefault(); col.classList.remove('drop-target');
+        if (!dragged || !col.dataset.member || dragged.dataset.from === col.dataset.member) return;
+        var body = new URLSearchParams({ job_id: dragged.dataset.job, member_id: col.dataset.member, from_member_id: dragged.dataset.from, date: '<%= date %>' });
+        fetch('/dispatch/move', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(), credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) { document.getElementById('dispatch-msg').innerHTML = '<div class="alert alert-error"></div>'; document.querySelector('#dispatch-msg .alert').textContent = d.error; return; }
+            var q = d.conflicts && d.conflicts.length ? '&error=' + encodeURIComponent('Assigned, but it overlaps: ' + d.conflicts.join('; ')) : '&notice=' + encodeURIComponent('Job assigned.');
+            location.href = '/dispatch?date=<%= date %>' + q;
+          });
+      });
+    });
+  })();
+</script>
+<%- include('partials/page-end') %>

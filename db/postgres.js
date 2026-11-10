@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { Pool, types } = require('pg');
 const { postgresUrl } = require('./config');
+const { migratePostgres } = require('./migrate');
 
 types.setTypeParser(20, (v) => parseInt(v, 10)); // int8 (COUNT(*), SUM)
 
@@ -82,6 +83,7 @@ async function initSchema() {
     $$ SELECT to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS') $$;
   `);
   await pool.query(schema);
+  await migratePostgres(pool);
 }
 
 const ready = initSchema();

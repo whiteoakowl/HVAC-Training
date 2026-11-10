@@ -1,0 +1,20 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <h1>General Journal</h1>
+  <div class="btn-row"><% if (can('accounting.manage')) { %><a class="primary-btn" href="/accounting/journal/new">+ Journal entry</a><% } %><a class="btn btn-secondary" href="/accounting">Accounting</a></div>
+</div>
+<form class="toolbar" method="GET">
+  <label>From <input type="date" name="from" value="<%= from %>" /></label>
+  <label>To <input type="date" name="to" value="<%= to %>" /></label>
+  <label>Account <select name="account_id"><option value="">All</option><% accounts.forEach(function(a) { %><option value="<%= a.id %>" <%= accountId === a.id ? 'selected' : '' %>><%= a.code %> <%= a.name %></option><% }); %></select></label>
+  <button type="submit">Filter</button>
+</form>
+<% if (!entries.length) { %><p class="empty">No entries in this range.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>#</th><th>Date</th><th>Memo</th><th>Source</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+    <% entries.forEach(function(e) { %><tr><td><a href="/accounting/journal/<%= e.id %>"><%= e.id %></a></td><td><%= e.entry_date %></td><td><%= e.memo %><%= e.reverses_entry_id ? ' (reversal)' : '' %></td><td class="small"><%= fmt.label(e.source_type) %></td><td class="num"><%= fmt.money(e.amount) %></td></tr><% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

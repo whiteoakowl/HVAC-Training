@@ -1,0 +1,32 @@
+<%- include('partials/page-start') %>
+<h1><%= e.equipment_type %><%= e.manufacturer ? ' - ' + e.manufacturer : '' %></h1>
+<p><a href="/customers/<%= c.id %>#equipment">&larr; <%= c.name %></a></p>
+<div class="two-col">
+  <div class="card">
+    <h2>Maintenance &amp; repair history</h2>
+    <% if (!history.length) { %><p class="empty">No jobs have been linked to this equipment yet. Link it from a job's page.</p><% } %>
+    <% history.forEach(function(h) { %>
+      <div style="border-top:1px solid var(--border); padding:0.5rem 0;">
+        <p style="margin:0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> <span class="status status-<%= h.status %>"><%= fmt.label(h.status) %></span> <span class="hint"><%= fmt.dateOnly(h.completed_at) || '' %></span></p>
+        <% if (h.work_performed) { %><p class="small" style="white-space:pre-wrap; margin:0.2rem 0;"><%= h.work_performed %></p><% } %>
+      </div>
+    <% }); %>
+  </div>
+  <div class="card">
+    <h2>Details</h2>
+    <% if (can('customers.edit')) { %>
+      <form method="POST" action="/customers/<%= c.id %>/equipment/<%= e.id %>/edit" class="stack-form">
+        <%- include('partials/equipment-fields', { e: e }) %>
+        <label>Status <select name="active"><option value="1" <%= e.active ? 'selected' : '' %>>In service</option><option value="0" <%= !e.active ? 'selected' : '' %>>Retired / replaced</option></select></label>
+        <button type="submit">Save</button>
+      </form>
+    <% } else { %>
+      <dl class="kv">
+        <dt>Model</dt><dd><%= e.model_number || '-' %></dd><dt>Serial</dt><dd><%= e.serial_number || '-' %></dd>
+        <dt>Installed</dt><dd><%= e.install_date || '-' %></dd><dt>Warranty</dt><dd><%= e.warranty_expires || '-' %></dd>
+        <dt>Filter</dt><dd><%= e.filter_size || '-' %></dd><dt>Refrigerant</dt><dd><%= e.refrigerant_type || '-' %></dd>
+      </dl>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

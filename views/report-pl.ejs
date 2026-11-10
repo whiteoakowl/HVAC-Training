@@ -1,0 +1,21 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: from + ' to ' + to, query: 'from=' + from + '&to=' + to }) %>
+<div class="doc">
+  <% function section(type, heading) { var list = pl.rows.filter(function(r) { return r.type === type && r.balance; }); %>
+    <h3><%= heading %></h3>
+    <table class="data-table"><tbody>
+      <% if (!list.length) { %><tr><td class="empty" colspan="2">None</td></tr><% } %>
+      <% list.forEach(function(r) { %><tr><td><a href="/accounting/journal?account_id=<%= r.id %>&from=<%= from %>&to=<%= to %>"><%= r.code %> <%= r.name %></a></td><td class="num"><%= fmt.money(r.balance) %></td></tr><% }); %>
+    </tbody></table>
+  <% } %>
+  <% section('income', 'Income'); %>
+  <table class="data-table"><tbody><tr class="total"><td>Total income</td><td class="num"><%= fmt.money(pl.income) %></td></tr></tbody></table>
+  <% section('cogs', 'Cost of goods sold'); %>
+  <table class="data-table"><tbody><tr class="total"><td>Gross profit</td><td class="num"><%= fmt.money(pl.grossProfit) %></td></tr></tbody></table>
+  <% section('expense', 'Operating expenses'); %>
+  <table class="data-table"><tbody>
+    <tr class="total"><td>Total expenses</td><td class="num"><%= fmt.money(pl.expense) %></td></tr>
+    <tr class="total"><td>Net income</td><td class="num"><%= fmt.money(pl.netIncome) %></td></tr>
+  </tbody></table>
+</div>
+<%- include('partials/page-end') %>

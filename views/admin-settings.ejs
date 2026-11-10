@@ -1,0 +1,47 @@
+<%- include('partials/page-start') %>
+<h1>Company Settings</h1>
+<form method="POST" action="/admin/settings" class="stack">
+  <div class="card form-grid">
+    <h2 class="full">Company</h2>
+    <label>Company name <input name="company_name" value="<%= s.company_name || '' %>" /></label>
+    <label>Phone (shown on invoices and confirmations) <input name="company_phone" value="<%= s.company_phone || '' %>" /></label>
+    <label>Email <input name="company_email" value="<%= s.company_email || '' %>" /></label>
+    <label>Address <input name="company_address" value="<%= s.company_address || '' %>" /></label>
+  </div>
+  <div class="card form-grid">
+    <h2 class="full">Billing</h2>
+    <label>Default labor rate ($/hour) <input name="labor_rate_cents" inputmode="decimal" value="<%= fmt.centsInput(s.labor_rate_cents) %>" /></label>
+    <label>Default sales tax rate (%) <input name="default_tax_rate_bp" inputmode="decimal" value="<%= (Number(s.default_tax_rate_bp || 0) / 100).toFixed(2) %>" /></label>
+    <label>Invoice terms (days) <input name="invoice_terms_days" inputmode="numeric" value="<%= s.invoice_terms_days || '30' %>" /></label>
+    <label>Invoice footer <input name="invoice_footer" value="<%= s.invoice_footer || '' %>" /></label>
+    <label class="full">Payment instructions (printed on invoices) <textarea name="invoice_payment_instructions" style="min-height:60px;"><%= s.invoice_payment_instructions || '' %></textarea></label>
+    <p class="full hint">Tax rates and what is taxable (labor vs. materials) differ by state and city - confirm with your tax professional.</p>
+  </div>
+  <div class="card form-grid">
+    <h2 class="full">Time &amp; security</h2>
+    <label>Weekly overtime threshold (hours) <input name="overtime_weekly_hours" inputmode="numeric" value="<%= s.overtime_weekly_hours || '40' %>" /></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="gps_clock_enabled" value="1" <%= s.gps_clock_enabled === '1' ? 'checked' : '' %> style="width:auto;" /> Record GPS location at clock-in/out (only at those moments; tell employees and follow your state's notice rules)</label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="allow_registration" value="1" <%= s.allow_registration === '1' ? 'checked' : '' %> style="width:auto;" /> Allow public self-registration as Trainee (original training portal feature; recommended OFF for a business)</label>
+  </div>
+  <div class="card">
+    <h2>Automations</h2>
+    <p class="hint">Every automation run is logged under Audit &amp; Automation. Automations never move money: completed jobs only get a draft invoice for review.</p>
+    <% Object.keys(rules).forEach(function(k) { %>
+      <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="<%= k %>" value="1" <%= s[k] === '1' ? 'checked' : '' %> style="width:auto;" /> <%= rules[k] %></label>
+    <% }); %>
+  </div>
+  <div><button type="submit">Save settings</button></div>
+</form>
+<div class="card mt">
+  <h2>Integrations (server environment variables)</h2>
+  <table class="data-table"><tbody>
+    <tr><td>Database</td><td><%= integrations.database ? 'Postgres (DATABASE_URL)' : 'SQLite fallback - set DATABASE_URL for production' %></td></tr>
+    <tr><td>Session secret</td><td><%= integrations.sessionSecret ? 'Configured' : 'NOT SET - set SESSION_SECRET (logins use a public default)' %></td></tr>
+    <tr><td>Wix website forms</td><td><%= integrations.wix ? 'Configured' : 'Not configured - set WIX_WEBHOOK_SECRET (see docs/WIX_INTEGRATION.md)' %></td></tr>
+    <tr><td>Email (Resend)</td><td><%= integrations.email ? 'Configured' : 'Not configured - set RESEND_API_KEY and MAIL_FROM' %></td></tr>
+    <tr><td>SMS (Twilio)</td><td><%= integrations.sms ? 'Configured' : 'Not configured - set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER' %></td></tr>
+    <tr><td>Payroll processing</td><td>Not integrated - export timesheets (CSV) to your payroll provider and post payroll journal entries</td></tr>
+    <tr><td>Card payments</td><td>Not integrated - record payments manually</td></tr>
+  </tbody></table>
+</div>
+<%- include('partials/page-end') %>

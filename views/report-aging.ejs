@@ -1,0 +1,17 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: 'Open invoices as of ' + asOf, query: 'as_of=' + asOf }) %>
+<div class="stat-grid">
+  <div class="stat good"><div class="stat-label">Current</div><div class="stat-value"><%= fmt.money(ag.buckets.current) %></div></div>
+  <div class="stat warn"><div class="stat-label">1-30 days</div><div class="stat-value"><%= fmt.money(ag.buckets.d1_30) %></div></div>
+  <div class="stat warn"><div class="stat-label">31-60 days</div><div class="stat-value"><%= fmt.money(ag.buckets.d31_60) %></div></div>
+  <div class="stat bad"><div class="stat-label">61-90 days</div><div class="stat-value"><%= fmt.money(ag.buckets.d61_90) %></div></div>
+  <div class="stat bad"><div class="stat-label">90+ days</div><div class="stat-value"><%= fmt.money(ag.buckets.d90_plus) %></div></div>
+  <div class="stat"><div class="stat-label">Total A/R</div><div class="stat-value"><%= fmt.money(ag.total) %></div></div>
+</div>
+<% if (!ag.rows.length) { %><p class="empty">No open invoices.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Issued</th><th>Due</th><th class="num">Days overdue</th><th class="num">Balance</th></tr></thead>
+  <tbody><% ag.rows.forEach(function(r) { %><tr><td><a href="/invoices/<%= r.id %>"><%= r.invoice_number %></a></td><td><%= r.customerName %></td><td><%= r.issue_date %></td><td><%= r.due_date %></td><td class="num <%= r.daysOverdue > 30 ? 'priority-emergency' : '' %>"><%= r.daysOverdue %></td><td class="num"><%= fmt.money(r.balance) %></td></tr><% }); %></tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

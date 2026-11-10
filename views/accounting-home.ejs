@@ -1,0 +1,43 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Accounting</h1><p class="hint">Double-entry ledger. Invoices, payments and inventory post automatically; manual entries for expenses, payroll, owner draws, etc.</p></div>
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="/accounting/journal">General journal</a>
+    <% if (can('accounting.manage')) { %><a class="primary-btn" href="/accounting/journal/new">+ Journal entry</a><% } %>
+  </div>
+</div>
+<div class="stat-grid">
+  <a class="stat" href="/accounting/reports/profit-loss"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">Profit &amp; Loss</div></a>
+  <a class="stat" href="/accounting/reports/balance-sheet"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">Balance Sheet</div></a>
+  <a class="stat" href="/accounting/reports/cash-flow"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">Cash Flow</div></a>
+  <a class="stat" href="/accounting/reports/trial-balance"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">Trial Balance</div></a>
+  <a class="stat" href="/accounting/reports/ar-aging"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">A/R Aging</div></a>
+  <a class="stat" href="/accounting/reports/sales-tax"><div class="stat-label">Report</div><div class="stat-value" style="font-size:1.05rem;">Sales Tax</div></a>
+</div>
+<h2>Chart of accounts</h2>
+<% types.forEach(function(t) { var list = rows.filter(function(r) { return r.type === t; }); %>
+  <h3 style="margin-bottom:0.2rem;"><%= t === 'cogs' ? 'Cost of Goods Sold' : fmt.label(t) %></h3>
+  <table class="data-table" style="margin-top:0;">
+    <tbody>
+      <% list.forEach(function(a) { %>
+        <tr>
+          <td style="width:80px;"><%= a.code %></td>
+          <td><a href="/accounting/journal?account_id=<%= a.id %>&from=2000-01-01"><%= a.name %></a><% if (!a.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
+          <td class="num"><%= fmt.money(a.balance) %></td>
+          <td style="width:110px;"><% if (can('accounting.manage')) { %><form method="POST" action="/accounting/accounts/<%= a.id %>/active" class="inline-form"><input type="hidden" name="active" value="<%= a.active ? '0' : '1' %>" /><button type="submit" class="btn-secondary small"><%= a.active ? 'Deactivate' : 'Activate' %></button></form><% } %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% }); %>
+<% if (can('accounting.manage')) { %>
+  <details class="card mt"><summary><strong>+ Add account</strong></summary>
+    <form method="POST" action="/accounting/accounts" class="inline-fields mt">
+      <label>Code <input name="code" required pattern="\d{3,6}" /></label>
+      <label>Name <input name="name" required /></label>
+      <label>Type <select name="type"><% types.forEach(function(t) { %><option value="<%= t %>"><%= t === 'cogs' ? 'Cost of Goods Sold' : fmt.label(t) %></option><% }); %></select></label>
+      <button type="submit">Add</button>
+    </form>
+  </details>
+<% } %>
+<%- include('partials/page-end') %>

@@ -1,34 +1,68 @@
 <%
-// One flat nav for every role, rather than the reference app's
-// per-portal navLinks arrays - this app has a single member-facing
-// portal (not three separate Student/Parent/Teacher portals), so there
-// is only ever one nav to define. Instructor/admin get extra "Manage"
-// links appended; admin additionally gets Manage Members.
-const isInstructor = member.role === 'instructor' || member.role === 'admin';
-const isAdmin = member.role === 'admin';
-const navLinks = [
-  { href: '/portal', icon: 'home', label: 'Home' },
-  { href: '/events', icon: 'calendar', label: 'Events' },
-  { href: '/training/mine', icon: 'graduation-cap', label: 'Training' },
-  { href: '/member-directory', icon: 'user', label: 'Members' },
-  { href: '/forums', icon: 'users', label: 'Chat' },
-  { href: '/documents', icon: 'file-text', label: 'Documents' },
-  { href: '/notifications', icon: 'bell', label: 'Notifications', badge: unreadNotifications },
-];
-const manageLinks = [];
-if (isInstructor) {
-  manageLinks.push({ href: '/events/manage', icon: 'calendar', label: 'Manage Events' });
-  manageLinks.push({ href: '/training/manage', icon: 'graduation-cap', label: 'Manage Training' });
-  manageLinks.push({ href: '/documents/manage', icon: 'upload', label: 'Manage Documents' });
+// Navigation is built from the signed-in member's permissions, grouped
+// by portal: My Work (employee portal), Customer Service, Operations,
+// Business (management portal), Team (the original training portal
+// features) and Admin. A section only appears if the member can use at
+// least one link in it, and every link points at a working page.
+const sections = [];
+function section(title, links) {
+  const visible = links.filter(function(l) { return l.show; });
+  if (visible.length) sections.push({ title: title, links: visible });
 }
-if (isAdmin) {
-  manageLinks.push({ href: '/portal/members', icon: 'gear', label: 'Manage Members' });
-  manageLinks.push({ href: '/member-directory/settings', icon: 'gear', label: 'Directory Settings' });
-}
-// Longest matching href wins, so /events/manage highlights "Manage
-// Events" rather than "Events".
-const activeHref = navLinks.concat(manageLinks)
-  .map(function(l) { return l.href; })
+section(null, [
+  { href: homeHref, icon: 'home', label: 'Home', show: true },
+  { href: '/notifications', icon: 'bell', label: 'Notifications', badge: unreadNotifications, show: true },
+]);
+section('My Work', [
+  { href: '/employee', icon: 'clipboard', label: 'My Day', show: can('portal.employee') },
+  { href: '/employee/jobs', icon: 'wrench', label: 'My Jobs', show: can('jobs.view_assigned', 'jobs.work') },
+  { href: '/employee/time', icon: 'clock', label: 'Time Clock', show: can('timeclock.use') },
+  { href: '/employee/truck', icon: 'truck', label: 'My Truck', show: can('inventory.use') },
+  { href: '/employee/parts', icon: 'box', label: 'Parts Requests', show: can('inventory.use') },
+]);
+section('Customer Service', [
+  { href: '/service', icon: 'phone', label: 'Service Desk', show: can('portal.service') },
+  { href: '/customers', icon: 'users', label: 'Customers', show: can('customers.view') },
+  { href: '/requests', icon: 'clipboard', label: 'Service Requests', show: can('requests.view', 'requests.manage') },
+]);
+section('Operations', [
+  { href: '/jobs', icon: 'wrench', label: 'Jobs', show: can('jobs.view_all') },
+  { href: '/dispatch', icon: 'calendar', label: 'Dispatch Board', show: can('jobs.dispatch', 'jobs.manage') },
+  { href: '/inventory', icon: 'box', label: 'Inventory', show: can('inventory.view', 'inventory.manage') },
+  { href: '/trucks', icon: 'truck', label: 'Trucks', show: can('trucks.manage', 'inventory.manage') },
+  { href: '/inventory/parts-requests', icon: 'box', label: 'Parts Approvals', show: can('inventory.manage') },
+]);
+section('Business', [
+  { href: '/manage', icon: 'chart', label: 'Dashboard', show: can('portal.management') },
+  { href: '/invoices', icon: 'dollar', label: 'Invoices', show: can('invoices.view', 'invoices.manage') },
+  { href: '/accounting', icon: 'dollar', label: 'Accounting', show: can('accounting.view') },
+  { href: '/manage/reports', icon: 'chart', label: 'Reports', show: can('jobs.costing', 'accounting.view') },
+  { href: '/manage/timesheets', icon: 'clock', label: 'Timesheets', show: can('timesheets.approve') },
+  { href: '/manage/employees', icon: 'user', label: 'Employees', show: can('employees.view') },
+]);
+section('Team', [
+  { href: '/portal', icon: 'graduation-cap', label: 'Training Home', show: homeHref !== '/portal' && can('training.view') },
+  { href: '/training/mine', icon: 'graduation-cap', label: 'Training', show: can('training.view') },
+  { href: '/events', icon: 'calendar', label: 'Events', show: can('events.view', 'events.manage') },
+  { href: '/forums', icon: 'users', label: 'Chat', show: can('forums.use', 'forums.moderate') },
+  { href: '/documents', icon: 'file-text', label: 'Documents', show: can('documents.view', 'documents.manage') },
+  { href: '/member-directory', icon: 'user', label: 'Directory', show: can('directory.view', 'directory.settings') },
+]);
+section('Admin', [
+  { href: '/events/manage', icon: 'calendar', label: 'Manage Events', show: can('events.manage') },
+  { href: '/training/manage', icon: 'graduation-cap', label: 'Manage Training', show: can('training.manage') },
+  { href: '/documents/manage', icon: 'upload', label: 'Manage Documents', show: can('documents.manage') },
+  { href: '/portal/members', icon: 'gear', label: 'Users & Roles', show: can('users.manage') },
+  { href: '/admin/roles', icon: 'shield', label: 'Role Permissions', show: can('roles.manage') },
+  { href: '/admin/settings', icon: 'gear', label: 'Company Settings', show: can('settings.manage') },
+  { href: '/admin/audit', icon: 'shield', label: 'Audit & Automation', show: can('audit.view') },
+  { href: '/member-directory/settings', icon: 'gear', label: 'Directory Settings', show: can('directory.settings') },
+]);
+// Longest matching href wins, so /inventory/parts-requests highlights
+// "Parts Approvals" rather than "Inventory".
+const allHrefs = [];
+sections.forEach(function(s) { s.links.forEach(function(l) { allHrefs.push(l.href); }); });
+const activeHref = allHrefs
   .filter(function(h) { return currentPath === h || currentPath.indexOf(h + '/') === 0; })
   .sort(function(a, b) { return b.length - a.length; })[0];
 %>
@@ -37,27 +71,22 @@ const activeHref = navLinks.concat(manageLinks)
   <%# On narrow screens the sidebar collapses into this top bar + a
       dropdown that starts closed on every page load. %>
   <header class="app-topbar">
-    <a class="brand" href="/portal">HVAC Training</a>
+    <a class="brand" href="<%= homeHref %>">HVAC Pro</a>
     <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="app-sidebar">
       <span class="menu-toggle-bars" aria-hidden="true"></span> Menu<% if (unreadNotifications) { %> <span class="badge-count"><%= unreadNotifications %></span><% } %>
     </button>
   </header>
   <aside class="app-sidebar" id="app-sidebar">
-    <a class="brand sidebar-brand" href="/portal">HVAC Training</a>
-    <p class="sidebar-role">Signed in as <strong><%= member.name %></strong> &middot; <%= member.role %></p>
-    <nav>
-      <% navLinks.forEach(function(link) { %>
-        <a href="<%= link.href %>"<%- link.href === activeHref ? ' class="active" aria-current="page"' : '' %>><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %><% if (link.badge) { %> <span class="badge-count"><%= link.badge %></span><% } %></a>
-      <% }); %>
-    </nav>
-    <% if (manageLinks.length) { %>
-      <p class="sidebar-section-title">Manage</p>
+    <a class="brand sidebar-brand" href="<%= homeHref %>">HVAC Pro</a>
+    <p class="sidebar-role">Signed in as <strong><%= member.name %></strong> &middot; <%= fmt.label(member.role) %></p>
+    <% sections.forEach(function(s) { %>
+      <% if (s.title) { %><p class="sidebar-section-title"><%= s.title %></p><% } %>
       <nav>
-        <% manageLinks.forEach(function(link) { %>
-          <a href="<%= link.href %>"<%- link.href === activeHref ? ' class="active" aria-current="page"' : '' %>><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %></a>
+        <% s.links.forEach(function(link) { %>
+          <a href="<%= link.href %>"<%- link.href === activeHref ? ' class="active" aria-current="page"' : '' %>><svg class="icon"><use href="#icon-<%= link.icon %>"/></svg> <%= link.label %><% if (link.badge) { %> <span class="badge-count"><%= link.badge %></span><% } %></a>
         <% }); %>
       </nav>
-    <% } %>
+    <% }); %>
     <div class="sidebar-bottom">
       <form method="POST" action="/logout">
         <button type="submit"><svg class="icon"><use href="#icon-log-out"/></svg> Log out</button>

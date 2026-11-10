@@ -1,0 +1,14 @@
+<label>Equipment type
+  <input name="equipment_type" list="equipment-types" value="<%= e.equipment_type || '' %>" required />
+  <datalist id="equipment-types"><option>Furnace</option><option>Air Conditioner</option><option>Heat Pump</option><option>Air Handler</option><option>Boiler</option><option>Ductless Mini-Split</option><option>Package Unit</option><option>Water Heater</option><option>Thermostat</option><option>Humidifier</option><option>Air Purifier</option><option>Rooftop Unit</option></datalist>
+</label>
+<label>Manufacturer <input name="manufacturer" value="<%= e.manufacturer || '' %>" /></label>
+<label>Model number <input name="model_number" value="<%= e.model_number || '' %>" /></label>
+<label>Serial number <input name="serial_number" value="<%= e.serial_number || '' %>" /></label>
+<label>Install date <input type="date" name="install_date" value="<%= e.install_date || '' %>" /></label>
+<label>Warranty expires <input type="date" name="warranty_expires" value="<%= e.warranty_expires || '' %>" /></label>
+<label>Filter size <input name="filter_size" value="<%= e.filter_size || '' %>" placeholder="16x25x1" /></label>
+<label>Refrigerant <input name="refrigerant_type" list="refrigerants" value="<%= e.refrigerant_type || '' %>" />
+  <datalist id="refrigerants"><option>R-410A</option><option>R-454B</option><option>R-32</option><option>R-22</option><option>R-407C</option><option>R-134a</option></datalist>
+</label>
+<label class="full">Location / notes <input name="location_notes" value="<%= e.location_notes || '' %>" placeholder="Attic, basement, roof..." /></label>

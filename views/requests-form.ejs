@@ -1,0 +1,36 @@
+<%- include('partials/page-start') %>
+<h1>New Service Request</h1>
+<p><a href="/requests">&larr; Service Requests</a></p>
+<form method="POST" action="/requests/new" class="form-grid card">
+  <% if (customer) { %>
+    <input type="hidden" name="customer_id" value="<%= customer.id %>" />
+    <p class="full"><strong>Customer:</strong> <a href="/customers/<%= customer.id %>"><%= customer.name %></a> (<%= customer.customer_number %>) · <%= customer.phone || customer.email || '' %></p>
+    <label class="full">Service address
+      <select name="property_id" onchange="document.getElementById('newaddr').style.display = this.value === 'new' ? '' : 'none'">
+        <% properties.forEach(function(p) { %><option value="<%= p.id %>"><%= p.label ? p.label + ' - ' : '' %><%= p.address %></option><% }); %>
+        <option value="new" <%= properties.length ? '' : 'selected' %>>+ New address</option>
+      </select>
+    </label>
+    <div id="newaddr" class="full form-grid" style="<%= properties.length ? 'display:none' : '' %>">
+      <label class="full">Street address <input name="address" /></label>
+      <label>City <input name="city" /></label>
+      <div class="inline-fields"><label>State <input name="state" /></label><label>ZIP <input name="zip" /></label></div>
+    </div>
+  <% } else { %>
+    <p class="full hint">Existing customers are matched automatically by email or phone, so no duplicate record is created. To pick a customer by hand, open them under <a href="/customers">Customers</a> and use "+ Service Request".</p>
+    <label>Name <input name="name" required /></label>
+    <label>Account type <select name="account_type"><option value="residential">Residential</option><option value="commercial">Commercial</option></select></label>
+    <label>Phone <input type="tel" name="phone" /></label>
+    <label>Email <input type="email" name="email" /></label>
+    <label class="full">Service address <input name="address" /></label>
+    <label>City <input name="city" /></label>
+    <div class="inline-fields"><label>State <input name="state" /></label><label>ZIP <input name="zip" /></label></div>
+  <% } %>
+  <label>Request type <select name="kind"><% kinds.forEach(function(k) { %><option value="<%= k %>"><%= fmt.label(k) %></option><% }); %></select></label>
+  <label>Received via <select name="source"><option value="phone">Phone call</option><option value="email">Email</option><option value="walk_in">Walk-in</option><option value="office">Office</option><option value="web">Website (manual entry)</option></select></label>
+  <label>Preferred date <input type="date" name="preferred_date" /></label>
+  <label>Preferred time <select name="preferred_time"><option value="">Any</option><option>Morning</option><option>Afternoon</option><option>Evening</option></select></label>
+  <label class="full">What's going on? <textarea name="description" required></textarea></label>
+  <div class="full"><button type="submit">Create Request</button></div>
+</form>
+<%- include('partials/page-end') %>

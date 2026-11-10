@@ -1,0 +1,33 @@
+<%- include('partials/page-start') %>
+<h1>Parts &amp; Supply Requests</h1>
+<p class="hint">Requests from technicians. "Fulfil" can move the item from <%= warehouse.name %> straight onto the requester's truck.</p>
+<% if (!rows.length) { %><p class="empty">No requests.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Date</th><th>From</th><th>Request</th><th class="num">Qty</th><th>Job</th><th>Status</th><th>Action</th></tr></thead>
+  <tbody>
+  <% rows.forEach(function(r) { %>
+    <tr>
+      <td class="small"><%= fmt.shortDateTime(r.created_at) %></td>
+      <td><%= r.memberName %></td>
+      <td><% if (r.item_id) { %><a href="/inventory/items/<%= r.item_id %>"><%= r.itemName %></a><br><% } %><span class="small"><%= r.description %></span></td>
+      <td class="num"><%= Number(r.quantity) %></td>
+      <td><% if (r.job_id) { %><a href="/jobs/<%= r.job_id %>"><%= r.job_number %></a><% } %></td>
+      <td><span class="status status-<%= r.status %>"><%= r.status %></span><% if (r.decision_note) { %><br><span class="hint"><%= r.decision_note %></span><% } %></td>
+      <td>
+        <% if (['pending','approved'].includes(r.status)) { %>
+          <form method="POST" action="/inventory/parts-requests/<%= r.id %>/decide" class="stack-form" style="min-width:200px;">
+            <input name="note" placeholder="Note (optional)" />
+            <div class="btn-row">
+              <% if (r.status === 'pending') { %><button name="decision" value="approved" class="btn-secondary">Approve</button><% } %>
+              <% if (r.item_id && r.truckLocationId) { %><input type="hidden" name="transfer" value="1" /><button name="decision" value="fulfilled">Fulfil to truck</button><% } else { %><button name="decision" value="fulfilled">Mark fulfilled</button><% } %>
+              <button name="decision" value="rejected" class="btn-danger">Reject</button>
+            </div>
+          </form>
+        <% } %>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

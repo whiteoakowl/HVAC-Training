@@ -1,0 +1,12 @@
+<label>SKU <input name="sku" value="<%= item.sku || '' %>" required maxlength="100" /></label>
+<label>Name <input name="name" value="<%= item.name || '' %>" required maxlength="200" /></label>
+<label>Category <input name="category" list="item-categories" value="<%= item.category || '' %>" />
+  <datalist id="item-categories"><% categories.concat(['Filters','Capacitors','Contactors','Motors','Refrigerant','Copper & Fittings','Electrical','Thermostats','Igniters & Sensors','Equipment','Ductwork','Consumables']).filter(function(c, i, a) { return a.indexOf(c) === i; }).forEach(function(c) { %><option><%= c %></option><% }); %></datalist>
+</label>
+<label>Unit <input name="unit" value="<%= item.unit || 'each' %>" placeholder="each, lb, ft, box" /></label>
+<label>Manufacturer <input name="manufacturer" value="<%= item.manufacturer || '' %>" /></label>
+<label>Supplier <input name="supplier" value="<%= item.supplier || '' %>" /></label>
+<label>Barcode <input name="barcode" value="<%= item.barcode || '' %>" /></label>
+<label>Selling price <input name="price" inputmode="decimal" value="<%= fmt.centsInput(item.price_cents) %>" /></label>
+<label class="full">Description <input name="description" value="<%= item.description || '' %>" /></label>
+<label class="full">Warranty info <input name="warranty_info" value="<%= item.warranty_info || '' %>" /></label>

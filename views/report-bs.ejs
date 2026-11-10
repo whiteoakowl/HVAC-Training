@@ -1,0 +1,15 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: 'As of ' + asOf, query: 'as_of=' + asOf }) %>
+<div class="doc">
+  <% [['asset','Assets', bs.assets], ['liability','Liabilities', bs.liabilities], ['equity','Equity', bs.equity]].forEach(function(s) { var list = bs.rows.filter(function(r) { return r.type === s[0] && r.balance; }); %>
+    <h3><%= s[1] %></h3>
+    <table class="data-table"><tbody>
+      <% list.forEach(function(r) { %><tr><td><%= r.code %> <%= r.name %></td><td class="num"><%= fmt.money(r.balance) %></td></tr><% }); %>
+      <% if (s[0] === 'equity') { %><tr><td>Current earnings (net income to date, not yet closed)</td><td class="num"><%= fmt.money(bs.earnings) %></td></tr><% } %>
+      <tr class="total"><td>Total <%= s[1].toLowerCase() %></td><td class="num"><%= fmt.money(s[0] === 'equity' ? s[2] + bs.earnings : s[2]) %></td></tr>
+    </tbody></table>
+  <% }); %>
+  <table class="data-table"><tbody><tr class="total"><td>Liabilities + equity</td><td class="num"><%= fmt.money(bs.liabilities + bs.equity + bs.earnings) %></td></tr></tbody></table>
+  <p class="<%= bs.balanced ? 'hint' : 'alert alert-error' %>"><%= bs.balanced ? 'Assets equal liabilities plus equity.' : 'Out of balance - check the journal.' %></p>
+</div>
+<%- include('partials/page-end') %>

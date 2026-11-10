@@ -1,0 +1,41 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Jobs</h1><p class="hint"><%= open ? 'Open jobs' : status ? fmt.label(status) : 'All jobs' %> · <%= rows.length %> shown</p></div>
+  <div class="btn-row">
+    <% if (can('jobs.dispatch', 'jobs.manage')) { %><a class="btn btn-secondary" href="/dispatch">Dispatch Board</a><% } %>
+    <% if (can('jobs.manage')) { %><a class="primary-btn" href="/jobs/new">+ New Job</a><% } %>
+  </div>
+</div>
+<form class="toolbar" method="GET" action="/jobs">
+  <label>Search <input type="search" name="q" value="<%= q %>" placeholder="Job #, title, customer, address" /></label>
+  <label>Status
+    <select name="status">
+      <option value="">Open jobs</option>
+      <% statuses.forEach(function(s) { %><option value="<%= s[0] %>" <%= status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }); %>
+    </select>
+  </label>
+  <label>Scheduled from <input type="date" name="from" value="<%= from %>" /></label>
+  <label>to <input type="date" name="to" value="<%= to %>" /></label>
+  <button type="submit">Filter</button>
+  <a class="btn btn-secondary" href="/jobs?view=all">All jobs</a>
+</form>
+<% if (!rows.length) { %><p class="empty">No jobs match.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Job</th><th>Customer</th><th>Address</th><th>Type</th><th>Scheduled</th><th>Crew</th><th>Truck</th><th>Status</th></tr></thead>
+  <tbody>
+    <% rows.forEach(function(j) { %>
+      <tr>
+        <td><a href="/jobs/<%= j.id %>"><%= j.job_number %></a><br><span class="small <%= 'priority-' + j.priority %>"><%= j.title %></span></td>
+        <td><%= j.customerName %></td>
+        <td class="small"><%= [j.address, j.city].filter(Boolean).join(', ') %></td>
+        <td><%= fmt.label(j.job_type) %></td>
+        <td class="small"><%= fmt.shortDateTime(j.scheduled_start) || '-' %></td>
+        <td class="small"><%= j.techs.map(function(t) { return t.name; }).join(', ') || '-' %></td>
+        <td class="small"><%= j.truckName || '' %></td>
+        <td><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

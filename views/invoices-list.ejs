@@ -1,0 +1,31 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Invoices</h1><p class="hint">Create invoices from completed jobs (job page) or from a customer's page.</p></div>
+  <a class="btn btn-secondary" href="/invoices?<%= status ? 'status=' + status + '&' : '' %><%= overdue ? 'overdue=1&' : '' %>format=csv">Export CSV</a>
+</div>
+<div class="toolbar">
+  <a class="btn <%= !status && !overdue ? '' : 'btn-secondary' %>" href="/invoices">All</a>
+  <a class="btn <%= status === 'draft' ? '' : 'btn-secondary' %>" href="/invoices?status=draft">Drafts</a>
+  <a class="btn <%= status === 'open' ? '' : 'btn-secondary' %>" href="/invoices?status=open">Unpaid</a>
+  <a class="btn <%= overdue ? '' : 'btn-secondary' %>" href="/invoices?overdue=1">Overdue</a>
+  <a class="btn <%= status === 'paid' ? '' : 'btn-secondary' %>" href="/invoices?status=paid">Paid</a>
+  <a class="btn <%= status === 'void' ? '' : 'btn-secondary' %>" href="/invoices?status=void">Void</a>
+  <form method="GET" action="/invoices" class="inline-fields" style="margin-left:auto;"><input type="search" name="q" value="<%= q %>" placeholder="Invoice #, customer, job #" /><button type="submit">Search</button></form>
+</div>
+<% if (!rows.length) { %><p class="empty">No invoices.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Invoice</th><th>Customer</th><th>Job</th><th>Issued</th><th>Due</th><th class="num">Total</th><th class="num">Balance</th><th>Status</th></tr></thead>
+  <tbody>
+    <% rows.forEach(function(i) { var bal = i.total_cents - i.amount_paid_cents; var late = ['issued','partial'].includes(i.status) && i.due_date && i.due_date < today; %>
+      <tr>
+        <td><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a></td><td><a href="/customers/<%= i.customer_id %>"><%= i.customerName %></a></td>
+        <td><% if (i.job_id) { %><a href="/jobs/<%= i.job_id %>"><%= i.job_number %></a><% } %></td>
+        <td><%= i.issue_date || '' %></td><td class="<%= late ? 'priority-emergency' : '' %>"><%= i.due_date || '' %><%= late ? ' (overdue)' : '' %></td>
+        <td class="num"><%= fmt.money(i.total_cents) %></td><td class="num"><%= ['issued','partial'].includes(i.status) ? fmt.money(bal) : '' %></td>
+        <td><span class="status status-<%= i.status %>"><%= i.status %></span></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

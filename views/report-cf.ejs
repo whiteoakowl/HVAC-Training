@@ -1,0 +1,13 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: from + ' to ' + to + ' · movements of 1000 Cash / Operating Checking by counter-account', query: 'from=' + from + '&to=' + to }) %>
+<table class="data-table">
+  <tbody>
+    <tr><td>Opening cash</td><td class="num"><%= fmt.money(cf.opening) %></td></tr>
+    <% cf.rows.forEach(function(r) { %><tr><td><%= r.amount >= 0 ? 'In from' : 'Out to' %> <%= r.code %> <%= r.name %></td><td class="num"><%= fmt.money(r.amount) %></td></tr><% }); %>
+    <tr><td>Total inflows</td><td class="num"><%= fmt.money(cf.inflows) %></td></tr>
+    <tr><td>Total outflows</td><td class="num"><%= fmt.money(cf.outflows) %></td></tr>
+    <tr class="total"><td>Net change</td><td class="num"><%= fmt.money(cf.net) %></td></tr>
+    <tr class="total"><td>Closing cash</td><td class="num"><%= fmt.money(cf.closing) %></td></tr>
+  </tbody>
+</table>
+<%- include('partials/page-end') %>

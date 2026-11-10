@@ -1,0 +1,25 @@
+<%- include('partials/page-start') %>
+<h1>Parts &amp; Supply Requests</h1>
+<form method="POST" action="/employee/parts" class="form-grid card">
+  <label>Item from catalog (optional)
+    <select name="item_id"><option value="">- not in catalog / describe below -</option><% items.forEach(function(i) { %><option value="<%= i.id %>"><%= i.name %> (<%= i.sku %>) - warehouse: <%= Number(i.warehouseQty) %></option><% }); %></select>
+  </label>
+  <label>Quantity <input name="quantity" inputmode="decimal" value="1" required /></label>
+  <label>For job (optional)
+    <select name="job_id"><option value="">- truck restock / general -</option><% myJobs.forEach(function(j) { %><option value="<%= j.id %>" <%= jobId === j.id ? 'selected' : '' %>><%= j.job_number %> · <%= j.title %></option><% }); %></select>
+  </label>
+  <label class="full">Description / notes <textarea name="description" placeholder="Part number, size, brand, urgency..." style="min-height:70px;"></textarea></label>
+  <div class="full"><button type="submit">Send request</button></div>
+</form>
+<h2 class="mt">My requests</h2>
+<% if (!rows.length) { %><p class="empty">No requests yet.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Date</th><th>Request</th><th class="num">Qty</th><th>Job</th><th>Status</th><th>Note</th></tr></thead>
+  <tbody>
+  <% rows.forEach(function(r) { %>
+    <tr><td class="small"><%= fmt.shortDateTime(r.created_at) %></td><td><%= r.itemName || r.description %><% if (r.itemName && r.description !== r.itemName) { %><br><span class="hint"><%= r.description %></span><% } %></td><td class="num"><%= Number(r.quantity) %></td><td><%= r.job_number || '' %></td><td><span class="status status-<%= r.status %>"><%= r.status %></span></td><td class="small"><%= r.decision_note || '' %><%= r.decidedByName ? ' (' + r.decidedByName + ')' : '' %></td></tr>
+  <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

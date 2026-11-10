@@ -1,0 +1,30 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Customers</h1><p class="hint">Search by name, phone, email, address, customer #, job #, or equipment serial number.</p></div>
+  <% if (can('customers.edit')) { %><a class="primary-btn" href="/customers/new">+ New Customer</a><% } %>
+</div>
+<form class="toolbar" method="GET" action="/customers">
+  <input type="search" name="q" value="<%= q %>" placeholder="Search customers..." style="flex:1; min-width:220px;" autofocus />
+  <button type="submit">Search</button>
+  <% if (q) { %><a class="btn-secondary btn" href="/customers">Clear</a><% } %>
+</form>
+<% if (!rows.length) { %>
+  <p class="empty"><%= q ? 'No customers match "' + q + '".' : 'No customers yet.' %></p>
+<% } else { %>
+  <table class="data-table">
+    <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Phone</th><th>Email</th><th>Billing address</th></tr></thead>
+    <tbody>
+      <% rows.forEach(function(c) { %>
+        <tr>
+          <td><a href="/customers/<%= c.id %>"><%= c.customer_number %></a></td>
+          <td><a href="/customers/<%= c.id %>"><%= c.name %></a><% if (c.company_name) { %><br><span class="hint"><%= c.company_name %></span><% } %><% if (!c.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
+          <td><%= fmt.label(c.account_type) %></td>
+          <td><% if (c.phone) { %><a href="tel:<%= c.phone %>"><%= c.phone %></a><% } %></td>
+          <td><%= c.email || '' %></td>
+          <td class="small"><%= c.billing_address || '' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+<%- include('partials/page-end') %>

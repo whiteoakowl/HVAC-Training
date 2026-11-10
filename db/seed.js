@@ -15,7 +15,10 @@ async function ensureMember(name, email, password, role) {
 // doesn't keep the well-known default password.
 const PASSWORD = process.env.SEED_PASSWORD || 'password123';
 
-async function main() {
+// opts.demo: also load sample HVAC business data (staff for every role,
+// trucks, inventory, customers, jobs). Used by `npm run seed` locally and
+// by SEED_DEMO=1; never loaded automatically on a production deploy.
+async function main(opts = {}) {
   const adminId = await ensureMember('Pat Reyes', 'admin@hvactraining.test', PASSWORD, 'admin');
   const instructorId = await ensureMember('Sam Kowalski', 'instructor@hvactraining.test', PASSWORD, 'instructor');
   const studentId = await ensureMember('Jordan Lee', 'student@hvactraining.test', PASSWORD, 'student');
@@ -68,13 +71,15 @@ async function main() {
     }
   }
 
+  if (opts.demo || process.env.SEED_DEMO === '1') await require('./seed-demo')(PASSWORD);
+
   console.log(`Seed complete. Login with admin@hvactraining.test / instructor@hvactraining.test / student@hvactraining.test, password: ${process.env.SEED_PASSWORD ? '(SEED_PASSWORD)' : PASSWORD}`);
 }
 
 module.exports = main;
 
 if (require.main === module) {
-  main()
+  main({ demo: true })
     .then(() => db.close())
     .catch((err) => {
       console.error(err);

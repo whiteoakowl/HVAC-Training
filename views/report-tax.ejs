@@ -1,0 +1,16 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: 'Invoices issued ' + from + ' to ' + to, query: 'from=' + from + '&to=' + to }) %>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Net sales</div><div class="stat-value"><%= fmt.money(totals.sales) %></div></div>
+  <div class="stat"><div class="stat-label">Taxable sales</div><div class="stat-value"><%= fmt.money(totals.taxable) %></div></div>
+  <div class="stat"><div class="stat-label">Tax charged</div><div class="stat-value"><%= fmt.money(totals.tax) %></div></div>
+  <div class="stat"><div class="stat-label">Net change, 2100 Sales Tax Payable</div><div class="stat-value"><%= fmt.money(ledgerCredits) %></div><div class="stat-sub">includes voids/reversals in range</div></div>
+</div>
+<p class="hint">Sales tax rates are set per invoice (default in Company Settings). Rates, taxability of labor vs. materials, and filing rules vary by state and locality - confirm with your tax professional.</p>
+<% if (!rows.length) { %><p class="empty">No invoices issued in this range.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Invoice</th><th>Date</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">Tax</th></tr></thead>
+  <tbody><% rows.forEach(function(r) { %><tr><td><%= r.invoice_number %></td><td><%= r.issue_date %></td><td class="num"><%= (r.tax_rate_bp / 100).toFixed(2) %>%</td><td class="num"><%= fmt.money(r.taxable_cents) %></td><td class="num"><%= fmt.money(r.tax_cents) %></td></tr><% }); %></tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

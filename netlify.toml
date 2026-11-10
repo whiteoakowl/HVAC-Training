@@ -10,7 +10,8 @@
   # zisi keeps the repo's file layout, so __dirname-relative paths
   # (views/, db/schema.sql) and the better-sqlite3 native binary just work.
   node_bundler = "zisi"
-  included_files = ["views/**", "db/schema.sql"]
+  # db/migrations is loaded with a dynamic require, so list it explicitly.
+  included_files = ["views/**", "db/schema.sql", "db/migrations/**"]
 
 # Static assets in public/ are served by the CDN; everything else goes to Express.
 [[redirects]]

@@ -1,0 +1,47 @@
+<%- include('partials/page-start') %>
+<h1>New Journal Entry</h1>
+<p class="hint">Use for expenses (fuel, insurance, rent...), payroll from your payroll provider's report, owner contributions/draws, vendor bill payments, and corrections. Debits must equal credits. Posted entries can't be edited - post a reversal instead.</p>
+<form method="POST" action="/accounting/journal/new" class="card stack-form" id="je">
+  <div class="inline-fields">
+    <label>Date <input type="date" name="entry_date" value="<%= today %>" required /></label>
+    <label style="flex:3">Memo <input name="memo" required placeholder="Fuel - Shell card statement Oct" /></label>
+  </div>
+  <table class="data-table" id="lines">
+    <thead><tr><th>Account</th><th>Line note</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+    <tbody>
+      <% for (var i = 0; i < 4; i++) { %>
+        <tr>
+          <td><select name="account_id"><option value="">-</option><% accounts.forEach(function(a) { %><option value="<%= a.id %>"><%= a.code %> <%= a.name %></option><% }); %></select></td>
+          <td><input name="line_description" /></td>
+          <td><input name="debit" inputmode="decimal" class="dr" /></td>
+          <td><input name="credit" inputmode="decimal" class="cr" /></td>
+        </tr>
+      <% } %>
+    </tbody>
+    <tfoot><tr><td colspan="2" class="num">Totals <span id="diff" class="small"></span></td><td class="num" id="tdr">0.00</td><td class="num" id="tcr">0.00</td></tr></tfoot>
+  </table>
+  <div class="btn-row"><button type="button" class="btn-secondary" id="add">+ Line</button><button type="submit">Post entry</button></div>
+</form>
+<script>
+  (function () {
+    var body = document.querySelector('#lines tbody');
+    function n(v) { v = parseFloat(String(v).replace(/[$,]/g, '')); return isFinite(v) ? Math.round(v * 100) : 0; }
+    function total() {
+      var d = 0, c = 0;
+      body.querySelectorAll('.dr').forEach(function (i) { d += n(i.value); });
+      body.querySelectorAll('.cr').forEach(function (i) { c += n(i.value); });
+      document.getElementById('tdr').textContent = (d / 100).toFixed(2);
+      document.getElementById('tcr').textContent = (c / 100).toFixed(2);
+      document.getElementById('diff').textContent = d === c ? '(balanced)' : '(out of balance by ' + (Math.abs(d - c) / 100).toFixed(2) + ')';
+    }
+    body.addEventListener('input', total);
+    document.getElementById('add').addEventListener('click', function () {
+      var row = body.rows[0].cloneNode(true);
+      row.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+      row.querySelector('select').selectedIndex = 0;
+      body.appendChild(row);
+    });
+    total();
+  })();
+</script>
+<%- include('partials/page-end') %>

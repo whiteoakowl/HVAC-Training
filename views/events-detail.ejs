@@ -26,7 +26,7 @@
     <% } %>
   </div>
 
-  <% if (member.role !== 'student') { %>
+  <% if (can('events.manage')) { %>
     <h2>Registered</h2>
     <% if (registrations.length === 0) { %>
       <p class="roster-empty">No one has registered yet.</p>

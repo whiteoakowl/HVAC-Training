@@ -1,0 +1,19 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Employees</h1><p class="hint">Staff accounts (trainee-only and customer accounts are not listed). Add people under Users &amp; Roles.</p></div>
+  <% if (can('users.manage')) { %><a class="btn" href="/portal/members">Users &amp; Roles</a><% } %>
+</div>
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Emp #</th><th>Title</th><th>Role</th><th>Phone</th><th>Truck</th><th>Hired</th><th></th></tr></thead>
+  <tbody>
+    <% rows.forEach(function(e) { %>
+      <tr>
+        <td><a href="/manage/employees/<%= e.id %>"><%= e.name %></a><% if (!e.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
+        <td><%= e.employee_number || '' %></td><td><%= e.job_title || '' %></td><td><%= e.roleName || e.role %></td>
+        <td><%= e.phone || '' %></td><td><%= e.truckName || '' %></td><td><%= e.hire_date || '' %></td>
+        <td><% if (e.expiredCerts) { %><span class="status status-rejected"><%= e.expiredCerts %> expired cert</span><% } %></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<%- include('partials/page-end') %>

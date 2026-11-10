@@ -1,0 +1,72 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Business Dashboard</h1><p class="hint"><%= today %> · figures come from recorded transactions, jobs and time entries</p></div>
+  <div class="btn-row">
+    <% if (can('requests.manage')) { %><a class="btn" href="/requests/new">+ Service Request</a><% } %>
+    <% if (can('jobs.manage')) { %><a class="btn btn-secondary" href="/jobs/new">+ Job</a><% } %>
+  </div>
+</div>
+
+<% if (m.revenueMonth !== undefined) { %>
+  <h2>Financials</h2>
+  <div class="stat-grid">
+    <% if (can('accounting.view')) { %><a class="stat" href="/accounting/reports/profit-loss?from=<%= monthStart %>&to=<%= today %>"><div class="stat-label">Revenue this month</div><div class="stat-value"><%= fmt.money(m.revenueMonth) %></div></a><% } else { %><div class="stat"><div class="stat-label">Revenue this month</div><div class="stat-value"><%= fmt.money(m.revenueMonth) %></div></div><% } %>
+    <% if (can('accounting.view')) { %><a class="stat" href="/accounting/reports/profit-loss?from=<%= yearStart %>&to=<%= today %>"><div class="stat-label">Revenue this year</div><div class="stat-value"><%= fmt.money(m.revenueYear) %></div></a><% } else { %><div class="stat"><div class="stat-label">Revenue this year</div><div class="stat-value"><%= fmt.money(m.revenueYear) %></div></div><% } %>
+    <div class="stat"><div class="stat-label">Total revenue (all time)</div><div class="stat-value"><%= fmt.money(m.revenueAll) %></div></div>
+    <% if (can('accounting.view')) { %><a class="stat <%= m.netMonth < 0 ? 'bad' : 'good' %>" href="/accounting/reports/profit-loss?from=<%= monthStart %>&to=<%= today %>"><div class="stat-label">Net profit this month</div><div class="stat-value"><%= fmt.money(m.netMonth) %></div><div class="stat-sub">year: <%= fmt.money(m.netYear) %></div></a><% } else { %><div class="stat <%= m.netMonth < 0 ? 'bad' : 'good' %>"><div class="stat-label">Net profit this month</div><div class="stat-value"><%= fmt.money(m.netMonth) %></div><div class="stat-sub">year: <%= fmt.money(m.netYear) %></div></div><% } %>
+    <div class="stat"><div class="stat-label">Operating expenses (month)</div><div class="stat-value"><%= fmt.money(m.expensesMonth) %></div><div class="stat-sub">COGS: <%= fmt.money(m.cogsMonth) %></div></div>
+    <div class="stat"><div class="stat-label">Payroll expense (month)</div><div class="stat-value"><%= fmt.money(m.payrollMonth) %></div><div class="stat-sub">posted to 6000</div></div>
+    <% if (can('accounting.view')) { %><a class="stat" href="/accounting/reports/balance-sheet"><div class="stat-label">Cash / checking</div><div class="stat-value"><%= fmt.money(m.cash) %></div></a><% } else { %><div class="stat"><div class="stat-label">Cash / checking</div><div class="stat-value"><%= fmt.money(m.cash) %></div></div><% } %>
+    <% if (can('accounting.view')) { %><a class="stat" href="/accounting/reports/balance-sheet"><div class="stat-label">Accounts payable</div><div class="stat-value"><%= fmt.money(m.ap) %></div></a><% } else { %><div class="stat"><div class="stat-label">Accounts payable</div><div class="stat-value"><%= fmt.money(m.ap) %></div></div><% } %>
+  </div>
+<% } %>
+
+<% if (m.arOpen !== undefined) { %>
+  <h2>Receivables</h2>
+  <div class="stat-grid">
+    <% if (can('invoices.view', 'invoices.manage')) { %><a class="stat <%= m.arOpen ? 'warn' : '' %>" href="/invoices?status=open"><div class="stat-label">Accounts receivable</div><div class="stat-value"><%= fmt.money(m.arOpen) %></div><div class="stat-sub"><%= m.openInvoices %> open invoice(s)</div></a><% } else { %><div class="stat <%= m.arOpen ? 'warn' : '' %>"><div class="stat-label">Accounts receivable</div><div class="stat-value"><%= fmt.money(m.arOpen) %></div><div class="stat-sub"><%= m.openInvoices %> open invoice(s)</div></div><% } %>
+    <% if (can('invoices.view', 'invoices.manage')) { %><a class="stat <%= m.overdue ? 'bad' : 'good' %>" href="/invoices?overdue=1"><div class="stat-label">Overdue invoices</div><div class="stat-value"><%= m.overdue %></div></a><% } else { %><div class="stat <%= m.overdue ? 'bad' : 'good' %>"><div class="stat-label">Overdue invoices</div><div class="stat-value"><%= m.overdue %></div></div><% } %>
+    <% if (can('invoices.view', 'invoices.manage')) { %><a class="stat <%= m.drafts ? 'warn' : '' %>" href="/invoices?status=draft"><div class="stat-label">Draft invoices to review</div><div class="stat-value"><%= m.drafts %></div></a><% } else { %><div class="stat <%= m.drafts ? 'warn' : '' %>"><div class="stat-label">Draft invoices to review</div><div class="stat-value"><%= m.drafts %></div></div><% } %>
+  </div>
+<% } %>
+
+<h2>Operations</h2>
+<div class="stat-grid">
+  <% if (can('jobs.view_all')) { %><a class="stat" href="/jobs"><div class="stat-label">Active jobs</div><div class="stat-value"><%= m.activeJobs %></div></a><% } else { %><div class="stat"><div class="stat-label">Active jobs</div><div class="stat-value"><%= m.activeJobs %></div></div><% } %>
+  <div class="stat"><div class="stat-label">Completed this month</div><div class="stat-value"><%= m.completedMonth %></div></div>
+  <% if (can('jobs.dispatch', 'jobs.manage')) { %><a class="stat" href="/dispatch"><div class="stat-label">Scheduled next 7 days</div><div class="stat-value"><%= m.scheduled7 %></div></a><% } else { %><div class="stat"><div class="stat-label">Scheduled next 7 days</div><div class="stat-value"><%= m.scheduled7 %></div></div><% } %>
+  <% if (can('jobs.view_all')) { %><a class="stat" href="/jobs?status=awaiting_approval"><div class="stat-label">Pending estimates</div><div class="stat-value"><%= m.pendingEstimates %></div><div class="stat-sub">approved, to schedule: <%= m.approvedEstimates %></div></a><% } else { %><div class="stat"><div class="stat-label">Pending estimates</div><div class="stat-value"><%= m.pendingEstimates %></div><div class="stat-sub">approved, to schedule: <%= m.approvedEstimates %></div></div><% } %>
+  <% if (can('jobs.view_all')) { %><a class="stat <%= m.waitingParts ? 'warn' : '' %>" href="/jobs?status=waiting_on_parts"><div class="stat-label">Waiting on parts</div><div class="stat-value"><%= m.waitingParts %></div></a><% } else { %><div class="stat <%= m.waitingParts ? 'warn' : '' %>"><div class="stat-label">Waiting on parts</div><div class="stat-value"><%= m.waitingParts %></div></div><% } %>
+  <% if (can('requests.view', 'requests.manage')) { %><a class="stat <%= m.openRequests ? 'warn' : '' %>" href="/requests"><div class="stat-label">Open service requests</div><div class="stat-value"><%= m.openRequests %></div></a><% } else { %><div class="stat <%= m.openRequests ? 'warn' : '' %>"><div class="stat-label">Open service requests</div><div class="stat-value"><%= m.openRequests %></div></div><% } %>
+  <% if (can('customers.view')) { %><a class="stat" href="/customers"><div class="stat-label">Active customers</div><div class="stat-value"><%= m.customers %></div><div class="stat-sub">+<%= m.newCustomersMonth %> this month</div></a><% } else { %><div class="stat"><div class="stat-label">Active customers</div><div class="stat-value"><%= m.customers %></div><div class="stat-sub">+<%= m.newCustomersMonth %> this month</div></div><% } %>
+  <% if (m.hoursWeek !== undefined) { %>
+    <% if (can('timesheets.approve')) { %><a class="stat" href="/manage/timesheets"><div class="stat-label">Employee hours this week</div><div class="stat-value"><%= fmt.hours(m.hoursWeek) %></div><div class="stat-sub"><%= m.hoursWeek ? Math.round(m.jobHoursWeek / m.hoursWeek * 100) : 0 %>% on jobs · <%= m.clockedIn %> clocked in now</div></a><% } else { %><div class="stat"><div class="stat-label">Employee hours this week</div><div class="stat-value"><%= fmt.hours(m.hoursWeek) %></div><div class="stat-sub"><%= m.hoursWeek ? Math.round(m.jobHoursWeek / m.hoursWeek * 100) : 0 %>% on jobs · <%= m.clockedIn %> clocked in now</div></div><% } %>
+    <% if (can('timesheets.approve')) { %><a class="stat <%= m.pendingTime ? 'warn' : '' %>" href="/manage/timesheets"><div class="stat-label">Time entries to approve</div><div class="stat-value"><%= m.pendingTime %></div></a><% } else { %><div class="stat <%= m.pendingTime ? 'warn' : '' %>"><div class="stat-label">Time entries to approve</div><div class="stat-value"><%= m.pendingTime %></div></div><% } %>
+  <% } %>
+  <% if (m.inventoryValue !== undefined) { %>
+    <% if (can('inventory.view', 'inventory.manage')) { %><a class="stat" href="/inventory"><div class="stat-label">Inventory value</div><div class="stat-value"><%= fmt.money(m.inventoryValue) %></div><div class="stat-sub">on trucks: <%= fmt.money(m.truckValue) %></div></a><% } else { %><div class="stat"><div class="stat-label">Inventory value</div><div class="stat-value"><%= fmt.money(m.inventoryValue) %></div><div class="stat-sub">on trucks: <%= fmt.money(m.truckValue) %></div></div><% } %>
+    <% if (can('inventory.view', 'inventory.manage')) { %><a class="stat <%= m.lowStock ? 'bad' : 'good' %>" href="/inventory"><div class="stat-label">Low-stock alerts</div><div class="stat-value"><%= m.lowStock %></div><div class="stat-sub"><%= m.pendingParts %> parts request(s) pending</div></a><% } else { %><div class="stat <%= m.lowStock ? 'bad' : 'good' %>"><div class="stat-label">Low-stock alerts</div><div class="stat-value"><%= m.lowStock %></div><div class="stat-sub"><%= m.pendingParts %> parts request(s) pending</div></div><% } %>
+  <% } %>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <div class="grid-box-header"><h2>Next 7 days</h2><% if (can('jobs.dispatch', 'jobs.manage')) { %><a href="/dispatch">Dispatch</a><% } %></div>
+    <% if (!upcoming.length) { %><p class="empty">Nothing scheduled.</p><% } %>
+    <% upcoming.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.shortDateTime(j.scheduled_start) %><br><span class="hint"><%= j.customerName %> · <%= j.techs.map(function(t) { return t.name; }).join(', ') || 'unassigned' %></span></p><% }); %>
+  </div>
+  <div class="card">
+    <h2>Upcoming maintenance (30 days)</h2>
+    <% if (!maintenance.length) { %><p class="empty">No maintenance visits scheduled.</p><% } %>
+    <% maintenance.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.shortDateTime(j.scheduled_start) %> · <%= j.customerName %></p><% }); %>
+  </div>
+  <% if (can('employees.view')) { %>
+    <div class="card">
+      <h2>Certifications expiring (60 days)</h2>
+      <% if (!certs.length) { %><p class="empty">None.</p><% } %>
+      <% certs.forEach(function(c) { %><p style="margin:0.35rem 0;"><a href="/manage/employees/<%= c.member_id %>"><%= c.memberName %></a> · <%= c.name %> · <span class="<%= c.expires_on < today ? 'priority-emergency' : 'priority-high' %>"><%= c.expires_on %></span></p><% }); %>
+      <% if (certs.length && can('employees.manage')) { %><form method="POST" action="/manage/employees/cert-reminders"><button type="submit" class="btn-secondary">Send reminders</button></form><% } %>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

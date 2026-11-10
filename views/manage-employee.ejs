@@ -1,0 +1,50 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1><%= emp.name %></h1><p class="hint"><%= emp.roleName || emp.role %> · <%= emp.email %><%= emp.phone ? ' · ' + emp.phone : '' %><%= emp.active ? '' : ' · INACTIVE' %></p></div>
+  <div class="btn-row"><% if (can('users.manage')) { %><a class="btn btn-secondary" href="/portal/members/<%= emp.id %>/edit">Account &amp; role</a><% } %><a class="btn btn-secondary" href="/manage/employees">&larr; Employees</a></div>
+</div>
+<div class="two-col">
+  <div class="stack">
+    <div class="card">
+      <h2>Employee record</h2>
+      <% if (can('employees.manage')) { %>
+        <form method="POST" action="/manage/employees/<%= emp.id %>/profile" class="form-grid">
+          <label>Employee # <input name="employee_number" value="<%= profile.employee_number || '' %>" /></label>
+          <label>Job title <input name="job_title" value="<%= profile.job_title || '' %>" /></label>
+          <label>Hire date <input type="date" name="hire_date" value="<%= profile.hire_date || '' %>" /></label>
+          <label>Pay type <select name="pay_type"><option value="hourly" <%= profile.pay_type !== 'salary' ? 'selected' : '' %>>Hourly</option><option value="salary" <%= profile.pay_type === 'salary' ? 'selected' : '' %>>Salary</option></select></label>
+          <label>Pay rate (hourly $ or annual salary $) <input name="pay_rate" inputmode="decimal" value="<%= fmt.centsInput(profile.pay_rate_cents) %>" /></label>
+          <label class="full">Home address <input name="address" value="<%= profile.address || '' %>" /></label>
+          <label class="full">Emergency contact <input name="emergency_contact" value="<%= profile.emergency_contact || '' %>" /></label>
+          <label class="full">Notes / performance <textarea name="notes"><%= profile.notes || '' %></textarea></label>
+          <div class="full"><button type="submit">Save</button> <span class="hint">Pay rates feed job labor costing. Actual payroll runs through your payroll provider.</span></div>
+        </form>
+      <% } else { %>
+        <dl class="kv"><dt>Employee #</dt><dd><%= profile.employee_number || '-' %></dd><dt>Title</dt><dd><%= profile.job_title || '-' %></dd><dt>Hired</dt><dd><%= profile.hire_date || '-' %></dd><dt>Emergency</dt><dd><%= profile.emergency_contact || '-' %></dd></dl>
+      <% } %>
+    </div>
+    <div class="card">
+      <h2>Certifications</h2>
+      <% if (!certs.length) { %><p class="empty">None on file.</p><% } %>
+      <% certs.forEach(function(c) { %>
+        <p style="margin:0.3rem 0;"><strong><%= c.name %></strong><%= c.number ? ' #' + c.number : '' %> · <span class="<%= c.expires_on && c.expires_on < today ? 'priority-emergency' : '' %>"><%= c.expires_on ? 'expires ' + c.expires_on : 'no expiration' %></span>
+          <% if (can('employees.manage')) { %><form method="POST" action="/manage/employees/<%= emp.id %>/certifications/<%= c.id %>/delete" class="inline-form" onsubmit="return confirm('Remove?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %></p>
+      <% }); %>
+      <% if (can('employees.manage')) { %>
+        <form method="POST" action="/manage/employees/<%= emp.id %>/certifications" class="form-grid mt">
+          <label>Certification <input name="name" list="cert-names" required /><datalist id="cert-names"><option>EPA 608 Universal</option><option>EPA 608 Type I</option><option>EPA 608 Type II</option><option>EPA 608 Type III</option><option>NATE</option><option>OSHA 10</option><option>OSHA 30</option><option>State HVAC License</option><option>Driver's License</option><option>First Aid / CPR</option></datalist></label>
+          <label>Number <input name="number" /></label>
+          <label>Issued <input type="date" name="issued_on" /></label>
+          <label>Expires <input type="date" name="expires_on" /></label>
+          <div class="full"><button type="submit" class="btn-secondary">Add certification</button></div>
+        </form>
+      <% } %>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>This week</h2><p><strong><%= fmt.hours(week.totalMinutes) %> h</strong><%= week.overtimeMinutes ? ' (' + fmt.hours(week.overtimeMinutes) + ' h OT)' : '' %> · <%= week.entries.filter(function(e) { return e.status === 'pending'; }).length %> pending approval</p><p>Truck: <%= truck ? truck.name : 'none' %></p></div>
+    <div class="card"><h2>Open jobs</h2><% if (!openJobs.length) { %><p class="empty">None.</p><% } %><% openJobs.forEach(function(j) { %><p class="small" style="margin:0.25rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= j.title %> · <%= fmt.shortDateTime(j.scheduled_start) || 'unscheduled' %></p><% }); %></div>
+    <div class="card"><h2>Training</h2><% if (!trainingRows.length) { %><p class="empty">No training assigned.</p><% } %><% trainingRows.forEach(function(t) { %><p class="small" style="margin:0.25rem 0;"><%= t.title %> · <span class="status status-<%= t.status === 'passed' ? 'completed' : t.status === 'failed' ? 'rejected' : 'pending' %>"><%= fmt.label(t.status) %></span><%= t.best_score !== null ? ' · best ' + t.best_score + '%' : '' %></p><% }); %><% if (can('training.manage')) { %><p class="hint"><a href="/training/manage">Assign training</a></p><% } %></div>
+  </div>
+</div>
+<%- include('partials/page-end') %>

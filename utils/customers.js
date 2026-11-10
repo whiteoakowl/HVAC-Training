@@ -1,6 +1,6 @@
 // CRM: customers, properties (service addresses), equipment, and the
 // communication log. findOrCreate() is the single entry point used by
-// the office forms and the Wix integration so the same person never
+// the office forms and the website request forms so the same person never
 // ends up as two customer records.
 const db = require('../db');
 const fmt = require('./format');

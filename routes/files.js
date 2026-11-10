@@ -16,7 +16,7 @@ const fmt = require('../utils/format');
 const { flash, action } = require('../utils/http');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
-router.use(requireAuth);
+router.use('/files', requireAuth);
 
 const BACK = {
   customer: (id) => `/customers/${id}#files`,

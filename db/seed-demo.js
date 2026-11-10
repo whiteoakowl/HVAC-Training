@@ -95,7 +95,7 @@ module.exports = async function seedDemo(password) {
   await jobs.assign(j2, { memberIds: [ids.technician], truckId: t2.id, start: `${fmt.addDays(today, 1)} 13:00:00`, end: `${fmt.addDays(today, 1)} 15:00:00` }, ids.dispatcher);
   await jobs.create({ customer_id: c3, property_id: p3, title: 'Estimate - replace 20-year-old AC', job_type: 'estimate', status: 'estimate_requested' }, ids.customer_service);
   await db
-    .prepare("INSERT INTO service_requests (request_number, customer_id, property_id, kind, description, preferred_time, source, status) VALUES ('SR-DEMO1', ?, ?, 'maintenance', 'Would like a fall tune-up before winter.', 'Morning', 'wix', 'new')")
+    .prepare("INSERT INTO service_requests (request_number, customer_id, property_id, kind, description, preferred_time, source, status) VALUES ('SR-DEMO1', ?, ?, 'maintenance', 'Would like a fall tune-up before winter.', 'Morning', 'website', 'new')")
     .run(c3, p3);
   // Maintenance plan + agreement, an estimate awaiting approval, a customer portal login.
   await require('../utils/agreements').savePlan(null, { name: 'Comfort Club', description: 'Two tune-ups a year', included_services: 'Spring AC tune-up\nFall furnace safety inspection\n15% off repairs\nPriority scheduling', visits_per_year: '2', term_months: '12', price: '189' });

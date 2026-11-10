@@ -48,7 +48,7 @@
   <table class="data-table"><tbody>
     <tr><td>Database</td><td><%= integrations.database ? 'Postgres (DATABASE_URL)' : 'SQLite fallback - set DATABASE_URL for production' %></td></tr>
     <tr><td>Session secret</td><td><%= integrations.sessionSecret ? 'Configured' : 'NOT SET - set SESSION_SECRET (logins use a public default)' %></td></tr>
-    <tr><td>Wix website forms</td><td><%= integrations.wix ? 'Configured' : 'Not configured - set WIX_WEBHOOK_SECRET (see docs/WIX_INTEGRATION.md)' %></td></tr>
+    <tr><td>Company website</td><td>Built in - edit and publish it under <a href="/website">Website</a>. Request forms go straight into Service Requests.</td></tr>
     <tr><td>Email (Resend)</td><td><%= integrations.email ? 'Configured' : 'Not configured - set RESEND_API_KEY and MAIL_FROM' %></td></tr>
     <tr><td>SMS (Twilio)</td><td><%= integrations.sms ? 'Configured' : 'Not configured - set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER' %></td></tr>
     <tr><td>Payroll processing</td><td>Not integrated - export timesheets (CSV) to your payroll provider and post payroll journal entries</td></tr>

@@ -1,0 +1,144 @@
+<%
+  var img = function (id) { return id ? '/media/' + id : ''; };
+  var paras = function (text) { return String(fill(text) || '').split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean); };
+  var link = function (l) { return fill(l || ''); };
+  var fontStacks = { modern: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', classic: 'Georgia, "Times New Roman", serif', rounded: '"Trebuchet MS", "Segoe UI", Verdana, sans-serif', bold: '"Arial Narrow", "Helvetica Neue", Arial, sans-serif' };
+  var title = page.seo_title || (page.slug === 'home' ? t.name + (t.tagline ? ' | ' + t.tagline : '') : page.title + ' | ' + t.name);
+%><!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <% if (page.seo_description) { %><meta name="description" content="<%= page.seo_description %>" /><% } %>
+  <% if (preview) { %><meta name="robots" content="noindex" /><% } %>
+  <meta property="og:title" content="<%= title %>" />
+  <link rel="stylesheet" href="/css/site.css" />
+  <style>:root { --primary: <%= t.primary %>; --accent: <%= t.accent %>; --font: <%- fontStacks[t.font] %>; }</style>
+</head>
+<body class="<%= preview ? 'is-preview' : '' %>">
+<% blocks.filter(function (b) { return b.type === 'announcement'; }).forEach(function (b) { %>
+  <div class="s-announce" data-block-id="<%= b.id %>"><span><%= fill(b.data.text) %></span><% if (b.data.phone) { %> <a href="tel:<%= fill(b.data.phone).replace(/[^\d+]/g, '') %>"><%= fill(b.data.phone) %></a><% } %></div>
+<% }); %>
+<header class="s-header">
+  <div class="s-wrap s-header-inner">
+    <a class="s-brand" href="/"><% if (t.logo) { %><img src="<%= img(t.logo) %>" alt="<%= t.name %>" /><% } else { %><span class="s-brand-name"><%= t.name %></span><% } %><% if (t.tagline && !t.logo) { %><span class="s-brand-tag"><%= t.tagline %></span><% } %></a>
+    <input type="checkbox" id="s-menu" class="s-menu-check" /><label for="s-menu" class="s-menu-btn" aria-label="Menu"><span></span></label>
+    <nav class="s-nav">
+      <% nav.forEach(function (n) { var href = n.slug === 'home' ? '/' : '/' + n.slug; %><a href="<%= href %>" class="<%= path === href ? 'active' : '' %>"><%= n.nav_label || n.title %></a><% }); %>
+      <% if (t.phone) { %><a class="s-nav-phone" href="tel:<%= t.phone.replace(/[^\d+]/g, '') %>"><%= t.phone %></a><% } %>
+      <% if (t.ctaLabel) { %><a class="s-btn s-btn-accent" href="<%= t.ctaLink %>"><%= t.ctaLabel %></a><% } %>
+    </nav>
+  </div>
+</header>
+<main>
+<% blocks.forEach(function (b) { var d = b.data || {}; if (b.type === 'announcement') return; %>
+  <section class="s-block s-<%= b.type %>" data-block-id="<%= b.id %>" <% if (preview) { %>data-label="<%= (BLOCKS[b.type] || {}).label %> - click to edit"<% } %>>
+  <% if (b.type === 'hero') { %>
+    <div class="s-hero-bg" style="<%= d.image ? 'background-image:url(' + img(d.image) + ')' : '' %>"><div class="s-hero-shade" style="opacity:<%= (parseInt(d.overlay, 10) || 50) / 100 %>"></div>
+      <div class="s-wrap s-hero-content <%= d.align === 'center' ? 's-center' : '' %>">
+        <h1><%= fill(d.heading) %></h1>
+        <% if (d.subheading) { %><p class="s-lead"><%= fill(d.subheading) %></p><% } %>
+        <div class="s-btns">
+          <% if (d.button1_label) { %><a class="s-btn s-btn-accent s-btn-lg" href="<%= link(d.button1_link) %>"><%= fill(d.button1_label) %></a><% } %>
+          <% if (d.button2_label) { %><a class="s-btn s-btn-ghost s-btn-lg" href="<%= link(d.button2_link) %>"><%= fill(d.button2_label) %></a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } else if (b.type === 'text') { %>
+    <div class="s-wrap s-narrow"><% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %><% paras(d.body).forEach(function (p) { %><p><%= p %></p><% }); %></div>
+  <% } else if (b.type === 'image_text') { %>
+    <div class="s-wrap s-split <%= d.image_side === 'left' ? 's-split-left' : '' %>">
+      <div class="s-split-text"><% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %><% paras(d.body).forEach(function (p) { %><p><%= p %></p><% }); %>
+        <% if (d.button_label) { %><a class="s-btn s-btn-primary" href="<%= link(d.button_link) %>"><%= fill(d.button_label) %></a><% } %></div>
+      <div class="s-split-img"><% if (d.image) { %><img src="<%= img(d.image) %>" alt="<%= fill(d.heading) %>" loading="lazy" /><% } else { %><div class="s-img-placeholder"><%= preview ? 'Choose a photo' : '' %></div><% } %></div>
+    </div>
+  <% } else if (b.type === 'services') { %>
+    <div class="s-wrap"><% if (d.heading) { %><h2 class="s-center"><%= fill(d.heading) %></h2><% } %><% if (d.intro) { %><p class="s-center s-muted"><%= fill(d.intro) %></p><% } %>
+      <div class="s-cards"><% (d.items || []).forEach(function (it) { %>
+        <<%= it.link ? 'a' : 'div' %> class="s-card" <% if (it.link) { %>href="<%= link(it.link) %>"<% } %>><% if (it.image) { %><img src="<%= img(it.image) %>" alt="" loading="lazy" /><% } %><h3><%= fill(it.title) %></h3><p><%= fill(it.text) %></p></<%= it.link ? 'a' : 'div' %>>
+      <% }); %></div></div>
+  <% } else if (b.type === 'cta') { %>
+    <div class="s-cta-band s-cta-<%= d.style || 'primary' %>"><div class="s-wrap s-center"><h2><%= fill(d.heading) %></h2><% if (d.body) { %><p class="s-lead"><%= fill(d.body) %></p><% } %>
+      <% if (d.button_label) { %><a class="s-btn s-btn-light s-btn-lg" href="<%= link(d.button_link) %>"><%= fill(d.button_label) %></a><% } %></div></div>
+  <% } else if (b.type === 'testimonials') { %>
+    <div class="s-wrap"><% if (d.heading) { %><h2 class="s-center"><%= fill(d.heading) %></h2><% } %>
+      <div class="s-cards"><% (d.items || []).forEach(function (it) { %><figure class="s-card s-quote"><blockquote>“<%= fill(it.quote) %>”</blockquote><figcaption><strong><%= fill(it.name) %></strong><%= it.place ? ', ' + fill(it.place) : '' %></figcaption></figure><% }); %></div></div>
+  <% } else if (b.type === 'faq') { %>
+    <div class="s-wrap s-narrow"><% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %><% (d.items || []).forEach(function (it) { %><details class="s-faq"><summary><%= fill(it.q) %></summary><% paras(it.a).forEach(function (p) { %><p><%= p %></p><% }); %></details><% }); %></div>
+  <% } else if (b.type === 'gallery') { %>
+    <div class="s-wrap"><% if (d.heading) { %><h2 class="s-center"><%= fill(d.heading) %></h2><% } %><div class="s-gallery"><% (d.items || []).forEach(function (it) { if (!it.image) return; %><figure><img src="<%= img(it.image) %>" alt="<%= fill(it.caption) %>" loading="lazy" /><% if (it.caption) { %><figcaption><%= fill(it.caption) %></figcaption><% } %></figure><% }); %></div></div>
+  <% } else if (b.type === 'service_area') { %>
+    <div class="s-wrap s-narrow s-center"><% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %><% paras(d.body).forEach(function (p) { %><p class="s-lead"><%= p %></p><% }); %></div>
+  <% } else if (b.type === 'contact_info') { %>
+    <div class="s-wrap s-split">
+      <div><% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %>
+        <% if (t.phone) { %><p class="s-lead">📞 <a href="tel:<%= t.phone.replace(/[^\d+]/g, '') %>"><%= t.phone %></a></p><% } %>
+        <% if (t.emergencyPhone && t.emergencyPhone !== t.phone) { %><p>Emergencies: <a href="tel:<%= t.emergencyPhone.replace(/[^\d+]/g, '') %>"><%= t.emergencyPhone %></a></p><% } %>
+        <% if (t.email) { %><p>✉️ <a href="mailto:<%= t.email %>"><%= t.email %></a></p><% } %>
+        <% if (t.address) { %><p style="white-space:pre-line;">📍 <%= t.address %></p><% } %>
+        <% if (t.hours) { %><p>🕘 <%= t.hours %></p><% } %></div>
+      <div><% if (d.show_map === '1' && t.address) { %><iframe class="s-map" title="Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=<%= encodeURIComponent(t.address) %>&output=embed"></iframe><% } %></div>
+    </div>
+  <% } else if (b.type === 'request_form') { var kind = requestType || d.default_type || 'service'; %>
+    <div class="s-wrap s-narrow" id="request-form">
+      <% if (d.heading) { %><h2><%= fill(d.heading) %></h2><% } %><% if (d.intro) { %><p class="s-muted"><%= fill(d.intro) %></p><% } %>
+      <% if (sent) { %><div class="s-alert s-alert-ok">Thank you! We received your request and will contact you shortly.</div><% } %>
+      <% if (formError) { %><div class="s-alert s-alert-err"><%= formError %></div><% } %>
+      <form method="POST" action="/site/request" class="s-form">
+        <input type="hidden" name="return_to" value="<%= path %>" />
+        <div class="s-hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off" /></label></div>
+        <label>What do you need?
+          <select name="kind"><option value="service" <%= kind === 'service' ? 'selected' : '' %>>Repair / service</option><option value="estimate" <%= kind === 'estimate' ? 'selected' : '' %>>Estimate for new equipment</option><option value="maintenance" <%= kind === 'maintenance' ? 'selected' : '' %>>Maintenance / tune-up</option><option value="emergency" <%= kind === 'emergency' ? 'selected' : '' %>>Emergency - no heat or cooling</option></select></label>
+        <div class="s-row"><label>Name <input name="name" required autocomplete="name" /></label><label>Phone <input name="phone" type="tel" required autocomplete="tel" /></label></div>
+        <label>Email <input name="email" type="email" autocomplete="email" /></label>
+        <label>Service address <input name="address" autocomplete="street-address" /></label>
+        <div class="s-row"><label>City <input name="city" autocomplete="address-level2" /></label><label>ZIP <input name="zip" autocomplete="postal-code" /></label></div>
+        <div class="s-row"><label>Preferred date <input name="preferred_date" type="date" /></label><label>Preferred time <select name="preferred_time"><option value="">Any time</option><option>Morning</option><option>Afternoon</option></select></label></div>
+        <label>Tell us what's happening <textarea name="description" rows="4" required></textarea></label>
+        <label class="s-check"><input type="checkbox" name="account_type" value="commercial" /> This is for a business</label>
+        <button type="submit" class="s-btn s-btn-accent s-btn-lg">Send request</button>
+        <% if (t.emergencyPhone) { %><p class="s-muted s-small">No heat or cooling right now? Call <a href="tel:<%= t.emergencyPhone.replace(/[^\d+]/g, '') %>"><%= t.emergencyPhone %></a>.</p><% } %>
+      </form>
+    </div>
+  <% } else if (b.type === 'spacer') { %>
+    <div class="s-spacer s-spacer-<%= d.size || 'small' %>"></div>
+  <% } %>
+  </section>
+<% }); %>
+<% if (preview && !blocks.length) { %><div class="s-wrap s-center" style="padding:4rem 1rem;"><p class="s-muted">This page is empty. Add a section from the editor.</p></div><% } %>
+</main>
+<footer class="s-footer">
+  <div class="s-wrap s-footer-grid">
+    <div><strong><%= t.name %></strong><% if (t.tagline) { %><br><%= t.tagline %><% } %><% if (t.footer) { %><p><%= t.footer %></p><% } %></div>
+    <div><% if (t.phone) { %><a href="tel:<%= t.phone.replace(/[^\d+]/g, '') %>"><%= t.phone %></a><br><% } %><% if (t.email) { %><a href="mailto:<%= t.email %>"><%= t.email %></a><br><% } %><% if (t.address) { %><span style="white-space:pre-line;"><%= t.address %></span><% } %></div>
+    <div class="s-footer-links">
+      <% nav.forEach(function (n) { %><a href="<%= n.slug === 'home' ? '/' : '/' + n.slug %>"><%= n.nav_label || n.title %></a><% }); %>
+      <% if (t.social.facebook) { %><a href="<%= t.social.facebook %>" rel="noopener" target="_blank">Facebook</a><% } %>
+      <% if (t.social.instagram) { %><a href="<%= t.social.instagram %>" rel="noopener" target="_blank">Instagram</a><% } %>
+      <% if (t.social.google) { %><a href="<%= t.social.google %>" rel="noopener" target="_blank">Google reviews</a><% } %>
+      <% if (t.staffLogin) { %><a href="/login" class="s-muted">Employee login</a><% } %>
+    </div>
+  </div>
+  <div class="s-wrap s-small s-muted">© <%= fmt.today().slice(0, 4) %> <%= t.name %></div>
+</footer>
+<% if (preview) { %>
+<script>
+  // Builder preview: click a section to edit it; links don't navigate.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a, button[type=submit]');
+    if (a) e.preventDefault();
+    var s = e.target.closest('[data-block-id]');
+    if (s) window.parent.postMessage({ hvacEditBlock: s.getAttribute('data-block-id') }, location.origin);
+  }, true);
+  document.addEventListener('submit', function (e) { e.preventDefault(); }, true);
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || !e.data.hvacFocusBlock) return;
+    document.querySelectorAll('.is-selected').forEach(function (x) { x.classList.remove('is-selected'); });
+    var s = document.querySelector('[data-block-id="' + e.data.hvacFocusBlock + '"]');
+    if (s) { s.classList.add('is-selected'); s.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  });
+</script>
+<% } %>
+</body>
+</html>

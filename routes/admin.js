@@ -46,7 +46,7 @@ const SETTING_FIELDS = [
 router.get('/settings', requirePermission('settings.manage'), async (req, res) => {
   res.render('admin-settings', {
     title: 'Company Settings', s: await settings.all(), rules: automation.RULES,
-    integrations: { email: messaging.emailConfigured(), sms: messaging.smsConfigured(), wix: Boolean(process.env.WIX_WEBHOOK_SECRET), sessionSecret: Boolean(process.env.SESSION_SECRET), database: Boolean(require('../db/config').postgresUrl) },
+    integrations: { email: messaging.emailConfigured(), sms: messaging.smsConfigured(), sessionSecret: Boolean(process.env.SESSION_SECRET), database: Boolean(require('../db/config').postgresUrl) },
   });
 });
 

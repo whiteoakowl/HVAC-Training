@@ -15,7 +15,6 @@ function setupEnv() {
   process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'hvac-test-'));
   process.env.UPLOADS_DIR = path.join(process.env.DATA_DIR, 'uploads');
   process.env.SESSION_SECRET = 'test-secret';
-  process.env.WIX_WEBHOOK_SECRET = 'wix-test-secret';
   delete process.env.RESEND_API_KEY;
   delete process.env.TWILIO_ACCOUNT_SID;
 }

@@ -116,7 +116,10 @@ app.use('/', require('./routes/customerPortal'));
 app.use('/', require('./routes/files'));
 app.use('/', require('./routes/trainingCenter'));
 
-app.get('/', (req, res) => res.redirect(req.member ? res.locals.homeHref : '/login'));
+app.use('/website', require('./routes/website'));
+// Public website: "/" (the published home page, otherwise the staff
+// login) and published pages by address. Last, so app URLs always win.
+app.use('/', require('./routes/site'));
 
 app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 

@@ -1,5 +1,5 @@
 // End-to-end business workflow across modules and roles:
-// Wix request -> customer + service request -> job -> dispatch ->
+// Website request form -> customer + service request -> job -> dispatch ->
 // technician clocks in, uses truck stock, completes with signature ->
 // draft invoice -> accounting issues it -> payments -> ledger.
 const test = require('node:test');
@@ -20,13 +20,10 @@ const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
 const fmt = require('../utils/format');
 let today;
 
-async function wix(body, secret = 'wix-test-secret') {
-  const r = await fetch(ctx.base + '/api/integrations/wix/service-request', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...(secret ? { authorization: `Bearer ${secret}` } : {}) },
-    body: JSON.stringify(body),
-  });
-  return { status: r.status, body: await r.json() };
+// A visitor filling in the request form on the public website.
+async function websiteRequest(form) {
+  const c = new Client(ctx.base);
+  return c.post('/site/request', { return_to: '/request-service', ...form });
 }
 
 async function balance(code) {
@@ -36,26 +33,42 @@ async function balance(code) {
 
 const state = {};
 
-test('Wix intake: auth, customer dedupe, idempotent retries', async () => {
-  assert.strictEqual((await wix({ name: 'X' }, null)).status, 401);
-  assert.strictEqual((await wix({ name: 'X' }, 'wrong')).status, 401);
+test('website: published home page, request form creates customer + request, no duplicates', async () => {
+  const anon = new Client(ctx.base);
+  const before0 = await anon.request('GET', '/', { follow: false });
+  assert.strictEqual(before0.location, '/login', 'unpublished site sends visitors to the staff login');
+  const gm = new Client(ctx.base);
+  await gm.login('gm@hvacdemo.test');
+  const home = await db.prepare("SELECT id FROM site_pages WHERE slug = 'home'").get();
+  const req = await db.prepare("SELECT id FROM site_pages WHERE slug = 'request-service'").get();
+  await gm.post(`/website/pages/${home.id}/publish`, {});
+  await gm.post(`/website/pages/${req.id}/publish`, {});
+  const page = await anon.get('/');
+  assert.strictEqual(page.status, 200);
+  assert.match(page.text, /Heating &amp; cooling you can count on/);
+  assert.match(page.text, /action="\/site\/request"/);
+  assert.strictEqual((await anon.get('/request-service?type=estimate')).status, 200);
+
   const before = (await db.prepare('SELECT COUNT(*) AS c FROM customers').get()).c;
-  const r1 = await wix({ name: 'Jordan Fields', email: 'Jordan.Fields@Example.com', phone: '555-444-1212', address: '7 Oak St', city: 'Springfield', state: 'IL', zip: '62701', requestType: 'Request Service', message: 'AC blowing warm air', submissionId: 'abc-1' });
-  assert.strictEqual(r1.status, 201);
-  assert.match(r1.body.requestNumber, /^SR-\d{6}$/);
-  const retry = await wix({ name: 'Jordan Fields', email: 'jordan.fields@example.com', submissionId: 'abc-1' });
-  assert.strictEqual(retry.status, 200);
-  assert.strictEqual(retry.body.duplicate, true);
-  assert.strictEqual(retry.body.requestNumber, r1.body.requestNumber);
+  const r1 = await websiteRequest({ kind: 'service', name: 'Jordan Fields', email: 'Jordan.Fields@Example.com', phone: '555-444-1212', address: '7 Oak St', city: 'Springfield', zip: '62701', description: 'AC blowing warm air' });
+  assert.match(r1.url, /sent=1/);
+  assert.match(r1.text, /We received your request/);
+  // Bots that fill the hidden field are silently ignored.
+  const nBefore = (await db.prepare('SELECT COUNT(*) AS c FROM service_requests').get()).c;
+  await websiteRequest({ name: 'Bot', phone: '1', description: 'spam', website: 'http://spam.example' });
+  assert.strictEqual((await db.prepare('SELECT COUNT(*) AS c FROM service_requests').get()).c, nBefore);
+  // Missing contact info is refused with a message.
+  assert.match(decodeURIComponent((await websiteRequest({ name: 'No Contact', description: 'x' })).url), /email address or phone/);
   // Second, different request from the same person (matched by phone) -> same customer.
-  const r2 = await wix({ name: 'J. Fields', phone: '(555) 444-1212', requestType: 'estimate', message: 'Quote for new furnace', submissionId: 'abc-2' });
-  assert.strictEqual(r2.status, 201);
+  await websiteRequest({ kind: 'estimate', name: 'J. Fields', phone: '(555) 444-1212', address: '7 Oak St', description: 'Quote for new furnace' });
   const after = (await db.prepare('SELECT COUNT(*) AS c FROM customers').get()).c;
   assert.strictEqual(after, before + 1, 'exactly one new customer for two requests');
-  const sr = await db.prepare('SELECT * FROM service_requests WHERE request_number = ?').get(r1.body.requestNumber);
-  const sr2 = await db.prepare('SELECT * FROM service_requests WHERE request_number = ?').get(r2.body.requestNumber);
+  const reqs = await db.prepare("SELECT * FROM service_requests WHERE source = 'website' AND description LIKE '%warm air%' OR description LIKE '%new furnace%' ORDER BY id").all();
+  assert.strictEqual(reqs.length, 2);
+  const [sr, sr2] = reqs;
   assert.strictEqual(sr.customer_id, sr2.customer_id);
-  assert.strictEqual(sr.source, 'wix');
+  assert.strictEqual(sr.source, 'website');
+  assert.strictEqual(sr2.kind, 'estimate');
   const props = await db.prepare('SELECT COUNT(*) AS c FROM properties WHERE customer_id = ?').get(sr.customer_id);
   assert.strictEqual(props.c, 1);
   // Customer service was notified; confirmation was skipped (rule off by default).
@@ -284,7 +297,7 @@ test('security: privilege escalation, lockout, open redirect, audit trail', asyn
   assert.strictEqual(r2.location, '/home');
 
   const actions = (await db.prepare('SELECT DISTINCT action FROM audit_log').all()).map((x) => x.action);
-  for (const a of ['auth.login', 'auth.locked', 'service_request.wix', 'service_request.convert', 'job.assign', 'job.material', 'job.complete', 'invoice.issue', 'payment.record', 'timesheet.approved']) {
+  for (const a of ['auth.login', 'auth.locked', 'service_request.website', 'service_request.convert', 'job.assign', 'job.material', 'job.complete', 'invoice.issue', 'payment.record', 'timesheet.approved']) {
     assert.ok(actions.includes(a), `audit log has ${a}`);
   }
 });

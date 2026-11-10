@@ -1,5 +1,36 @@
 # Implementation log
 
+## Built-in website builder (replaces the Wix integration)
+
+The Wix integration is removed: the webhook endpoint, `WIX_WEBHOOK_SECRET` and the Wix guide are gone. The company website is now built and hosted by this app.
+
+* **Builder (`/website`, permission `website.manage`; Owner, General Manager and Office Manager by default):**
+  * **Pages:** create, rename, change address, menu order (drag), show/hide in menu, SEO title and description.
+  * **Sections, edited with a live preview:** announcement bar, hero banner with photo and buttons, text, image + text, services grid, call to action, testimonials, FAQ, photo gallery, service area, contact details with map, service request form, spacer.
+  * **Editing tools:**
+    * Drag to reorder, duplicate, move up or down, delete.
+    * Click a section in the preview to edit it.
+    * Preview at desktop, tablet or phone width.
+  * **Drafts and versions:** edits are saved to a draft. **Publish** makes them live and keeps a version; you can restore an earlier version or discard unpublished edits.
+  * **Look & feel:** logo, brand and accent colors, font style, header button, emergency phone, hours, footer text, social links.
+  * **Image library:** PNG, JPG, GIF or WebP, checked by file content; SVG is refused. An image can't be deleted while a page uses it.
+  * **Text placeholders:** `{{company_name}}`, `{{company_phone}}` and `{{emergency_phone}}` fill in from Company Settings.
+* **Public site:** mobile-first, served at `/` and `/<page-address>`.
+  * Request forms create the customer (deduplicated) and a Service Request with source "website", notifying customer service.
+  * The forms have a spam honeypot and a rate limit.
+  * App addresses (`/jobs`, `/login`, ...) can't be used as page addresses.
+* **Starter pages:** Home, Services, Maintenance Plans, About, Contact and Request Service are created as **drafts**. [Bracketed] placeholders mark text to replace, such as reviews and service area. Until the Home page is published, `/` goes to the staff login, as before.
+* **Tests:** `test/website.test.js`, 6 scenarios:
+  1. Only website managers can use the builder.
+  2. Draft vs. published; escaped text.
+  3. Unsafe links stripped.
+  4. Section reorder, duplicate, move and delete, and repeating items.
+  5. Reserved addresses refused, the menu, hide/publish, and version history.
+  6. Image type checks and in-use protection, theme colors (bad values rejected), taking the site offline.
+
+  The workflow test now starts from a website form submission. **42 tests pass on SQLite, and the same suites pass on Postgres 16.**
+
+
 ## Dates and times: US format, Eastern Time (New York)
 
 * **Display format.** Every date shows as MM/DD/YYYY (e.g. 12/15/1984) and every time as a 12-hour clock (2:30 PM). This covers every page, customer-facing estimates and invoices, pay stubs, emails and texts, notifications, CSV exports, and dates inside ledger memos and audit details. A footer note states the timezone, including standard/daylight time (EST/EDT).
@@ -93,8 +124,8 @@ The smoke test now also crawls as the customer login. **35 tests pass on SQLite,
   * A communication log with follow-ups, a service-history timeline, balances and photos.
   * Search by name, phone, email, address, customer #, job # or serial #.
   * Duplicate detection on email and phone.
-* **Service requests** (`/requests`, and the `/api/integrations/wix/service-request` endpoint)
-  * Office intake and Wix intake share one code path.
+* **Service requests** (`/requests`)
+  * Office intake, the website's request forms and the customer portal share one code path.
   * Retries are idempotent; customer service is notified.
   * A request converts to a job in one click.
 * **Jobs** (`/jobs/:id`, mobile-first)
@@ -138,7 +169,7 @@ The smoke test now also crawls as the customer login. **35 tests pass on SQLite,
 
 | Trigger | Action | Default |
 | --- | --- | --- |
-| New service request (office or Wix) | Notify everyone with `requests.manage` | on |
+| New service request (office, website or portal) | Notify everyone with `requests.manage` | on |
 | New service request | Email/SMS confirmation to the customer (needs a provider) | **off** |
 | Technician added to a job | Notify the technician | on |
 | Job completed | Create a **draft** invoice and notify billing | on |
@@ -149,7 +180,7 @@ The smoke test now also crawls as the customer login. **35 tests pass on SQLite,
 
 * `test/smoke.test.js`: logs in as each of the 13 seeded roles, opens every nav link (must return 200), then every internal link on those pages (must not be 404, 403 or 500).
 * `test/workflow.test.js`: the full chain from the brief, checked step by step with database and ledger assertions.
-  * Wix submission → customer created → retry deduped → second request matched to the same customer.
+  * Website form submission → customer created → spam honeypot ignored → second request matched to the same customer.
   * CSR converts it to a job; the CSR is blocked from payroll and financials.
   * The dispatcher assigns technician and truck; conflicts are flagged.
   * The technician is blocked from other technicians' jobs and from invoices. They clock in with GPS, can't over-draw or pull from the warehouse, and use one part (truck stock −1, Inventory −cost, COGS +cost). They upload a photo, clock out and complete with a signature.
@@ -174,7 +205,6 @@ The smoke test now also crawls as the customer login. **35 tests pass on SQLite,
 * **Payroll**: hours, overtime and rates are tracked and exported as CSV. Gross-to-net, withholding, direct deposit and tax filings must go through a payroll provider; that integration is not built. Overtime is weekly only (no daily-OT rules).
 * **Accounting**: statements are management reports computed from the ledger. They are not tax returns or reviewed/audited statements. There are no year-end closing entries; the balance sheet shows cumulative "current earnings". Have an accountant review the chart of accounts and the tax settings.
 * **Timezone**: timestamps are stored and shown in UTC.
-* **Wix**: the API is built and tested. The Wix page code (docs/WIX_INTEGRATION.md) has to be added in your Wix editor.
 
 ### Credentials and configuration you need to provide
 
@@ -182,7 +212,6 @@ The smoke test now also crawls as the customer login. **35 tests pass on SQLite,
 | --- | --- | --- |
 | `DATABASE_URL` | Supabase Postgres (transaction pooler, port 6543) | Yes, for production |
 | `SESSION_SECRET` | Signs login cookies | **Yes** |
-| `WIX_WEBHOOK_SECRET` | Authenticates the Wix site | For Wix forms |
 | `RESEND_API_KEY`, `MAIL_FROM` | Customer emails | Optional |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | Customer texts | Optional |
 | `COOKIE_SECURE=1` | Adds the `Secure` flag to the session cookie | Recommended once verified on Netlify |

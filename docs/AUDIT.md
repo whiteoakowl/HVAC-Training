@@ -13,7 +13,7 @@ Audited at commit `e9bb90e` ("Collapse sidebar into a Menu dropdown on phones").
 | Auth | Email + bcrypt password; signed-cookie sessions (`cookie-session`) storing only `memberId` |
 | Roles | One column, `members.role`, with a CHECK constraint limiting it to `student`, `instructor` or `admin`; a hard-coded rank `student < instructor < admin` |
 | Files | Document uploads are stored in the database (`document_files`) so they survive serverless instances |
-| Integrations | None (no email, SMS, payments, Wix or payroll) |
+| Integrations | None (no email, SMS, payments or payroll) |
 | Tests | None |
 
 ## Features that existed (all kept)
@@ -52,5 +52,5 @@ Not changed, but noted:
 
 * **Preserve:** the stack (Express + EJS + Postgres/SQLite + Netlify), the dual-driver DB layer, every training-portal feature, existing URLs and the visual style.
 * **Improve:** auth (lockout, redirect safety), roles (configurable RBAC), the navigation (built from permissions and grouped by portal), the error handling, and the CSS.
-* **Add:** migrations, audit log, settings, CRM, service requests and the Wix API, jobs and dispatch, inventory and trucks, the time clock, invoices and payments, double-entry accounting and reports, the three portals, the automation log, the messaging outbox and tests.
+* **Add:** migrations, audit log, settings, CRM, service requests, jobs and dispatch, inventory and trucks, the time clock, invoices and payments, double-entry accounting and reports, the three portals, the automation log, the messaging outbox and tests.
 * **Replace:** only the hard-coded rank checks (`requireRole`). They are now permission checks, with `requireRole` kept as a compatibility wrapper.

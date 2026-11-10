@@ -1,0 +1,20 @@
+<%# One builder field. Expects f (definition), name, value, media. %>
+<% if (f.type === 'textarea') { %>
+  <label class="full"><%= f.label %> <textarea name="<%= name %>" style="min-height:80px;"><%= value || '' %></textarea></label>
+<% } else if (f.type === 'image') { %>
+  <label class="full"><%= f.label %>
+    <select name="<%= name %>" class="img-pick">
+      <option value="">- none -</option>
+      <% media.forEach(function(m) { %><option value="<%= m.id %>" <%= String(value) === String(m.id) ? 'selected' : '' %>><%= m.file_name %><%= m.alt_text ? ' - ' + m.alt_text : '' %></option><% }); %>
+    </select>
+    <img class="img-pick-preview" src="<%= value ? '/media/' + value : '' %>" alt="" style="max-height:90px; width:auto; border-radius:6px; margin-top:0.3rem; <%= value ? '' : 'display:none;' %>" />
+  </label>
+<% } else if (f.type === 'select') { %>
+  <label><%= f.label %> <select name="<%= name %>"><% f.options.forEach(function(o) { %><option value="<%= o[0] %>" <%= value === o[0] ? 'selected' : '' %>><%= o[1] %></option><% }); %></select></label>
+<% } else if (f.type === 'bool') { %>
+  <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="<%= name %>" value="1" <%= value === '1' ? 'checked' : '' %> style="width:auto;" /> <%= f.label %></label>
+<% } else if (f.type === 'link') { %>
+  <label><%= f.label %> <input name="<%= name %>" value="<%= value || '' %>" list="site-links" placeholder="/contact, tel:5551234567, https://..." /></label>
+<% } else { %>
+  <label><%= f.label %> <input name="<%= name %>" value="<%= value || '' %>" /></label>
+<% } %>

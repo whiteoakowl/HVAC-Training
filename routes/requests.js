@@ -1,4 +1,4 @@
-// Service requests (office intake; the Wix webhook lands here too).
+// Service requests (office intake; website form requests land here too).
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requirePermission } = require('../middleware/auth');

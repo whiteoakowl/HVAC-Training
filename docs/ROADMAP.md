@@ -7,7 +7,7 @@ The work is ordered by dependency: the foundation first, then the money flow (jo
 * Migrations, configurable roles and permissions, settings, audit log.
 * The three portals, with navigation built from each user's permissions.
 * CRM.
-* Service requests and the Wix API.
+* Service requests (office intake; website forms added later).
 * Jobs and dispatch.
 * Inventory and trucks.
 * Time clock.

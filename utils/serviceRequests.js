@@ -1,12 +1,12 @@
 // Service requests: everything a customer asks for (service call,
 // estimate, maintenance, emergency, warranty, complaint) before it
 // becomes a scheduled job. intake() is shared by the office form and
-// the Wix webhook:
+// the public website's request forms (and the customer portal):
 //   1. find-or-create the customer (dedupe on email / phone)
 //   2. save the service address as a property (deduped)
 //   3. create the request with a unique SR- number
 //   4. notify customer service, 5. queue the customer confirmation
-// The external_id (e.g. Wix submission id) makes webhook retries safe.
+// An optional external_id makes repeated submissions of the same form safe.
 const db = require('../db');
 const fmt = require('./format');
 const customers = require('./customers');
@@ -63,7 +63,7 @@ async function intake(data, { memberId = null } = {}) {
       .run(customer.id, propertyId || null, kind, fmt.clean(data.description, 5000), fmt.dateOnly(data.preferred_date), fmt.clean(data.preferred_time, 50), fmt.clean(data.source, 40) || 'office', externalId, memberId);
     const id = info.lastInsertRowid;
     await tx.prepare('UPDATE service_requests SET request_number = ? WHERE id = ?').run(fmt.number('SR', id), id);
-    await customers.addInteraction(customer.id, { channel: data.source === 'wix' ? 'web' : 'note', direction: 'inbound', summary: `Service request ${fmt.number('SR', id)} (${kind}): ${fmt.clean(data.description, 500) || 'no details'}` }, memberId, tx);
+    await customers.addInteraction(customer.id, { channel: ['website', 'portal'].includes(data.source) ? 'web' : 'note', direction: 'inbound', summary: `Service request ${fmt.number('SR', id)} (${kind}): ${fmt.clean(data.description, 500) || 'no details'}` }, memberId, tx);
     return { id, customer, created };
   });
   const request = await get(result.id);

@@ -7,7 +7,7 @@ Node / Express / EJS on Postgres (Supabase), or SQLite for local development. De
 * **docs/AUDIT.md**: Phase 1 audit of the pre-upgrade app (stack, bugs, security fixes)
 * **docs/ROADMAP.md**: what's built and what's next
 * **docs/IMPLEMENTATION_LOG.md**: details, tests, known limitations, required credentials
-* **docs/WIX_INTEGRATION.md**: connecting the Wix website's forms
+* **Website**: the company's public website is built into the app (Admin → Website); no outside site builder is needed
 
 ## Setup
 
@@ -49,7 +49,7 @@ Demo logins all use the password `password123`.
 | Customer-facing (no staff login) | `/my` (customer portal), `/e/:token` (approve estimate), `/i/:token` (view invoice) |
 | Admin | `/portal/members` (users), `/admin/roles`, `/admin/settings`, `/admin/audit`, `/admin/checklists`, `/account` (password, two-step verification) |
 | Training portal (original) | `/portal`, `/events`, `/training/mine`, `/member-directory`, `/forums`, `/documents`, `/notifications` |
-| Website API | `POST /api/integrations/wix/service-request` |
+| Public website (built in) | `/` home page and pages like `/services`, `/contact`, `/request-service`; edited at `/website` |
 
 Roles and permissions are configurable (`/admin/roles`). Every page and action checks a permission, not a role name.
 
@@ -69,7 +69,7 @@ Roles and permissions are configurable (`/admin/roles`). Every page and action c
    * `DATABASE_URL`: the connection string from step 1.
    * `SESSION_SECRET`: a long random string (**required**).
    * `SEED_PASSWORD`: the password for the original demo accounts. **Change or deactivate those accounts** once your real users exist.
-   * Optional: `WIX_WEBHOOK_SECRET`, `RESEND_API_KEY` + `MAIL_FROM`, `TWILIO_*` (see docs/IMPLEMENTATION_LOG.md).
+   * Optional: `RESEND_API_KEY` + `MAIL_FROM`, `TWILIO_*` (see docs/IMPLEMENTATION_LOG.md).
    * Optional: `APP_TIMEZONE` overrides the timezone in Company Settings.
    * Optional: `APP_BASE_URL` (e.g. `https://yourapp.netlify.app`) is used for links in automated reminder emails. Netlify's `URL` is used if it isn't set.
    * Daily automations run from the scheduled function `netlify/functions/daily.js` (schedule in `netlify.toml`). There is nothing to set up beyond deploying.
@@ -79,5 +79,6 @@ Roles and permissions are configurable (`/admin/roles`). Every page and action c
    * In **Users & Roles**: create your staff accounts.
    * In **Trucks**: add your trucks.
    * In **Inventory**: add your items and receive opening stock.
+   * In **Website**: add your logo, colors and photos, replace the [bracketed] placeholder text with your own, then **Publish** the Home page. Until then, your address goes to the staff login.
 
 Netlify Functions cap request bodies at about 6 MB, so larger uploads fail there. Job photos are limited to 8 MB each in the app, but a single upload request must also fit under that 6 MB cap.

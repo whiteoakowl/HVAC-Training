@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
   const fail = (msg) => res.redirect('/login?error=' + encodeURIComponent(msg) + (next ? '&next=' + encodeURIComponent(next) : ''));
   const member = await findByEmail(req.body.email);
   if (member && member.locked_until && member.locked_until > fmt.nowText()) {
-    return fail(`Too many failed attempts. Try again after ${member.locked_until} or ask a manager to reset your password.`);
+    return fail(`Too many failed attempts. Try again after ${fmt.dt(member.locked_until)} or ask a manager to reset your password.`);
   }
   if (!member || !(await verifyPassword(member, req.body.password))) {
     if (member) {

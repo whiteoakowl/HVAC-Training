@@ -1,5 +1,13 @@
 # Implementation log
 
+## Dates and times: US format, Eastern Time (New York)
+
+* **Display format.** Every date shows as MM/DD/YYYY (e.g. 12/15/1984) and every time as a 12-hour clock (2:30 PM). This covers every page, customer-facing estimates and invoices, pay stubs, emails and texts, notifications, CSV exports, and dates inside ledger memos and audit details. A footer note states the timezone, including standard/daylight time (EST/EDT).
+* **Timezone.** It is Eastern Time, America/New_York; migration `004_eastern_time` sets it on existing databases. `APP_TIMEZONE` can still override it.
+* **What's stored.** The database still stores ISO text (`YYYY-MM-DD HH:MM:SS`) in New York local time, so sorting, date ranges and comparisons keep working. Date pickers use the browser's native control, which US browsers already show as MM/DD/YYYY.
+* **Tests.** The smoke test now fails if any page, for any role, shows a YYYY-MM-DD date or a 24-hour time. A stage 2 test re-checks every invoice, estimate, job, payroll run, purchase order, bill, agreement and customer page after a full day of activity.
+
+
 ## Stage 2 (second change): remaining modules
 
 Migration `003_stage2_modules` adds new tables and columns only. It was tested on SQLite and on Postgres 16, including upgrading a copy of a database created by the original app.

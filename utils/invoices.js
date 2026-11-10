@@ -357,7 +357,7 @@ async function createForAgreement(agreementId, memberId) {
   if (existing) return { id: existing.id, created: false };
   const id = await db.withTransaction(async (tx) => {
     const invId = await createDraft(tx, { customerId: ag.customer_id, agreementId, memberId });
-    await addLine(tx, invId, { kind: 'fee', description: `${ag.name} (${ag.agreement_number}) ${ag.start_date} to ${ag.end_date}`, quantity: 1, unitPriceCents: ag.price_cents, accountCode: '4200' });
+    await addLine(tx, invId, { kind: 'fee', description: `${ag.name} (${ag.agreement_number}) ${fmt.d(ag.start_date)} to ${fmt.d(ag.end_date)}`, quantity: 1, unitPriceCents: ag.price_cents, accountCode: '4200' });
     await recalc(tx, invId);
     return invId;
   });

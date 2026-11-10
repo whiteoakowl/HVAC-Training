@@ -42,7 +42,7 @@ router.post('/employee/time-off', requirePermission('portal.employee'), action(a
   if (overlap) throw new Error('You already have a request covering some of those days.');
   const info = await db.prepare('INSERT INTO time_off_requests (member_id, kind, start_date, end_date, hours, reason) VALUES (?, ?, ?, ?, ?, ?)').run(req.member.id, req.body.kind, start, end, hours, fmt.clean(req.body.reason, 500));
   await audit.log(req, 'timeoff.request', 'time_off', info.lastInsertRowid);
-  await automation.notifyPermission(['timeoff.approve'], 'timesheet', { title: `Time-off request from ${req.member.name}`, body: `${fmt.label(req.body.kind)} ${start} to ${end} (${hours} h)`, linkUrl: '/manage/time-off' }, req.member.id);
+  await automation.notifyPermission(['timeoff.approve'], 'timesheet', { title: `Time-off request from ${req.member.name}`, body: `${fmt.label(req.body.kind)} ${fmt.d(start)} to ${fmt.d(end)} (${hours} h)`, linkUrl: '/manage/time-off' }, req.member.id);
   flash(res, '/employee/time-off', 'notice', 'Request sent to your manager.');
 }, '/employee/time-off'));
 
@@ -87,7 +87,7 @@ router.post('/manage/time-off/:id', requirePermission('timeoff.approve'), action
     return t;
   });
   await audit.log(req, approve ? 'timeoff.approve' : 'timeoff.deny', 'time_off', r.id);
-  await notifications.notify(r.member_id, 'timesheet', { title: `Time off ${approve ? 'approved' : 'denied'}: ${r.start_date} to ${r.end_date}`, body: fmt.clean(req.body.note, 200) || '', linkUrl: '/employee/time-off' });
+  await notifications.notify(r.member_id, 'timesheet', { title: `Time off ${approve ? 'approved' : 'denied'}: ${fmt.d(r.start_date)} to ${fmt.d(r.end_date)}`, body: fmt.clean(req.body.note, 200) || '', linkUrl: '/employee/time-off' });
   flash(res, '/manage/time-off', 'notice', approve ? 'Approved.' : 'Denied.');
 }, '/manage/time-off'));
 
@@ -110,7 +110,7 @@ router.get('/employee/pay', requirePermission('portal.employee'), async (req, re
 router.get('/employee/pay/:itemId', requirePermission('portal.employee'), async (req, res) => {
   const s = await payroll.stub(req.member.id, req.params.itemId);
   if (!s) return res.status(404).render('404', { title: 'Not Found' });
-  res.render('employee-paystub', { title: `Pay stub ${s.pay_date}`, s, ytd: await payroll.ytd(req.member.id, s.pay_date.slice(0, 4)), company: await settings.all() });
+  res.render('employee-paystub', { title: `Pay stub ${fmt.d(s.pay_date)}`, s, ytd: await payroll.ytd(req.member.id, s.pay_date.slice(0, 4)), company: await settings.all() });
 });
 
 // ---------------------------------------------------------------- end-of-day reports

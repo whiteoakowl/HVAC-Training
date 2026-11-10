@@ -170,7 +170,7 @@ router.get('/timesheets', requirePermission('timesheets.approve'), async (req, r
     const canPay = req.can('employees.manage');
     res.type('text/csv').attachment(`timesheet-${start}.csv`);
     return res.send(fmt.csv(people, [
-      { label: 'Employee', value: 'name' }, { label: 'Week of', value: () => start }, { label: 'Regular hours', value: (p) => fmt.hours(p.regular) },
+      { label: 'Employee', value: 'name' }, { label: 'Week of', value: () => fmt.d(start) }, { label: 'Regular hours', value: (p) => fmt.hours(p.regular) },
       { label: 'Overtime hours', value: (p) => fmt.hours(p.overtime) }, { label: 'Unapproved entries', value: 'pending' },
       ...(canPay ? [{ label: 'Pay type', value: (p) => (rates.find((r) => r.member_id === p.memberId) || {}).pay_type || '' }, { label: 'Rate', value: (p) => fmt.centsInput((rates.find((r) => r.member_id === p.memberId) || {}).pay_rate_cents) }] : []),
     ]));
@@ -238,7 +238,7 @@ router.get('/reports', requirePermission('jobs.costing', 'accounting.view'), asy
   if (req.query.format === 'csv') {
     res.type('text/csv').attachment(`job-profitability-${from}-${to}.csv`);
     return res.send(fmt.csv(rows, [
-      { label: 'Job', value: 'job_number' }, { label: 'Completed', value: (r) => fmt.dateOnly(r.completed_at) }, { label: 'Customer', value: 'customerName' }, { label: 'Type', value: 'job_type' },
+      { label: 'Job', value: 'job_number' }, { label: 'Completed', value: (r) => fmt.d(r.completed_at) }, { label: 'Customer', value: 'customerName' }, { label: 'Type', value: 'job_type' },
       { label: 'Technicians', value: (r) => r.techs.map((t) => t.name).join('; ') }, { label: 'Price', value: (r) => fmt.centsInput(r.price) }, { label: 'Price source', value: 'priceSource' },
       { label: 'Materials', value: (r) => fmt.centsInput(r.materials) }, { label: 'Labor', value: (r) => fmt.centsInput(r.labor) }, { label: 'Labor hours', value: (r) => fmt.hours(r.laborMinutes) },
       { label: 'Other costs', value: (r) => fmt.centsInput(r.equipment + r.subcontractor + r.permit + r.other) }, { label: 'Total cost', value: (r) => fmt.centsInput(r.totalCost) },

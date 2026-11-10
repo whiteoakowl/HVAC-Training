@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Timesheets</h1><p class="hint">Week of <%= start %> · overtime over <%= threshold %> h/week · times in <%= fmt.timezone() %></p></div>
+  <div><h1>Timesheets</h1><p class="hint">Week of <%= fmt.d(start) %> · overtime over <%= threshold %> h/week · times in <%= fmt.timezone() %></p></div>
   <div class="btn-row">
     <a class="btn btn-secondary" href="/manage/timesheets?week=<%= prev %>">&larr; Prev</a><a class="btn btn-secondary" href="/manage/timesheets">This week</a><a class="btn btn-secondary" href="/manage/timesheets?week=<%= next %>">Next &rarr;</a>
     <a class="btn btn-secondary" href="/manage/timesheets?week=<%= start %>&format=csv">Payroll export (CSV)</a>
@@ -11,7 +11,7 @@
     <h2>Correction requests</h2>
     <% corrections.forEach(function(c) { %>
       <div style="border-top:1px solid var(--border); padding:0.4rem 0;">
-        <strong><%= c.memberName %></strong>: <%= c.clock_in %> - <%= c.clock_out || 'open' %> → <%= c.requested_clock_in || '(same)' %> - <%= c.requested_clock_out || '(same)' %><br><span class="hint"><%= c.reason %></span>
+        <strong><%= c.memberName %></strong>: <%= fmt.dt(c.clock_in) %> - <%= fmt.dt(c.clock_out) || 'open' %> → <%= fmt.dt(c.requested_clock_in) || '(same)' %> - <%= fmt.dt(c.requested_clock_out) || '(same)' %><br><span class="hint"><%= c.reason %></span>
         <form method="POST" action="/manage/timesheets/corrections/<%= c.id %>" class="inline-form"><button name="decision" value="approve" class="small">Approve</button> <button name="decision" value="reject" class="btn-danger small">Reject</button></form>
       </div>
     <% }); %>
@@ -29,7 +29,7 @@
           <% p.entries.forEach(function(e) { %>
             <tr>
               <td><% if (e.status === 'pending' && e.member_id !== member.id) { %><input type="checkbox" name="entry_ids" value="<%= e.id %>" checked style="width:auto;" /><% } %></td>
-              <td><%= e.clock_in.slice(0,10) %></td><td><%= e.clock_in.slice(11,16) %></td><td><%= e.clock_out ? e.clock_out.slice(11,16) : 'open' %></td>
+              <td><%= fmt.d(e.clock_in) %></td><td><%= fmt.time(e.clock_in) %></td><td><%= e.clock_out ? fmt.time(e.clock_out) : 'open' %></td>
               <td><%= e.breakMinutes %>m</td><td class="num"><%= fmt.hours(e.workedMinutes) %></td><td><%= e.job_number || '' %></td>
               <td class="small"><% if (e.in_lat !== null && e.in_lat !== undefined) { %><a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=<%= e.in_lat %>,<%= e.in_lng %>">in</a><% } %> <% if (e.out_lat !== null && e.out_lat !== undefined) { %><a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=<%= e.out_lat %>,<%= e.out_lng %>">out</a><% } %></td>
               <td><span class="status status-<%= e.status %>"><%= e.status %></span></td>

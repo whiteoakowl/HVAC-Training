@@ -28,7 +28,7 @@
 <% if (!rows.length) { %><p class="empty">No bills.</p><% } else { %>
 <table class="data-table">
   <thead><tr><th>Vendor</th><th>Bill #</th><th>PO</th><th>Date</th><th>Due</th><th class="num">Total</th><th class="num">Balance</th><th>Status</th></tr></thead>
-  <tbody><% rows.forEach(function(b) { var late = ['open','partial'].includes(b.status) && b.due_date < today; %><tr><td><%= b.vendorName %></td><td><a href="/bills/<%= b.id %>"><%= b.bill_number || '#' + b.id %></a></td><td><% if (b.po_id) { %><a href="/purchasing/<%= b.po_id %>"><%= b.po_number %></a><% } %></td><td><%= b.bill_date %></td><td class="<%= late ? 'priority-emergency' : '' %>"><%= b.due_date %></td><td class="num"><%= fmt.money(b.total_cents) %></td><td class="num"><%= fmt.money(b.total_cents - b.amount_paid_cents) %></td><td><span class="status status-<%= b.status === 'open' ? 'issued' : b.status %>"><%= b.status %></span></td></tr><% }); %></tbody>
+  <tbody><% rows.forEach(function(b) { var late = ['open','partial'].includes(b.status) && b.due_date < today; %><tr><td><%= b.vendorName %></td><td><a href="/bills/<%= b.id %>"><%= b.bill_number || '#' + b.id %></a></td><td><% if (b.po_id) { %><a href="/purchasing/<%= b.po_id %>"><%= b.po_number %></a><% } %></td><td><%= fmt.d(b.bill_date) %></td><td class="<%= late ? 'priority-emergency' : '' %>"><%= fmt.d(b.due_date) %></td><td class="num"><%= fmt.money(b.total_cents) %></td><td class="num"><%= fmt.money(b.total_cents - b.amount_paid_cents) %></td><td><span class="status status-<%= b.status === 'open' ? 'issued' : b.status %>"><%= b.status %></span></td></tr><% }); %></tbody>
 </table>
 <% } %>
 <%- include('partials/page-end') %>

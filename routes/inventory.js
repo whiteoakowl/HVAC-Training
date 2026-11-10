@@ -117,7 +117,7 @@ router.get('/inventory/transactions', requirePermission('inventory.view', 'inven
   if (req.query.format === 'csv') {
     res.type('text/csv').attachment('inventory-transactions.csv');
     return res.send(fmt.csv(rows, [
-      { label: 'Date', value: 'created_at' }, { label: 'Item', value: 'itemName' }, { label: 'SKU', value: 'sku' }, { label: 'Location', value: 'locationName' },
+      { label: 'Date', value: (r) => fmt.dt(r.created_at) }, { label: 'Item', value: 'itemName' }, { label: 'SKU', value: 'sku' }, { label: 'Location', value: 'locationName' },
       { label: 'Kind', value: 'kind' }, { label: 'Change', value: 'quantity_change' }, { label: 'Unit cost', value: (r) => fmt.centsInput(r.unit_cost_cents) },
       { label: 'Job', value: 'job_number' }, { label: 'By', value: 'memberName' }, { label: 'Note', value: 'note' },
     ]));

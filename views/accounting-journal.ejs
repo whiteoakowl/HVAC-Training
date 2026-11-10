@@ -13,7 +13,7 @@
 <table class="data-table">
   <thead><tr><th>#</th><th>Date</th><th>Memo</th><th>Source</th><th class="num">Amount</th></tr></thead>
   <tbody>
-    <% entries.forEach(function(e) { %><tr><td><a href="/accounting/journal/<%= e.id %>"><%= e.id %></a></td><td><%= e.entry_date %></td><td><%= e.memo %><%= e.reverses_entry_id ? ' (reversal)' : '' %></td><td class="small"><%= fmt.label(e.source_type) %></td><td class="num"><%= fmt.money(e.amount) %></td></tr><% }); %>
+    <% entries.forEach(function(e) { %><tr><td><a href="/accounting/journal/<%= e.id %>"><%= e.id %></a></td><td><%= fmt.d(e.entry_date) %></td><td><%= fmt.usText(e.memo) %><%= e.reverses_entry_id ? ' (reversal)' : '' %></td><td class="small"><%= fmt.label(e.source_type) %></td><td class="num"><%= fmt.money(e.amount) %></td></tr><% }); %>
   </tbody>
 </table>
 <% } %>

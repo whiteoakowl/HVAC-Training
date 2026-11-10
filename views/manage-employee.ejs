@@ -20,14 +20,14 @@
           <div class="full"><button type="submit">Save</button> <span class="hint">Pay rates feed job labor costing. Actual payroll runs through your payroll provider.</span></div>
         </form>
       <% } else { %>
-        <dl class="kv"><dt>Employee #</dt><dd><%= profile.employee_number || '-' %></dd><dt>Title</dt><dd><%= profile.job_title || '-' %></dd><dt>Hired</dt><dd><%= profile.hire_date || '-' %></dd><dt>Emergency</dt><dd><%= profile.emergency_contact || '-' %></dd></dl>
+        <dl class="kv"><dt>Employee #</dt><dd><%= profile.employee_number || '-' %></dd><dt>Title</dt><dd><%= profile.job_title || '-' %></dd><dt>Hired</dt><dd><%= fmt.d(profile.hire_date) || '-' %></dd><dt>Emergency</dt><dd><%= profile.emergency_contact || '-' %></dd></dl>
       <% } %>
     </div>
     <div class="card">
       <h2>Certifications</h2>
       <% if (!certs.length) { %><p class="empty">None on file.</p><% } %>
       <% certs.forEach(function(c) { %>
-        <p style="margin:0.3rem 0;"><strong><%= c.name %></strong><%= c.number ? ' #' + c.number : '' %> · <span class="<%= c.expires_on && c.expires_on < today ? 'priority-emergency' : '' %>"><%= c.expires_on ? 'expires ' + c.expires_on : 'no expiration' %></span>
+        <p style="margin:0.3rem 0;"><strong><%= c.name %></strong><%= c.number ? ' #' + c.number : '' %> · <span class="<%= c.expires_on && c.expires_on < today ? 'priority-emergency' : '' %>"><%= c.expires_on ? 'expires ' + fmt.d(c.expires_on) : 'no expiration' %></span>
           <% if (can('employees.manage')) { %><form method="POST" action="/manage/employees/<%= emp.id %>/certifications/<%= c.id %>/delete" class="inline-form" onsubmit="return confirm('Remove?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %></p>
       <% }); %>
       <% if (can('employees.manage')) { %>
@@ -43,10 +43,10 @@
   </div>
   <div class="stack">
     <div class="card"><h2>This week</h2><p><strong><%= fmt.hours(week.totalMinutes) %> h</strong><%= week.overtimeMinutes ? ' (' + fmt.hours(week.overtimeMinutes) + ' h OT)' : '' %> · <%= week.entries.filter(function(e) { return e.status === 'pending'; }).length %> pending approval</p><p>Truck: <%= truck ? truck.name : 'none' %></p></div>
-    <div class="card"><h2>Open jobs</h2><% if (!openJobs.length) { %><p class="empty">None.</p><% } %><% openJobs.forEach(function(j) { %><p class="small" style="margin:0.25rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= j.title %> · <%= fmt.shortDateTime(j.scheduled_start) || 'unscheduled' %></p><% }); %></div>
+    <div class="card"><h2>Open jobs</h2><% if (!openJobs.length) { %><p class="empty">None.</p><% } %><% openJobs.forEach(function(j) { %><p class="small" style="margin:0.25rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= j.title %> · <%= fmt.dt(j.scheduled_start) || 'unscheduled' %></p><% }); %></div>
     <div class="card"><h2>Leave</h2>
       <p class="small">PTO <strong><%= Number(profile.pto_balance_hours || 0) %> h</strong> · Sick <strong><%= Number(profile.sick_balance_hours || 0) %> h</strong></p>
-      <% leave.forEach(function(l) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.label(l.kind) %> <%= l.start_date %> to <%= l.end_date %> (<%= Number(l.hours) %> h) · <%= l.status %></p><% }); %>
+      <% leave.forEach(function(l) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.label(l.kind) %> <%= fmt.d(l.start_date) %> to <%= fmt.d(l.end_date) %> (<%= Number(l.hours) %> h) · <%= l.status %></p><% }); %>
       <% if (can('employees.manage', 'timeoff.approve')) { %>
         <form method="POST" action="/manage/employees/<%= emp.id %>/leave-balance" class="inline-fields mt"><label>PTO h <input name="pto_balance_hours" value="<%= Number(profile.pto_balance_hours || 0) %>" /></label><label>Sick h <input name="sick_balance_hours" value="<%= Number(profile.sick_balance_hours || 0) %>" /></label><button class="btn-secondary" type="submit">Set balances</button></form>
       <% } %>

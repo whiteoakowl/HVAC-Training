@@ -87,7 +87,7 @@ router.post('/:id/send', requirePermission('estimates.manage'), load, action(asy
   const e = await estimates.details(req.est.id);
   const link = `${req.protocol}://${req.get('host')}/e/${e.public_token}`;
   const company = await settings.get('company_name', 'Our team');
-  const body = `${company} sent you estimate ${e.estimate_number} for "${e.title}": ${fmt.money(e.total_cents)}. Review and approve online: ${link} (valid until ${e.expires_on}).`;
+  const body = `${company} sent you estimate ${e.estimate_number} for "${e.title}": ${fmt.money(e.total_cents)}. Review and approve online: ${link} (valid until ${fmt.d(e.expires_on)}).`;
   const results = [];
   if (req.body.channel !== 'sms' && e.customerEmail) results.push(await messaging.send({ channel: 'email', to: e.customerEmail, subject: `Estimate ${e.estimate_number} from ${company}`, body, relatedType: 'estimate', relatedId: e.id }));
   if (req.body.channel === 'sms' || req.body.channel === 'both') if (e.customerPhone) results.push(await messaging.send({ channel: 'sms', to: e.customerPhone, body, relatedType: 'estimate', relatedId: e.id }));

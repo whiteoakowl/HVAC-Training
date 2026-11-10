@@ -17,7 +17,7 @@
           <tr>
             <td><%= d.title %><% if (d.description) { %><br /><span class="hint"><%= d.description %></span><% } %></td>
             <td><%= d.categoryName || '-' %></td>
-            <td><%= d.created_at %></td>
+            <td><%= fmt.dt(d.created_at) %></td>
             <td><a class="btn-secondary" href="/documents/<%= d.id %>/download"><svg class="icon" style="width:14px;height:14px;"><use href="#icon-download"/></svg> Download</a></td>
           </tr>
         <% }); %>

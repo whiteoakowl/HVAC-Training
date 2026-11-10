@@ -10,7 +10,7 @@
       <tr>
         <td><a href="/manage/employees/<%= e.id %>"><%= e.name %></a><% if (!e.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
         <td><%= e.employee_number || '' %></td><td><%= e.job_title || '' %></td><td><%= e.roleName || e.role %></td>
-        <td><%= e.phone || '' %></td><td><%= e.truckName || '' %></td><td><%= e.hire_date || '' %></td>
+        <td><%= e.phone || '' %></td><td><%= e.truckName || '' %></td><td><%= fmt.d(e.hire_date) || '' %></td>
         <td><% if (e.expiredCerts) { %><span class="status status-rejected"><%= e.expiredCerts %> expired cert</span><% } %></td>
       </tr>
     <% }); %>

@@ -7,7 +7,7 @@
     <% if (!history.length) { %><p class="empty">No jobs have been linked to this equipment yet. Link it from a job's page.</p><% } %>
     <% history.forEach(function(h) { %>
       <div style="border-top:1px solid var(--border); padding:0.5rem 0;">
-        <p style="margin:0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> <span class="status status-<%= h.status %>"><%= fmt.label(h.status) %></span> <span class="hint"><%= fmt.dateOnly(h.completed_at) || '' %></span></p>
+        <p style="margin:0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> <span class="status status-<%= h.status %>"><%= fmt.label(h.status) %></span> <span class="hint"><%= fmt.d(h.completed_at) || '' %></span></p>
         <% if (h.work_performed) { %><p class="small" style="white-space:pre-wrap; margin:0.2rem 0;"><%= h.work_performed %></p><% } %>
       </div>
     <% }); %>
@@ -23,7 +23,7 @@
     <% } else { %>
       <dl class="kv">
         <dt>Model</dt><dd><%= e.model_number || '-' %></dd><dt>Serial</dt><dd><%= e.serial_number || '-' %></dd>
-        <dt>Installed</dt><dd><%= e.install_date || '-' %></dd><dt>Warranty</dt><dd><%= e.warranty_expires || '-' %></dd>
+        <dt>Installed</dt><dd><%= fmt.d(e.install_date) || '-' %></dd><dt>Warranty</dt><dd><%= fmt.d(e.warranty_expires) || '-' %></dd>
         <dt>Filter</dt><dd><%= e.filter_size || '-' %></dd><dt>Refrigerant</dt><dd><%= e.refrigerant_type || '-' %></dd>
       </dl>
     <% } %>

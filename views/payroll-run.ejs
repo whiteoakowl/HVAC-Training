@@ -1,8 +1,8 @@
 <%- include('partials/page-start') %>
 <% const draft = run.status === 'draft'; %>
 <div class="page-header">
-  <div><h1>Payroll <%= run.period_start %> to <%= run.period_end %> <span class="status status-<%= run.status === 'posted' ? 'paid' : run.status === 'void' ? 'void' : run.status === 'draft' ? 'draft' : 'approved' %>"><%= run.status %></span></h1>
-    <p class="hint">Pay date <%= run.pay_date %> · prepared by <%= run.createdByName || '-' %><%= run.approvedByName ? ' · approved by ' + run.approvedByName : '' %><% if (run.journal_entry_id) { %> · <a href="/accounting/journal/<%= run.journal_entry_id %>">ledger entry</a><% } %></p></div>
+  <div><h1>Payroll <%= fmt.d(run.period_start) %> to <%= fmt.d(run.period_end) %> <span class="status status-<%= run.status === 'posted' ? 'paid' : run.status === 'void' ? 'void' : run.status === 'draft' ? 'draft' : 'approved' %>"><%= run.status %></span></h1>
+    <p class="hint">Pay date <%= fmt.d(run.pay_date) %> · prepared by <%= run.createdByName || '-' %><%= run.approvedByName ? ' · approved by ' + run.approvedByName : '' %><% if (run.journal_entry_id) { %> · <a href="/accounting/journal/<%= run.journal_entry_id %>">ledger entry</a><% } %></p></div>
   <div class="btn-row"><a class="btn btn-secondary" href="/payroll/<%= run.id %>?format=csv">Export CSV</a><a class="btn btn-secondary" href="/payroll">&larr; Payroll</a></div>
 </div>
 <% if (run.pendingTime && draft) { %><div class="alert alert-error"><%= run.pendingTime %> time entr<%= run.pendingTime === 1 ? 'y' : 'ies' %> in this period are not approved and are NOT included. <a href="/manage/timesheets">Review timesheets</a>, then void and re-prepare this run.</div><% } %>

@@ -128,7 +128,7 @@ async function cancel(id, reason) {
   if (!fmt.clean(reason)) throw new Error('A reason is required.');
   const a = await db.prepare('SELECT * FROM maintenance_agreements WHERE id = ?').get(id);
   if (!a || a.status !== 'active') throw new Error('Only active agreements can be cancelled.');
-  await db.prepare("UPDATE maintenance_agreements SET status = 'cancelled', notes = COALESCE(notes, '') || ? WHERE id = ?").run(`\n[Cancelled ${fmt.today()}: ${reason}]`, id);
+  await db.prepare("UPDATE maintenance_agreements SET status = 'cancelled', notes = COALESCE(notes, '') || ? WHERE id = ?").run(`\n[Cancelled ${fmt.d(fmt.today())}: ${reason}]`, id);
   await db.prepare("UPDATE agreement_visits SET status = 'skipped' WHERE agreement_id = ? AND status = 'due'").run(id);
 }
 
@@ -141,7 +141,7 @@ async function createVisitJob(visitId, memberId) {
     if (v.job_id) return v.job_id;
     if (v.agreementStatus !== 'active') throw new Error('The agreement is not active.');
     const eq = await tx.prepare('SELECT e.equipment_type, e.manufacturer, e.serial_number FROM agreement_equipment ae JOIN equipment e ON e.id = ae.equipment_id WHERE ae.agreement_id = ?').all(v.agreement_id);
-    const desc = [`Maintenance visit ${v.visit_number} under ${v.agreement_number} (due ${v.due_date}).`, v.included_services ? `Included: ${v.included_services}` : null,
+    const desc = [`Maintenance visit ${v.visit_number} under ${v.agreement_number} (due ${fmt.d(v.due_date)}).`, v.included_services ? `Included: ${v.included_services}` : null,
       eq.length ? `Covered equipment: ${eq.map((e) => [e.equipment_type, e.manufacturer, e.serial_number && '#' + e.serial_number].filter(Boolean).join(' ')).join('; ')}` : null].filter(Boolean).join('\n');
     const jobId = await jobs.create({ customer_id: v.customer_id, property_id: v.property_id, title: `${v.name} - visit ${v.visit_number}`, description: desc, job_type: 'maintenance', status: 'ready_to_schedule', estimated_hours: 1.5, quoted_price_cents: 0 }, memberId, tx);
     await tx.prepare('UPDATE jobs SET agreement_visit_id = ? WHERE id = ?').run(visitId, jobId);

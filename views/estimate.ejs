@@ -3,7 +3,7 @@
 <div class="page-header no-print">
   <div>
     <h1><%= e.estimate_number %> <span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></h1>
-    <p class="hint">Revision <%= e.revision %> · created <%= fmt.dateOnly(e.created_at) %><%= e.createdByName ? ' by ' + e.createdByName : '' %><% if (e.job_id) { %> · job <a href="/jobs/<%= e.job_id %>"><%= e.job_number %></a><% } %></p>
+    <p class="hint">Revision <%= e.revision %> · created <%= fmt.d(e.created_at) %><%= e.createdByName ? ' by ' + e.createdByName : '' %><% if (e.job_id) { %> · job <a href="/jobs/<%= e.job_id %>"><%= e.job_number %></a><% } %></p>
   </div>
   <div class="btn-row"><button type="button" class="btn-secondary" onclick="window.print()">Print / Save PDF</button><a class="btn btn-secondary" href="/customers/<%= e.customer_id %>">Customer</a><a class="btn btn-secondary" href="/estimates">&larr; Estimates</a></div>
 </div>

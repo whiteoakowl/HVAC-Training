@@ -17,7 +17,7 @@
   <div class="card" style="margin-bottom:0.6rem;<%= a.pinned ? ' border-left:4px solid var(--brand);' : '' %>">
     <h3><%= a.pinned ? '📌 ' : '' %><%= a.title %></h3>
     <p style="white-space:pre-wrap;"><%= a.body %></p>
-    <p class="hint"><%= a.authorName || '' %> · <%= fmt.dateOnly(a.created_at) %><%= a.roleName ? ' · ' + a.roleName + ' only' : '' %><%= a.expires_on ? ' · until ' + a.expires_on : '' %></p>
+    <p class="hint"><%= a.authorName || '' %> · <%= fmt.d(a.created_at) %><%= a.roleName ? ' · ' + a.roleName + ' only' : '' %><%= a.expires_on ? ' · until ' + fmt.d(a.expires_on) : '' %></p>
     <% if (can('announcements.manage')) { %><form method="POST" action="/announcements/<%= a.id %>/delete" class="inline-form" onsubmit="return confirm('Remove?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %>
   </div>
 <% }); %>

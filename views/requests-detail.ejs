@@ -2,7 +2,7 @@
 <div class="page-header">
   <div>
     <h1><%= sr.request_number %> <span class="status status-<%= sr.status %>"><%= sr.status %></span></h1>
-    <p class="hint"><span class="<%= sr.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(sr.kind) %></span> · received <%= fmt.shortDateTime(sr.created_at) %> via <%= sr.source %><%= sr.createdByName ? ' by ' + sr.createdByName : '' %></p>
+    <p class="hint"><span class="<%= sr.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(sr.kind) %></span> · received <%= fmt.dt(sr.created_at) %> via <%= sr.source %><%= sr.createdByName ? ' by ' + sr.createdByName : '' %></p>
   </div>
   <p><a href="/requests">&larr; Service Requests</a></p>
 </div>
@@ -14,7 +14,7 @@
       <dt>Phone</dt><dd><% if (sr.customerPhone) { %><a href="tel:<%= sr.customerPhone %>"><%= sr.customerPhone %></a><% } else { %>-<% } %></dd>
       <dt>Email</dt><dd><%= sr.customerEmail || '-' %></dd>
       <dt>Address</dt><dd><%= [sr.address, sr.city, sr.state, sr.zip].filter(Boolean).join(', ') || '-' %></dd>
-      <dt>Preferred</dt><dd><%= [sr.preferred_date, sr.preferred_time].filter(Boolean).join(' ') || 'any time' %></dd>
+      <dt>Preferred</dt><dd><%= [fmt.d(sr.preferred_date), sr.preferred_time].filter(Boolean).join(' ') || 'any time' %></dd>
       <dt>Details</dt><dd style="white-space:pre-wrap"><%= sr.description || '-' %></dd>
       <% if (sr.job_id) { %><dt>Job</dt><dd><a href="/jobs/<%= sr.job_id %>"><%= sr.job_number %></a></dd><% } %>
     </dl>

@@ -15,7 +15,7 @@
       <% events.forEach(function(e) { %>
         <tr>
           <td><a href="/events/<%= e.id %>"><%= e.title %></a></td>
-          <td><%= e.starts_at %></td>
+          <td><%= fmt.dt(e.starts_at) %></td>
           <td><span class="badge-pill<%= e.visibility === 'public' ? '' : ' badge-pill-gray' %>"><%= e.visibility %></span></td>
           <td class="btn-row">
             <a class="btn-secondary" href="/events/<%= e.id %>/edit">Edit</a>

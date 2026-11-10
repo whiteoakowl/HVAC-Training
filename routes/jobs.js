@@ -159,12 +159,12 @@ router.post('/jobs/:id/assign', requirePermission('jobs.dispatch', 'jobs.manage'
   await audit.log(req, 'job.assign', 'job', req.job.id, { memberIds, truckId, start, end });
   for (const mid of added) {
     await automation.run('automation_notify_job_assigned', 'job', req.job.id, async () => {
-      await notifications.notify(mid, 'job_assigned', { title: `New job ${req.job.job_number}`, body: `${req.job.title} · ${start ? fmt.shortDateTime(start) : 'unscheduled'} · ${req.job.address || ''}`, linkUrl: `/jobs/${req.job.id}` });
+      await notifications.notify(mid, 'job_assigned', { title: `New job ${req.job.job_number}`, body: `${req.job.title} · ${start ? fmt.dt(start) : 'unscheduled'} · ${req.job.address || ''}`, linkUrl: `/jobs/${req.job.id}` });
       return `notified member ${mid}`;
     });
   }
   const msg = conflicts.length
-    ? `Saved, but there ${conflicts.length === 1 ? 'is a schedule conflict' : 'are schedule conflicts'}: ${conflicts.map((c) => `${c.memberName} on ${c.job_number} at ${fmt.shortDateTime(c.scheduled_start)}`).join('; ')}`
+    ? `Saved, but there ${conflicts.length === 1 ? 'is a schedule conflict' : 'are schedule conflicts'}: ${conflicts.map((c) => `${c.memberName} on ${c.job_number} at ${fmt.dt(c.scheduled_start)}`).join('; ')}`
     : 'Assignment saved.';
   flash(res, back(req), conflicts.length ? 'error' : 'notice', msg);
 }, back));
@@ -324,11 +324,11 @@ router.post('/dispatch/move', requirePermission('jobs.dispatch', 'jobs.manage'),
     await audit.log(req, 'job.dispatch_move', 'job', job.id, { crew, start });
     for (const mid of added) {
       await automation.run('automation_notify_job_assigned', 'job', job.id, async () => {
-        await notifications.notify(mid, 'job_assigned', { title: `New job ${job.job_number}`, body: `${job.title} · ${fmt.shortDateTime(start)}`, linkUrl: `/jobs/${job.id}` });
+        await notifications.notify(mid, 'job_assigned', { title: `New job ${job.job_number}`, body: `${job.title} · ${fmt.dt(start)}`, linkUrl: `/jobs/${job.id}` });
         return `notified member ${mid}`;
       });
     }
-    res.json({ ok: true, conflicts: conflicts.map((c) => `${c.memberName}: ${c.job_number} at ${fmt.shortDateTime(c.scheduled_start)}`) });
+    res.json({ ok: true, conflicts: conflicts.map((c) => `${c.memberName}: ${c.job_number} at ${fmt.dt(c.scheduled_start)}`) });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.code ? 'Could not move the job.' : err.message });
   }

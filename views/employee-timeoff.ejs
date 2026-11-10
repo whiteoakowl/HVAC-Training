@@ -15,7 +15,7 @@
 <h2 class="mt">My requests</h2>
 <% if (!rows.length) { %><p class="empty">None yet.</p><% } else { %>
 <table class="data-table"><thead><tr><th>Dates</th><th>Type</th><th class="num">Hours</th><th>Status</th><th></th></tr></thead><tbody>
-  <% rows.forEach(function(r) { %><tr><td><%= r.start_date %><%= r.end_date !== r.start_date ? ' to ' + r.end_date : '' %></td><td><%= fmt.label(r.kind) %></td><td class="num"><%= Number(r.hours) %></td>
+  <% rows.forEach(function(r) { %><tr><td><%= fmt.d(r.start_date) %><%= r.end_date !== r.start_date ? ' to ' + fmt.d(r.end_date) : '' %></td><td><%= fmt.label(r.kind) %></td><td class="num"><%= Number(r.hours) %></td>
     <td><span class="status status-<%= r.status === 'denied' ? 'rejected' : r.status === 'cancelled' ? 'cancelled' : r.status %>"><%= r.status %></span><%= r.decision_note ? ' · ' + r.decision_note : '' %></td>
     <td><% if (['pending','approved'].includes(r.status) && r.start_date > fmt.today()) { %><form method="POST" action="/employee/time-off/<%= r.id %>/cancel" class="inline-form"><button class="btn-secondary small" type="submit">Cancel</button></form><% } %></td></tr><% }); %>
 </tbody></table>

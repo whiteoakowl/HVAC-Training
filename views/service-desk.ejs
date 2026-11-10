@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Service Desk</h1><p class="hint"><%= today %> · requests, today's schedule and follow-ups</p></div>
+  <div><h1>Service Desk</h1><p class="hint"><%= fmt.d(today) %> · requests, today's schedule and follow-ups</p></div>
   <div class="btn-row">
     <% if (can('requests.manage')) { %><a class="btn" href="/requests/new">+ Service Request</a><% } %>
     <% if (can('customers.edit')) { %><a class="btn btn-secondary" href="/customers/new">+ Customer</a><% } %>
@@ -25,14 +25,14 @@
     <% if (!requests.length) { %><p class="empty">Queue is clear.</p><% } %>
     <% requests.forEach(function(r) { %>
       <p style="margin:0.35rem 0;"><a href="/requests/<%= r.id %>"><%= r.request_number %></a> <span class="<%= r.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(r.kind) %></span> <span class="status status-<%= r.status %>"><%= r.status %></span><br>
-        <span class="hint"><%= r.customerName %> · <%= r.customerPhone || '' %> · <%= r.source %> · <%= fmt.shortDateTime(r.created_at) %></span></p>
+        <span class="hint"><%= r.customerName %> · <%= r.customerPhone || '' %> · <%= r.source %> · <%= fmt.dt(r.created_at) %></span></p>
     <% }); %>
   </div>
   <div class="card">
     <h2>Today's appointments (<%= todayJobs.length %>)</h2>
     <% if (!todayJobs.length) { %><p class="empty">Nothing scheduled today.</p><% } %>
     <% todayJobs.forEach(function(j) { %>
-      <p style="margin:0.35rem 0;"><strong><%= j.scheduled_start.slice(11,16) %></strong> <a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span><br>
+      <p style="margin:0.35rem 0;"><strong><%= fmt.time(j.scheduled_start) %></strong> <a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span><br>
         <span class="hint"><%= j.customerName %> · <%= j.techs.map(function(t) { return t.name; }).join(', ') || 'no tech' %></span></p>
     <% }); %>
   </div>
@@ -47,7 +47,7 @@
       <h2>Follow-ups due (<%= followUps.length %>)</h2>
       <% if (!followUps.length) { %><p class="empty">None due.</p><% } %>
       <% followUps.forEach(function(f) { %>
-        <div style="margin:0.35rem 0;"><a href="/customers/<%= f.customer_id %>#communication"><%= f.customerName %></a> <span class="hint">due <%= f.follow_up_on %> · <%= f.phone || '' %></span><br><span class="small"><%= f.summary %></span>
+        <div style="margin:0.35rem 0;"><a href="/customers/<%= f.customer_id %>#communication"><%= f.customerName %></a> <span class="hint">due <%= fmt.d(f.follow_up_on) %> · <%= f.phone || '' %></span><br><span class="small"><%= f.summary %></span>
           <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= f.customer_id %>/interactions/<%= f.id %>/done" class="inline-form"><input type="hidden" name="back" value="service" /><button type="submit" class="btn-secondary small">Done</button></form><% } %></div>
       <% }); %>
     </div>
@@ -55,7 +55,7 @@
   <% if (overdue.length) { %>
     <div class="card">
       <h2>Overdue invoices (<%= overdue.length %>)</h2>
-      <% overdue.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> · <%= i.customerName %> · <%= fmt.money(i.total_cents - i.amount_paid_cents - i.credited_cents) %> <span class="hint">due <%= i.due_date %></span></p><% }); %>
+      <% overdue.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> · <%= i.customerName %> · <%= fmt.money(i.total_cents - i.amount_paid_cents - i.credited_cents) %> <span class="hint">due <%= fmt.d(i.due_date) %></span></p><% }); %>
     </div>
   <% } %>
 </div>

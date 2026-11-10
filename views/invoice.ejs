@@ -15,7 +15,7 @@
     <div style="text-align:right;">
       <h2 style="margin:0;">INVOICE <%= inv.invoice_number %></h2>
       <p style="margin:0.3rem 0;"><span class="status status-<%= inv.status %>"><%= inv.status.toUpperCase() %></span></p>
-      <p class="small" style="margin:0;">Issued: <%= inv.issue_date || '(draft)' %><br>Due: <%= inv.due_date || '-' %><br>Terms: <%= inv.terms || '-' %></p>
+      <p class="small" style="margin:0;">Issued: <%= fmt.d(inv.issue_date) || '(draft)' %><br>Due: <%= fmt.d(inv.due_date) || '-' %><br>Terms: <%= inv.terms || '-' %></p>
     </div>
   </div>
   <div class="two-col" style="grid-template-columns: 1fr 1fr;">
@@ -47,10 +47,10 @@
   <% if (company.invoice_payment_instructions) { %><p class="small" style="white-space:pre-wrap;"><strong>How to pay:</strong> <%= company.invoice_payment_instructions %></p><% } %>
   <% if (inv.payments.length) { %>
     <p class="hint mt">Payments received</p>
-    <% inv.payments.forEach(function(p) { %><p class="small" style="margin:0.15rem 0;"><%= p.received_on %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %><%= p.reference ? ' #' + p.reference : '' %></p><% }); %>
+    <% inv.payments.forEach(function(p) { %><p class="small" style="margin:0.15rem 0;"><%= fmt.d(p.received_on) %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %><%= p.reference ? ' #' + p.reference : '' %></p><% }); %>
   <% } %>
-  <% if (inv.credits.length) { %><p class="hint mt">Credits</p><% inv.credits.forEach(function(c) { %><p class="small" style="margin:0.15rem 0;"><%= fmt.dateOnly(c.created_at) %> · <%= fmt.money(c.amount_cents) %> · <%= c.reason %></p><% }); %><% } %>
-  <% if (inv.refunds.length) { %><p class="hint mt">Refunds</p><% inv.refunds.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><%= r.refunded_on %> · <%= fmt.money(r.amount_cents) %> · <%= r.method %> · <%= r.reason %></p><% }); %><% } %>
+  <% if (inv.credits.length) { %><p class="hint mt">Credits</p><% inv.credits.forEach(function(c) { %><p class="small" style="margin:0.15rem 0;"><%= fmt.d(c.created_at) %> · <%= fmt.money(c.amount_cents) %> · <%= c.reason %></p><% }); %><% } %>
+  <% if (inv.refunds.length) { %><p class="hint mt">Refunds</p><% inv.refunds.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><%= fmt.d(r.refunded_on) %> · <%= fmt.money(r.amount_cents) %> · <%= r.method %> · <%= r.reason %></p><% }); %><% } %>
 </div>
 
 <div class="card-grid no-print">

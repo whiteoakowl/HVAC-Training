@@ -4,7 +4,8 @@
 // company's timezone (Company Settings -> timezone, or APP_TIMEZONE),
 // so schedules typed by the office and clock punches line up.
 
-let TZ = process.env.APP_TIMEZONE || 'UTC';
+// Eastern (New York) until the company setting is loaded.
+let TZ = process.env.APP_TIMEZONE || 'America/New_York';
 const fmtCache = new Map();
 
 function validTimezone(tz) {
@@ -160,7 +161,54 @@ function csv(rows, columns) {
   return [head, ...body].join('\n');
 }
 
+// ---------------------------------------------------------------- display
+// US display format: dates as MM/DD/YYYY (e.g. 12/15/1984), times as
+// 12-hour clock in the company timezone (Eastern, New York by default).
+// Storage stays ISO 'YYYY-MM-DD HH:MM:SS' so sorting and comparisons work.
+function d(v) {
+  if (!v) return '';
+  const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : String(v);
+}
+
+function time(v) {
+  if (!v) return '';
+  const m = String(v).match(/(?:^|[ T])(\d{2}):(\d{2})/);
+  if (!m) return '';
+  const h = parseInt(m[1], 10);
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+function dt(v) {
+  if (!v) return '';
+  const t = time(String(v).length > 10 ? v : '');
+  return t ? `${d(v)} ${t}` : d(v);
+}
+
+// "EST" / "EDT" (or the zone's short name) for a given moment.
+function tzAbbr(date = new Date()) {
+  try {
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'short' }).formatToParts(date).find((x) => x.type === 'timeZoneName');
+    return p ? p.value : TZ;
+  } catch (e) {
+    return TZ;
+  }
+}
+
+// Rewrites any ISO dates/times inside free text (ledger memos, audit
+// details, automation results) into US format for display.
+function usText(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/g, (m) => dt(m));
+}
+
+function tzName() {
+  const names = { 'America/New_York': 'Eastern Time (New York)', 'America/Chicago': 'Central Time', 'America/Denver': 'Mountain Time', 'America/Phoenix': 'Arizona Time', 'America/Los_Angeles': 'Pacific Time', UTC: 'UTC' };
+  return `${names[TZ] || TZ} - ${tzAbbr()}`;
+}
+
 module.exports = {
+  d, time, dt, usText, tzAbbr, tzName,
   setTimezone, timezone, validTimezone, addMinutes,
   money, toCents, centsInput, toNumber, nowText, today, addDays, weekStart, fromLocalInput, toLocalInput, dateOnly,
   shortDateTime, hours, parseTs, minutesBetween, digits, phoneKey, number, label, clean, csv,

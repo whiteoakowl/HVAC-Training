@@ -342,3 +342,34 @@ test('books still balance after every stage-2 posting', async () => {
   const runs = await db.prepare("SELECT COUNT(*) AS c FROM automation_runs WHERE rule_key = 'daily_run'").get();
   assert.ok(runs.c >= 1);
 });
+
+test('every date reads MM/DD/YYYY and every time is 12-hour Eastern after a full day of activity', async () => {
+  assert.strictEqual(require('../utils/format').timezone(), 'America/New_York');
+  const admin = await login('admin@hvactraining.test');
+  const ids = async (sql) => (await db.prepare(sql).all()).map((r) => r.id);
+  const pages = ['/manage', '/estimates?all=1', '/invoices', '/bills?status=paid', '/purchasing?all=1', '/expenses', '/payroll', '/agreements', '/manage/timesheets', '/manage/time-off',
+    '/accounting/journal?from=2000-01-01', '/accounting/reports/ar-aging', '/admin/audit', '/messages', '/announcements', '/training/center', '/inventory/transactions'];
+  for (const id of await ids('SELECT id FROM invoices')) pages.push(`/invoices/${id}`);
+  for (const id of await ids('SELECT id FROM estimates')) pages.push(`/estimates/${id}`);
+  for (const id of await ids('SELECT id FROM jobs')) pages.push(`/jobs/${id}`);
+  for (const id of await ids('SELECT id FROM payroll_runs')) pages.push(`/payroll/${id}`);
+  for (const id of await ids('SELECT id FROM purchase_orders')) pages.push(`/purchasing/${id}`);
+  for (const id of await ids('SELECT id FROM vendor_bills')) pages.push(`/bills/${id}`);
+  for (const id of await ids('SELECT id FROM maintenance_agreements')) pages.push(`/agreements/${id}`);
+  for (const id of await ids('SELECT id FROM customers')) pages.push(`/customers/${id}`);
+  const bad = [];
+  for (const url of pages) {
+    const r = await admin.get(url);
+    assert.strictEqual(r.status, 200, url);
+    const text = r.text.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<textarea[\s\S]*?<\/textarea>/gi, ' ').replace(/<[^>]*>/g, ' ');
+    const iso = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
+    const h24 = text.match(/\b(1[3-9]|2[0-3]):[0-5]\d\b/);
+    if (iso) bad.push(`${url}: ${iso[0]}`);
+    if (h24) bad.push(`${url}: ${h24[0]}`);
+  }
+  assert.deepStrictEqual(bad, []);
+  const stub = await db.prepare("SELECT i.id FROM payroll_items i JOIN members m ON m.id = i.member_id WHERE m.email = 'tech@hvacdemo.test'").get();
+  const t = await login('tech@hvacdemo.test');
+  assert.match((await t.get(`/employee/pay/${stub.id}`)).text, /\d{2}\/\d{2}\/\d{4}/);
+  assert.match((await t.get('/employee/time')).text, /Eastern Time \(New York\)/);
+});

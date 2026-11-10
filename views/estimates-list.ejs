@@ -18,8 +18,8 @@
 <table class="data-table">
   <thead><tr><th>Estimate</th><th>Customer</th><th>Title</th><th>Created</th><th>Expires</th><th class="num">Total</th><th>Status</th></tr></thead>
   <tbody><% rows.forEach(function(e) { %>
-    <tr><td><a href="/estimates/<%= e.id %>"><%= e.estimate_number %></a></td><td><%= e.customerName %></td><td><%= e.title %></td><td><%= fmt.dateOnly(e.created_at) %></td>
-      <td class="<%= e.status === 'sent' && e.expires_on && e.expires_on < fmt.today() ? 'priority-emergency' : '' %>"><%= e.expires_on || '' %></td><td class="num"><%= fmt.money(e.total_cents) %></td>
+    <tr><td><a href="/estimates/<%= e.id %>"><%= e.estimate_number %></a></td><td><%= e.customerName %></td><td><%= e.title %></td><td><%= fmt.d(e.created_at) %></td>
+      <td class="<%= e.status === 'sent' && e.expires_on && e.expires_on < fmt.today() ? 'priority-emergency' : '' %>"><%= fmt.d(e.expires_on) || '' %></td><td class="num"><%= fmt.money(e.total_cents) %></td>
       <td><span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></td></tr>
   <% }); %></tbody>
 </table>

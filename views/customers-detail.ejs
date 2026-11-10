@@ -2,7 +2,7 @@
 <div class="page-header">
   <div>
     <h1><%= c.name %> <span class="status status-<%= c.active ? 'approved' : 'cancelled' %>"><%= c.customer_number %></span></h1>
-    <p class="hint"><%= fmt.label(c.account_type) %><%= c.company_name ? ' · ' + c.company_name : '' %> · customer since <%= fmt.dateOnly(c.created_at) %><%= c.source ? ' · source: ' + c.source : '' %></p>
+    <p class="hint"><%= fmt.label(c.account_type) %><%= c.company_name ? ' · ' + c.company_name : '' %> · customer since <%= fmt.d(c.created_at) %><%= c.source ? ' · source: ' + c.source : '' %></p>
   </div>
   <div class="btn-row no-print">
     <% if (can('requests.manage')) { %><a class="btn" href="/requests/new?customer_id=<%= c.id %>">+ Service Request</a><% } %>
@@ -72,8 +72,8 @@
                 <td><a href="/customers/<%= c.id %>/equipment/<%= e.id %>"><%= e.equipment_type %></a><% if (!e.active) { %> <span class="status status-cancelled">retired</span><% } %></td>
                 <td><%= [e.manufacturer, e.model_number].filter(Boolean).join(' ') %></td>
                 <td><%= e.serial_number || '' %></td>
-                <td><%= e.install_date || '' %></td>
-                <td><% if (e.warranty_expires) { %><span class="<%= e.warranty_expires < fmt.today() ? 'muted' : '' %>"><%= e.warranty_expires %></span><% } %></td>
+                <td><%= fmt.d(e.install_date) || '' %></td>
+                <td><% if (e.warranty_expires) { %><span class="<%= e.warranty_expires < fmt.today() ? 'muted' : '' %>"><%= fmt.d(e.warranty_expires) %></span><% } %></td>
                 <td><%= e.filter_size || '' %></td>
                 <td class="small"><%= e.propertyLabel || e.address %></td>
               </tr>
@@ -99,7 +99,7 @@
           <thead><tr><th>Job</th><th>Title</th><th>Status</th><th>Scheduled</th><th>Completed</th></tr></thead>
           <tbody>
             <% jobList.forEach(function(j) { %>
-              <tr><td><a href="/jobs/<%= j.id %>"><%= j.job_number %></a></td><td><%= j.title %></td><td><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></td><td><%= fmt.shortDateTime(j.scheduled_start) %></td><td><%= fmt.dateOnly(j.completed_at) || '' %></td></tr>
+              <tr><td><a href="/jobs/<%= j.id %>"><%= j.job_number %></a></td><td><%= j.title %></td><td><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></td><td><%= fmt.dt(j.scheduled_start) %></td><td><%= fmt.d(j.completed_at) || '' %></td></tr>
             <% }); %>
           </tbody>
         </table>
@@ -122,11 +122,11 @@
         <div class="stat <%= balance > 0 ? 'warn' : 'good' %>" style="margin-bottom:0.6rem;"><div class="stat-label">Outstanding balance</div><div class="stat-value"><%= fmt.money(balance) %></div></div>
         <% if (!invoiceList.length) { %><p class="empty">No invoices.</p><% } %>
         <% invoiceList.forEach(function(i) { %>
-          <p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <span class="num"><%= fmt.money(i.total_cents) %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">due <%= i.due_date %></span><% } %></p>
+          <p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <span class="num"><%= fmt.money(i.total_cents) %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">due <%= fmt.d(i.due_date) %></span><% } %></p>
         <% }); %>
         <% if (payments.length) { %>
           <p class="hint mt">Payments</p>
-          <% payments.forEach(function(p) { %><p class="small" style="margin:0.2rem 0;"><%= p.received_on %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %> · <%= p.invoice_number %></p><% }); %>
+          <% payments.forEach(function(p) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.d(p.received_on) %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %> · <%= p.invoice_number %></p><% }); %>
         <% } %>
       </div>
     <% } %>
@@ -138,11 +138,11 @@
     <% } %>
     <div class="card"><h2>Maintenance agreements</h2>
       <% if (!agreementList.length) { %><p class="empty">None.</p><% } %>
-      <% agreementList.forEach(function(a) { %><p style="margin:0.3rem 0;"><% if (can('agreements.manage')) { %><a href="/agreements/<%= a.id %>"><%= a.agreement_number %></a><% } else { %><%= a.agreement_number %><% } %> <%= a.name %> <span class="status status-<%= a.status === 'active' ? 'approved' : 'cancelled' %>"><%= a.status %></span><br><span class="hint">to <%= a.end_date %><%= a.nextVisit ? ' · next visit ' + a.nextVisit : '' %></span></p><% }); %>
+      <% agreementList.forEach(function(a) { %><p style="margin:0.3rem 0;"><% if (can('agreements.manage')) { %><a href="/agreements/<%= a.id %>"><%= a.agreement_number %></a><% } else { %><%= a.agreement_number %><% } %> <%= a.name %> <span class="status status-<%= a.status === 'active' ? 'approved' : 'cancelled' %>"><%= a.status %></span><br><span class="hint">to <%= fmt.d(a.end_date) %><%= a.nextVisit ? ' · next visit ' + fmt.d(a.nextVisit) : '' %></span></p><% }); %>
     </div>
     <div class="card"><h2>Customer portal</h2>
       <% if (portalUser) { %>
-        <p class="small"><%= portalUser.email %> · <%= portalUser.active ? 'active' : 'disabled' %> · last login <%= portalUser.last_login_at || 'never' %></p>
+        <p class="small"><%= portalUser.email %> · <%= portalUser.active ? 'active' : 'disabled' %> · last login <%= fmt.dt(portalUser.last_login_at) || 'never' %></p>
         <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/portal-revoke" onsubmit="return confirm('Remove portal access?');"><button class="btn-secondary small" type="submit">Remove access</button></form><% } %>
       <% } else { %>
         <p class="hint">Let the customer see service history, estimates, invoices and request service online.</p>
@@ -154,7 +154,7 @@
       <h2>Service requests</h2>
       <% if (!requests.length) { %><p class="empty">None.</p><% } %>
       <% requests.forEach(function(r) { %>
-        <p style="margin:0.3rem 0;"><a href="/requests/<%= r.id %>"><%= r.request_number %></a> <span class="status status-<%= r.status %>"><%= r.status %></span> <span class="hint"><%= fmt.label(r.kind) %> · <%= fmt.dateOnly(r.created_at) %></span></p>
+        <p style="margin:0.3rem 0;"><a href="/requests/<%= r.id %>"><%= r.request_number %></a> <span class="status status-<%= r.status %>"><%= r.status %></span> <span class="hint"><%= fmt.label(r.kind) %> · <%= fmt.d(r.created_at) %></span></p>
       <% }); %>
     </div>
 
@@ -182,10 +182,10 @@
       <% if (!interactions.length) { %><p class="empty">Nothing logged yet.</p><% } %>
       <% interactions.forEach(function(i) { %>
         <div style="border-top:1px solid var(--border); padding:0.45rem 0;">
-          <p class="hint" style="margin:0;"><%= fmt.shortDateTime(i.created_at) %> · <%= fmt.label(i.channel) %> · <%= i.direction %><%= i.memberName ? ' · ' + i.memberName : '' %></p>
+          <p class="hint" style="margin:0;"><%= fmt.dt(i.created_at) %> · <%= fmt.label(i.channel) %> · <%= i.direction %><%= i.memberName ? ' · ' + i.memberName : '' %></p>
           <p style="margin:0.2rem 0; white-space:pre-wrap;"><%= i.summary %></p>
           <% if (i.follow_up_on) { %>
-            <p class="small" style="margin:0;">Follow up <%= i.follow_up_on %>: <%= i.follow_up_done ? 'done' : 'open' %>
+            <p class="small" style="margin:0;">Follow up <%= fmt.d(i.follow_up_on) %>: <%= i.follow_up_done ? 'done' : 'open' %>
               <% if (!i.follow_up_done && can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/interactions/<%= i.id %>/done" class="inline-form"><button class="btn-secondary small" type="submit">Mark done</button></form><% } %></p>
           <% } %>
         </div>

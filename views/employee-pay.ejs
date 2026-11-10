@@ -7,7 +7,7 @@
 </div>
 <% if (!stubs.length) { %><p class="empty">No pay stubs yet.</p><% } else { %>
 <table class="data-table"><thead><tr><th>Pay date</th><th>Period</th><th class="num">Gross</th><th class="num">Net</th></tr></thead><tbody>
-  <% stubs.forEach(function(s) { %><tr><td><a href="/employee/pay/<%= s.id %>"><%= s.pay_date %></a></td><td><%= s.period_start %> to <%= s.period_end %></td><td class="num"><%= fmt.money(s.gross_cents) %></td><td class="num"><%= fmt.money(s.net_cents) %></td></tr><% }); %>
+  <% stubs.forEach(function(s) { %><tr><td><a href="/employee/pay/<%= s.id %>"><%= fmt.d(s.pay_date) %></a></td><td><%= fmt.d(s.period_start) %> to <%= fmt.d(s.period_end) %></td><td class="num"><%= fmt.money(s.gross_cents) %></td><td class="num"><%= fmt.money(s.net_cents) %></td></tr><% }); %>
 </tbody></table>
 <% } %>
 <p class="hint">Official pay statements and W-2s come from the company's payroll provider.</p>

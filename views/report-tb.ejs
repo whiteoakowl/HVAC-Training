@@ -1,5 +1,5 @@
 <%- include('partials/page-start') %>
-<%- include('partials/report-head', { subtitle: 'As of ' + asOf, query: 'as_of=' + asOf }) %>
+<%- include('partials/report-head', { subtitle: 'As of ' + fmt.d(asOf), query: 'as_of=' + asOf }) %>
 <table class="data-table">
   <thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
   <tbody>

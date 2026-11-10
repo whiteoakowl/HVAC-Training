@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     res.type('text/csv').attachment('invoices.csv');
     return res.send(fmt.csv(rows, [
       { label: 'Invoice', value: 'invoice_number' }, { label: 'Customer', value: 'customerName' }, { label: 'Job', value: 'job_number' }, { label: 'Status', value: 'status' },
-      { label: 'Issued', value: 'issue_date' }, { label: 'Due', value: 'due_date' }, { label: 'Total', value: (r) => fmt.centsInput(r.total_cents) },
+      { label: 'Issued', value: (r) => fmt.d(r.issue_date) }, { label: 'Due', value: (r) => fmt.d(r.due_date) }, { label: 'Total', value: (r) => fmt.centsInput(r.total_cents) },
       { label: 'Paid', value: (r) => fmt.centsInput(r.amount_paid_cents) }, { label: 'Balance', value: (r) => fmt.centsInput(r.total_cents - r.amount_paid_cents - r.credited_cents) },
     ]));
   }
@@ -101,7 +101,7 @@ router.post('/:id/send', requirePermission('invoices.manage'), load, action(asyn
   if (!['issued', 'partial'].includes(inv.status)) throw new Error('Only issued, unpaid invoices can be sent.');
   const base = `${req.protocol}://${req.get('host')}`;
   const company = await settings.get('company_name', 'Our team');
-  const body = `${company}: invoice ${inv.invoice_number} for ${fmt.money(inv.total_cents)} - balance due ${fmt.money(inv.balance)} by ${inv.due_date}. View it here: ${base}/i/${inv.public_token}`;
+  const body = `${company}: invoice ${inv.invoice_number} for ${fmt.money(inv.total_cents)} - balance due ${fmt.money(inv.balance)} by ${fmt.d(inv.due_date)}. View it here: ${base}/i/${inv.public_token}`;
   const results = [];
   if (req.body.channel !== 'sms' && inv.customerEmail) results.push(await messaging.send({ channel: 'email', to: inv.customerEmail, subject: `Invoice ${inv.invoice_number} from ${company}`, body, relatedType: 'invoice', relatedId: inv.id }));
   if (req.body.channel !== 'email' && inv.customerPhone) results.push(await messaging.send({ channel: 'sms', to: inv.customerPhone, body, relatedType: 'invoice', relatedId: inv.id }));

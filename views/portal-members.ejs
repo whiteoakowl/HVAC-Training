@@ -40,7 +40,7 @@
               </select>
             </form>
           </td>
-          <td class="hint"><%= m.last_login_at || 'never' %></td>
+          <td class="hint"><%= fmt.dt(m.last_login_at) || 'never' %></td>
           <td>
             <form method="POST" action="/portal/members/<%= m.id %>/active" class="inline-form">
               <input type="hidden" name="active" value="<%= m.active ? '0' : '1' %>" />

@@ -25,7 +25,7 @@
       </select>
     </label>
     <label>New password <input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current" /></label>
-    <p class="full hint">Last login: <%= editMember.last_login_at || 'never' %><% if (editMember.locked_until) { %> &middot; locked until <%= editMember.locked_until %> (setting a new password unlocks)<% } %></p>
+    <p class="full hint">Last login: <%= fmt.dt(editMember.last_login_at) || 'never' %><% if (editMember.locked_until) { %> &middot; locked until <%= fmt.dt(editMember.locked_until) %> (setting a new password unlocks)<% } %></p>
     <% if (editMember.mfa_enabled && !isSelf) { %><label class="full" style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="reset_mfa" value="1" style="width:auto;" /> Reset two-step verification (lost phone)</label><% } %>
     <% if (isSelf) { %><p class="full">You can't change your own role or deactivate your own account.</p><% } %>
     <div class="full"><button type="submit" class="primary-btn">Save Changes</button></div>

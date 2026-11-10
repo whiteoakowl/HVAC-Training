@@ -11,7 +11,7 @@
 <% } %>
 <% if (!runs.length) { %><p class="empty">No payroll runs yet.</p><% } else { %>
 <table class="data-table"><thead><tr><th>Period</th><th>Pay date</th><th class="num">People</th><th class="num">Gross</th><th class="num">Net</th><th>Status</th></tr></thead><tbody>
-  <% runs.forEach(function(r) { %><tr><td><a href="/payroll/<%= r.id %>"><%= r.period_start %> to <%= r.period_end %></a></td><td><%= r.pay_date %></td><td class="num"><%= r.people %></td><td class="num"><%= fmt.money(r.gross_cents) %></td><td class="num"><%= fmt.money(r.net_cents) %></td><td><span class="status status-<%= r.status === 'posted' ? 'paid' : r.status === 'draft' ? 'draft' : r.status === 'void' ? 'void' : 'approved' %>"><%= r.status %></span></td></tr><% }); %>
+  <% runs.forEach(function(r) { %><tr><td><a href="/payroll/<%= r.id %>"><%= fmt.d(r.period_start) %> to <%= fmt.d(r.period_end) %></a></td><td><%= fmt.d(r.pay_date) %></td><td class="num"><%= r.people %></td><td class="num"><%= fmt.money(r.gross_cents) %></td><td class="num"><%= fmt.money(r.net_cents) %></td><td><span class="status status-<%= r.status === 'posted' ? 'paid' : r.status === 'draft' ? 'draft' : r.status === 'void' ? 'void' : 'approved' %>"><%= r.status %></span></td></tr><% }); %>
 </tbody></table>
 <% } %>
 <%- include('partials/page-end') %>

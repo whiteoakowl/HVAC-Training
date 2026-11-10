@@ -138,7 +138,7 @@ async function post(runId, memberId) {
     if (!run || run.status !== 'approved') throw new Error('Approve the run before posting it.');
     const liabilities = run.withholding_cents + run.deduction_cents;
     const entryId = await accounting.post(tx, {
-      date: run.pay_date, memo: `Payroll ${run.period_start} to ${run.period_end}`, sourceType: 'payroll', sourceId: run.id, memberId,
+      date: run.pay_date, memo: `Payroll ${fmt.d(run.period_start)} to ${fmt.d(run.period_end)}`, sourceType: 'payroll', sourceId: run.id, memberId,
       lines: [{ code: '6000', debit: run.gross_cents }, { code: '6050', debit: run.reimbursement_cents }, { code: '2300', credit: liabilities }, { code: '1000', credit: run.net_cents }],
     });
     await tx.prepare("UPDATE payroll_runs SET status = 'posted', posted_at = now_text(), journal_entry_id = ? WHERE id = ?").run(entryId, runId);

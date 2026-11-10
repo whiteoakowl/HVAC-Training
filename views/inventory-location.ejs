@@ -7,5 +7,5 @@
 </tbody></table>
 <% } %>
 <h2 class="mt">Recent movements</h2>
-<% history.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.shortDateTime(t.created_at) %> · <%= fmt.label(t.kind) %> · <%= t.itemName %> <%= t.quantity_change > 0 ? '+' : '' %><%= Number(t.quantity_change) %><%= t.job_number ? ' · ' + t.job_number : '' %><%= t.memberName ? ' · ' + t.memberName : '' %></p><% }); %>
+<% history.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.dt(t.created_at) %> · <%= fmt.label(t.kind) %> · <%= t.itemName %> <%= t.quantity_change > 0 ? '+' : '' %><%= Number(t.quantity_change) %><%= t.job_number ? ' · ' + t.job_number : '' %><%= t.memberName ? ' · ' + t.memberName : '' %></p><% }); %>
 <%- include('partials/page-end') %>

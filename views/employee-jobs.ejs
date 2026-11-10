@@ -9,7 +9,7 @@
   <a class="job-card" href="/jobs/<%= j.id %>">
     <div class="row"><strong><%= j.job_number %></strong><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></div>
     <div class="<%= 'priority-' + j.priority %>"><%= j.title %></div>
-    <div class="hint"><%= fmt.shortDateTime(j.scheduled_start) || 'unscheduled' %> · <%= j.customerName %> · <%= [j.address, j.city].filter(Boolean).join(', ') %></div>
+    <div class="hint"><%= fmt.dt(j.scheduled_start) || 'unscheduled' %> · <%= j.customerName %> · <%= [j.address, j.city].filter(Boolean).join(', ') %></div>
   </a>
 <% }); %>
 <%- include('partials/page-end') %>

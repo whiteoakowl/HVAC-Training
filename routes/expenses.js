@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
   if (req.query.format === 'csv') {
     res.type('text/csv').attachment(`expenses-${from}-${to}.csv`);
     return res.send(fmt.csv(rows, [
-      { label: 'Date', value: 'expense_date' }, { label: 'Payee', value: 'payee' }, { label: 'Category', value: (r) => `${r.code} ${r.accountName}` }, { label: 'Amount', value: (r) => fmt.centsInput(r.amount_cents) },
+      { label: 'Date', value: (r) => fmt.d(r.expense_date) }, { label: 'Payee', value: 'payee' }, { label: 'Category', value: (r) => `${r.code} ${r.accountName}` }, { label: 'Amount', value: (r) => fmt.centsInput(r.amount_cents) },
       { label: 'Paid from', value: (r) => expenses.PAID_FROM[r.paid_from_code] }, { label: 'Job', value: 'job_number' }, { label: 'Truck', value: 'truckName' }, { label: 'Description', value: 'description' }, { label: 'Status', value: 'status' },
     ]));
   }

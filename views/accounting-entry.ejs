@@ -1,14 +1,14 @@
 <%- include('partials/page-start') %>
 <h1>Journal entry #<%= entry.id %></h1>
-<p class="hint"><%= entry.entry_date %> · <%= fmt.label(entry.source_type) %><%= entry.source_id ? ' #' + entry.source_id : '' %> · posted <%= fmt.shortDateTime(entry.created_at) %><%= entry.createdByName ? ' by ' + entry.createdByName : '' %></p>
-<p><strong><%= entry.memo %></strong></p>
+<p class="hint"><%= fmt.d(entry.entry_date) %> · <%= fmt.label(entry.source_type) %><%= entry.source_id ? ' #' + entry.source_id : '' %> · posted <%= fmt.dt(entry.created_at) %><%= entry.createdByName ? ' by ' + entry.createdByName : '' %></p>
+<p><strong><%= fmt.usText(entry.memo) %></strong></p>
 <% if (entry.reverses_entry_id) { %><p>Reverses <a href="/accounting/journal/<%= entry.reverses_entry_id %>">entry #<%= entry.reverses_entry_id %></a>.</p><% } %>
 <% if (entry.reversedBy) { %><p class="alert alert-error">Reversed by <a href="/accounting/journal/<%= entry.reversedBy.id %>">entry #<%= entry.reversedBy.id %></a>.</p><% } %>
 <table class="data-table">
   <thead><tr><th>Account</th><th>Note</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
   <tbody>
     <% var d = 0, c = 0; entry.lines.forEach(function(l) { d += l.debit_cents; c += l.credit_cents; %>
-      <tr><td><%= l.code %> <%= l.accountName %></td><td class="small"><%= l.description || '' %></td><td class="num"><%= l.debit_cents ? fmt.money(l.debit_cents) : '' %></td><td class="num"><%= l.credit_cents ? fmt.money(l.credit_cents) : '' %></td></tr>
+      <tr><td><%= l.code %> <%= l.accountName %></td><td class="small"><%= fmt.usText(l.description) %></td><td class="num"><%= l.debit_cents ? fmt.money(l.debit_cents) : '' %></td><td class="num"><%= l.credit_cents ? fmt.money(l.credit_cents) : '' %></td></tr>
     <% }); %>
     <tr class="total"><td colspan="2">Total</td><td class="num"><%= fmt.money(d) %></td><td class="num"><%= fmt.money(c) %></td></tr>
   </tbody>

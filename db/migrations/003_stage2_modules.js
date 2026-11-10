@@ -511,7 +511,7 @@ ALTER TABLE inventory_items ADD COLUMN preferred_vendor_id INTEGER REFERENCES ve
   ACCOUNTS.forEach(([code, name, type]) => out.push(`INSERT INTO accounts (code, name, type, is_system) VALUES (${q(code)}, ${q(name)}, ${q(type)}, 1) ON CONFLICT (code) DO NOTHING;`));
   CHECKLISTS.forEach(([name, items]) => out.push(`INSERT INTO checklist_templates (name, items) VALUES (${q(name)}, ${q(items)}) ON CONFLICT (name) DO NOTHING;`));
   const SETTINGS = {
-    company_timezone: 'America/Chicago',
+    company_timezone: 'America/New_York',
     estimate_valid_days: '30',
     estimate_terms: 'Prices valid until the expiration date. A deposit may be required before equipment is ordered. Balance due on completion.',
     estimate_warranty: "Manufacturer's parts warranty per equipment registration; 1-year labor warranty on installation workmanship.",

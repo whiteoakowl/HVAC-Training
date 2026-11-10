@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Operations Reports</h1><p class="hint">Jobs completed <%= from %> to <%= to %>. Price = invoiced amount (pre-tax), or the quote if not yet invoiced.</p></div>
+  <div><h1>Operations Reports</h1><p class="hint">Jobs completed <%= fmt.d(from) %> to <%= fmt.d(to) %>. Price = invoiced amount (pre-tax), or the quote if not yet invoiced.</p></div>
   <div class="btn-row no-print"><a class="btn btn-secondary" href="/manage/reports?from=<%= from %>&to=<%= to %>&format=csv">Export CSV</a><button type="button" class="btn-secondary" onclick="window.print()">Print / PDF</button><% if (can('accounting.view')) { %><a class="btn btn-secondary" href="/accounting">Financial statements</a><% } %></div>
 </div>
 <form class="toolbar no-print" method="GET"><label>From <input type="date" name="from" value="<%= from %>" /></label><label>To <input type="date" name="to" value="<%= to %>" /></label><button type="submit">Run</button></form>

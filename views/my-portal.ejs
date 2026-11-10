@@ -20,14 +20,14 @@
     <div class="card"><h2>Appointments &amp; service history</h2>
       <% if (!jobs.length) { %><p class="empty">No service yet.</p><% } %>
       <% jobs.forEach(function(j) { %><div style="border-top:1px solid var(--border); padding:0.4rem 0;"><strong><%= j.title %></strong> <span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span><br>
-        <span class="hint"><%= j.completed_at ? 'Completed ' + fmt.dateOnly(j.completed_at) : j.scheduled_start ? 'Scheduled ' + fmt.shortDateTime(j.scheduled_start) : 'Being scheduled' %> · <%= j.job_number %></span>
+        <span class="hint"><%= j.completed_at ? 'Completed ' + fmt.d(j.completed_at) : j.scheduled_start ? 'Scheduled ' + fmt.dt(j.scheduled_start) : 'Being scheduled' %> · <%= j.job_number %></span>
         <% if (j.work_performed) { %><p class="small" style="white-space:pre-wrap; margin:0.2rem 0;"><%= j.work_performed %></p><% } %></div><% }); %>
     </div>
   </div>
   <div class="stack">
     <div class="card"><h2>Invoices</h2>
       <% if (!invoices.length) { %><p class="empty">None.</p><% } %>
-      <% invoices.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/i/<%= i.public_token %>"><%= i.invoice_number %></a> <%= fmt.money(i.total_cents) %> <span class="status status-<%= i.status %>"><%= i.status === 'issued' ? 'due ' + i.due_date : i.status %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">balance <%= fmt.money(i.total_cents - i.amount_paid_cents - i.credited_cents) %></span><% } %></p><% }); %>
+      <% invoices.forEach(function(i) { %><p style="margin:0.3rem 0;"><a href="/i/<%= i.public_token %>"><%= i.invoice_number %></a> <%= fmt.money(i.total_cents) %> <span class="status status-<%= i.status %>"><%= i.status === 'issued' ? 'due ' + fmt.d(i.due_date) : i.status %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">balance <%= fmt.money(i.total_cents - i.amount_paid_cents - i.credited_cents) %></span><% } %></p><% }); %>
       <% if (openInv.length && company.invoice_payment_instructions) { %><p class="small"><strong>How to pay:</strong> <%= company.invoice_payment_instructions %></p><% } %>
     </div>
     <div class="card"><h2>Estimates</h2>
@@ -36,11 +36,11 @@
     </div>
     <div class="card"><h2>Maintenance plan</h2>
       <% if (!agreements.length) { %><p class="empty">No active plan. Ask us about maintenance plans.</p><% } %>
-      <% agreements.forEach(function(a) { %><p><strong><%= a.name %></strong><br><span class="hint">through <%= a.end_date %><%= a.nextVisit ? ' · next visit ' + a.nextVisit : '' %></span></p><% }); %>
+      <% agreements.forEach(function(a) { %><p><strong><%= a.name %></strong><br><span class="hint">through <%= fmt.d(a.end_date) %><%= a.nextVisit ? ' · next visit ' + fmt.d(a.nextVisit) : '' %></span></p><% }); %>
     </div>
     <div class="card"><h2>My equipment</h2>
       <% if (!equipment.length) { %><p class="empty">None on file.</p><% } %>
-      <% equipment.forEach(function(e) { %><p class="small" style="margin:0.25rem 0;"><strong><%= e.equipment_type %></strong> <%= [e.manufacturer, e.model_number].filter(Boolean).join(' ') %><br><span class="hint"><%= e.filter_size ? 'Filter ' + e.filter_size + ' · ' : '' %><%= e.warranty_expires ? 'Warranty to ' + e.warranty_expires : '' %></span></p><% }); %>
+      <% equipment.forEach(function(e) { %><p class="small" style="margin:0.25rem 0;"><strong><%= e.equipment_type %></strong> <%= [e.manufacturer, e.model_number].filter(Boolean).join(' ') %><br><span class="hint"><%= e.filter_size ? 'Filter ' + e.filter_size + ' · ' : '' %><%= e.warranty_expires ? 'Warranty to ' + fmt.d(e.warranty_expires) : '' %></span></p><% }); %>
     </div>
     <div class="card"><h2>Recent requests</h2><% requests.slice(0, 5).forEach(function(r) { %><p class="small" style="margin:0.2rem 0;"><%= r.request_number %> · <%= fmt.label(r.kind) %> · <%= r.status %></p><% }); %><% if (!requests.length) { %><p class="empty">None.</p><% } %></div>
   </div>

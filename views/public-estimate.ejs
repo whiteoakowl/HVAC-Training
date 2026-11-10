@@ -28,7 +28,7 @@
     })();
   </script>
 <% } else if (expired || e.status === 'expired') { %>
-  <div class="alert alert-error mt">This estimate expired on <%= e.expires_on %>. Please call <%= company.company_phone || 'us' %> for an updated price.</div>
+  <div class="alert alert-error mt">This estimate expired on <%= fmt.d(e.expires_on) %>. Please call <%= company.company_phone || 'us' %> for an updated price.</div>
 <% } %>
 <p class="hint mt no-print">Questions? Call <%= company.company_phone || 'us' %>. <button type="button" class="btn-secondary small" onclick="window.print()">Print / save PDF</button></p>
 </main></body></html>

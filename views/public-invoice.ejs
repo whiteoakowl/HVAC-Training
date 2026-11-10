@@ -2,7 +2,7 @@
 <div class="doc">
   <div class="doc-head">
     <div><h1><%= company.company_name || 'Invoice' %></h1><p class="small" style="margin:0; white-space:pre-wrap;"><%= company.company_address || '' %></p><p class="small" style="margin:0;"><%= [company.company_phone, company.company_email].filter(Boolean).join(' · ') %></p></div>
-    <div style="text-align:right;"><h2 style="margin:0;">INVOICE <%= inv.invoice_number %></h2><p class="small" style="margin:0.3rem 0;">Issued: <%= inv.issue_date %><br>Due: <%= inv.due_date %></p></div>
+    <div style="text-align:right;"><h2 style="margin:0;">INVOICE <%= inv.invoice_number %></h2><p class="small" style="margin:0.3rem 0;">Issued: <%= fmt.d(inv.issue_date) %><br>Due: <%= fmt.d(inv.due_date) %></p></div>
   </div>
   <p><strong><%= inv.customerName %></strong><br><%= inv.billing_address || '' %></p>
   <table class="data-table">

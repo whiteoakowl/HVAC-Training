@@ -124,7 +124,7 @@ router.get('/reports/cash-flow', async (req, res) => {
 router.get('/reports/ar-aging', async (req, res) => {
   const asOf = fmt.dateOnly(req.query.as_of) || fmt.today();
   const ag = await invoices.aging(asOf);
-  if (req.query.format === 'csv') return sendCsv(res, `ar-aging-${asOf}.csv`, ag.rows, [{ label: 'Invoice', value: 'invoice_number' }, { label: 'Customer', value: 'customerName' }, { label: 'Due', value: 'due_date' }, { label: 'Days overdue', value: 'daysOverdue' }, { label: 'Bucket', value: 'bucket' }, { label: 'Balance', value: (r) => fmt.centsInput(r.balance) }]);
+  if (req.query.format === 'csv') return sendCsv(res, `ar-aging-${asOf}.csv`, ag.rows, [{ label: 'Invoice', value: 'invoice_number' }, { label: 'Customer', value: 'customerName' }, { label: 'Due', value: (r) => fmt.d(r.due_date) }, { label: 'Days overdue', value: 'daysOverdue' }, { label: 'Bucket', value: 'bucket' }, { label: 'Balance', value: (r) => fmt.centsInput(r.balance) }]);
   res.render('report-aging', { title: 'A/R Aging', ag, asOf });
 });
 
@@ -135,7 +135,7 @@ router.get('/reports/sales-tax', async (req, res) => {
     .all(from, to);
   const totals = rows.reduce((t, r) => ({ sales: t.sales + r.subtotal_cents - r.discount_cents, taxable: t.taxable + r.taxable_cents, tax: t.tax + r.tax_cents }), { sales: 0, taxable: 0, tax: 0 });
   const ledger = (await accounting.balances({ from, to })).find((r) => r.code === '2100');
-  if (req.query.format === 'csv') return sendCsv(res, `sales-tax-${from}-${to}.csv`, rows, [{ label: 'Invoice', value: 'invoice_number' }, { label: 'Date', value: 'issue_date' }, { label: 'Rate %', value: (r) => (r.tax_rate_bp / 100).toFixed(2) }, { label: 'Taxable', value: (r) => fmt.centsInput(r.taxable_cents) }, { label: 'Tax', value: (r) => fmt.centsInput(r.tax_cents) }]);
+  if (req.query.format === 'csv') return sendCsv(res, `sales-tax-${from}-${to}.csv`, rows, [{ label: 'Invoice', value: 'invoice_number' }, { label: 'Date', value: (r) => fmt.d(r.issue_date) }, { label: 'Rate %', value: (r) => (r.tax_rate_bp / 100).toFixed(2) }, { label: 'Taxable', value: (r) => fmt.centsInput(r.taxable_cents) }, { label: 'Tax', value: (r) => fmt.centsInput(r.tax_cents) }]);
   res.render('report-tax', { title: 'Sales Tax', rows, totals, ledgerCredits: ledger ? ledger.credits - ledger.debits : 0, from, to });
 });
 

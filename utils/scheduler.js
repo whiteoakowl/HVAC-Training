@@ -75,7 +75,7 @@ async function runDaily({ force = false, origin = 'schedule' } = {}) {
       for (const i of rows) {
         if (!i.email) continue;
         const bal = i.total_cents - i.amount_paid_cents - i.credited_cents;
-        await messaging.send({ channel: 'email', to: i.email, subject: `Reminder: invoice ${i.invoice_number} is past due`, body: `Hi ${i.name}, invoice ${i.invoice_number} from ${company} for ${fmt.money(bal)} was due ${i.due_date}.${base ? ` View it: ${base}/i/${i.public_token}` : ''} If you've already paid, thank you - please ignore this.`, relatedType: 'invoice', relatedId: i.id });
+        await messaging.send({ channel: 'email', to: i.email, subject: `Reminder: invoice ${i.invoice_number} is past due`, body: `Hi ${i.name}, invoice ${i.invoice_number} from ${company} for ${fmt.money(bal)} was due ${fmt.d(i.due_date)}.${base ? ` View it: ${base}/i/${i.public_token}` : ''} If you've already paid, thank you - please ignore this.`, relatedType: 'invoice', relatedId: i.id });
         sent++;
       }
     }
@@ -84,8 +84,8 @@ async function runDaily({ force = false, origin = 'schedule' } = {}) {
 
   await step('automation_certification_alerts', async () => {
     const certs = await db.prepare('SELECT c.*, m.name FROM certifications c JOIN members m ON m.id = c.member_id WHERE m.active = 1 AND c.expires_on IN (?, ?, ?)').all(fmt.addDays(today, 30), fmt.addDays(today, 7), today);
-    for (const c of certs) await notifications.notify(c.member_id, 'certification', { title: `${c.name} expires ${c.expires_on}`, body: 'Please renew and send the office a copy.', linkUrl: '/employee' });
-    if (certs.length) await automation.notifyPermission(['employees.manage'], 'certification', { title: `${certs.length} certification(s) expiring`, body: certs.map((c) => `${c.name} (${c.expires_on})`).slice(0, 5).join('; '), linkUrl: '/manage' });
+    for (const c of certs) await notifications.notify(c.member_id, 'certification', { title: `${c.name} expires ${fmt.d(c.expires_on)}`, body: 'Please renew and send the office a copy.', linkUrl: '/employee' });
+    if (certs.length) await automation.notifyPermission(['employees.manage'], 'certification', { title: `${certs.length} certification(s) expiring`, body: certs.map((c) => `${c.name} (${fmt.d(c.expires_on)})`).slice(0, 5).join('; '), linkUrl: '/manage' });
     const tools = await db.prepare('SELECT COUNT(*) AS c FROM assets WHERE status = ? AND next_service_on = ?').get('in_service', today);
     if (Number(tools.c)) await automation.notifyPermission(['assets.manage'], 'certification', { title: `${tools.c} tool(s) due for calibration/service today`, linkUrl: '/assets' });
     return `${certs.length} certification alerts`;

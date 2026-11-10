@@ -3,7 +3,7 @@
   <h2><%= typeof heading !== 'undefined' ? heading : 'Documents' %></h2>
   <% if (!files.length) { %><p class="empty">No documents attached.</p><% } %>
   <% files.forEach(function(f) { %>
-    <p class="small" style="margin:0.25rem 0;"><a href="/files/<%= f.id %>"><%= f.title %></a><%= f.doc_type ? ' · ' + f.doc_type : '' %> <span class="hint"><%= fmt.dateOnly(f.created_at) %><%= f.uploadedByName ? ' · ' + f.uploadedByName : '' %></span>
+    <p class="small" style="margin:0.25rem 0;"><a href="/files/<%= f.id %>"><%= f.title %></a><%= f.doc_type ? ' · ' + f.doc_type : '' %> <span class="hint"><%= fmt.d(f.created_at) %><%= f.uploadedByName ? ' · ' + f.uploadedByName : '' %></span>
       <% if (canEdit) { %><form method="POST" action="/files/<%= f.id %>/delete" class="inline-form" onsubmit="return confirm('Remove this file?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %></p>
   <% }); %>
   <% if (canEdit) { %>

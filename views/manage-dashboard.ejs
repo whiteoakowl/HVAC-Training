@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Business Dashboard</h1><p class="hint"><%= today %> · figures come from recorded transactions, jobs and time entries</p></div>
+  <div><h1>Business Dashboard</h1><p class="hint"><%= fmt.d(today) %> · figures come from recorded transactions, jobs and time entries</p></div>
   <div class="btn-row">
     <% if (can('requests.manage')) { %><a class="btn" href="/requests/new">+ Service Request</a><% } %>
     <% if (can('jobs.manage')) { %><a class="btn btn-secondary" href="/jobs/new">+ Job</a><% } %>
@@ -54,18 +54,18 @@
   <div class="card">
     <div class="grid-box-header"><h2>Next 7 days</h2><% if (can('jobs.dispatch', 'jobs.manage')) { %><a href="/dispatch">Dispatch</a><% } %></div>
     <% if (!upcoming.length) { %><p class="empty">Nothing scheduled.</p><% } %>
-    <% upcoming.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.shortDateTime(j.scheduled_start) %><br><span class="hint"><%= j.customerName %> · <%= j.techs.map(function(t) { return t.name; }).join(', ') || 'unassigned' %></span></p><% }); %>
+    <% upcoming.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.dt(j.scheduled_start) %><br><span class="hint"><%= j.customerName %> · <%= j.techs.map(function(t) { return t.name; }).join(', ') || 'unassigned' %></span></p><% }); %>
   </div>
   <div class="card">
     <h2>Upcoming maintenance (30 days)</h2>
     <% if (!maintenance.length) { %><p class="empty">No maintenance visits scheduled.</p><% } %>
-    <% maintenance.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.shortDateTime(j.scheduled_start) %> · <%= j.customerName %></p><% }); %>
+    <% maintenance.forEach(function(j) { %><p style="margin:0.35rem 0;"><a href="/jobs/<%= j.id %>"><%= j.job_number %></a> <%= fmt.dt(j.scheduled_start) %> · <%= j.customerName %></p><% }); %>
   </div>
   <% if (can('employees.view')) { %>
     <div class="card">
       <h2>Certifications expiring (60 days)</h2>
       <% if (!certs.length) { %><p class="empty">None.</p><% } %>
-      <% certs.forEach(function(c) { %><p style="margin:0.35rem 0;"><a href="/manage/employees/<%= c.member_id %>"><%= c.memberName %></a> · <%= c.name %> · <span class="<%= c.expires_on < today ? 'priority-emergency' : 'priority-high' %>"><%= c.expires_on %></span></p><% }); %>
+      <% certs.forEach(function(c) { %><p style="margin:0.35rem 0;"><a href="/manage/employees/<%= c.member_id %>"><%= c.memberName %></a> · <%= c.name %> · <span class="<%= c.expires_on < today ? 'priority-emergency' : 'priority-high' %>"><%= fmt.d(c.expires_on) %></span></p><% }); %>
       <% if (certs.length && can('employees.manage')) { %><form method="POST" action="/manage/employees/cert-reminders"><button type="submit" class="btn-secondary">Send reminders</button></form><% } %>
     </div>
   <% } %>

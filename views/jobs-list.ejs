@@ -29,7 +29,7 @@
         <td><%= j.customerName %></td>
         <td class="small"><%= [j.address, j.city].filter(Boolean).join(', ') %></td>
         <td><%= fmt.label(j.job_type) %></td>
-        <td class="small"><%= fmt.shortDateTime(j.scheduled_start) || '-' %></td>
+        <td class="small"><%= fmt.dt(j.scheduled_start) || '-' %></td>
         <td class="small"><%= j.techs.map(function(t) { return t.name; }).join(', ') || '-' %></td>
         <td class="small"><%= j.truckName || '' %></td>
         <td><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></td>

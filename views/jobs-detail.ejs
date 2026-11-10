@@ -4,7 +4,7 @@
   <div>
     <h1><%= job.job_number %> <span class="status status-<%= job.status %>"><%= fmt.label(job.status) %></span><% if (job.priority !== 'normal') { %> <span class="priority-<%= job.priority %>"><%= job.priority.toUpperCase() %></span><% } %></h1>
     <p style="margin:0.2rem 0; font-weight:600;"><%= job.title %></p>
-    <p class="hint"><%= fmt.label(job.job_type) %> · <%= job.scheduled_start ? 'scheduled ' + fmt.shortDateTime(job.scheduled_start) + (job.scheduled_end ? ' - ' + job.scheduled_end.slice(11,16) : '') : 'not scheduled' %></p>
+    <p class="hint"><%= fmt.label(job.job_type) %> · <%= job.scheduled_start ? 'scheduled ' + fmt.dt(job.scheduled_start) + (job.scheduled_end ? ' - ' + fmt.time(job.scheduled_end) : '') : 'not scheduled' %></p>
   </div>
   <p class="no-print"><a href="<%= can('jobs.view_all') ? '/jobs' : '/employee/jobs' %>">&larr; Jobs</a></p>
 </div>
@@ -101,7 +101,7 @@
   <div class="card" id="checklists">
     <h2>Checklists &amp; inspections</h2>
     <% checklists.forEach(function(c) { var fails = c.results.filter(function(r) { return r.result === 'fail'; }).length; %>
-      <details style="margin-bottom:0.4rem;"><summary><strong><%= c.name %></strong> <span class="hint"><%= fmt.shortDateTime(c.created_at) %> · <%= c.memberName || '' %></span> <% if (fails) { %><span class="status status-rejected"><%= fails %> fail</span><% } else { %><span class="status status-completed">ok</span><% } %></summary>
+      <details style="margin-bottom:0.4rem;"><summary><strong><%= c.name %></strong> <span class="hint"><%= fmt.dt(c.created_at) %> · <%= c.memberName || '' %></span> <% if (fails) { %><span class="status status-rejected"><%= fails %> fail</span><% } else { %><span class="status status-completed">ok</span><% } %></summary>
         <% c.results.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><span class="status status-<%= r.result === 'pass' ? 'completed' : r.result === 'fail' ? 'rejected' : 'cancelled' %>"><%= r.result === 'na' ? 'n/a' : r.result.replace('_', ' ') %></span> <%= r.label %><%= r.note ? ' - ' + r.note : '' %></p><% }); %>
         <% if (c.notes) { %><p class="small" style="white-space:pre-wrap;"><%= c.notes %></p><% } %>
       </details>
@@ -181,7 +181,7 @@
     <% } %>
     <% if (!job.notes.length) { %><p class="empty">No notes.</p><% } %>
     <% job.notes.forEach(function(n) { %>
-      <div style="border-top:1px solid var(--border); padding:0.4rem 0;"><p class="hint" style="margin:0;"><%= n.memberName || 'Unknown' %> · <%= fmt.shortDateTime(n.created_at) %></p><p style="margin:0.2rem 0; white-space:pre-wrap;"><%= n.body %></p></div>
+      <div style="border-top:1px solid var(--border); padding:0.4rem 0;"><p class="hint" style="margin:0;"><%= n.memberName || 'Unknown' %> · <%= fmt.dt(n.created_at) %></p><p style="margin:0.2rem 0; white-space:pre-wrap;"><%= n.body %></p></div>
     <% }); %>
   </div>
 
@@ -204,9 +204,9 @@
   <% if (job.completed_at) { %>
     <div class="card">
       <h2>Completion</h2>
-      <p class="hint">Completed <%= fmt.shortDateTime(job.completed_at) %></p>
+      <p class="hint">Completed <%= fmt.dt(job.completed_at) %></p>
       <p style="white-space:pre-wrap;"><%= job.work_performed %></p>
-      <% if (job.signature_data) { %><p class="hint">Customer signature<%= job.signature_name ? ' - ' + job.signature_name : '' %> (<%= fmt.shortDateTime(job.signed_at) %>)</p><img src="<%= job.signature_data %>" alt="Customer signature" style="max-width:320px; border:1px solid var(--border); border-radius:8px;" /><% } else if (job.signature_name) { %><p class="hint">Acknowledged by <%= job.signature_name %></p><% } %>
+      <% if (job.signature_data) { %><p class="hint">Customer signature<%= job.signature_name ? ' - ' + job.signature_name : '' %> (<%= fmt.dt(job.signed_at) %>)</p><img src="<%= job.signature_data %>" alt="Customer signature" style="max-width:320px; border:1px solid var(--border); border-radius:8px;" /><% } else if (job.signature_name) { %><p class="hint">Acknowledged by <%= job.signature_name %></p><% } %>
     </div>
   <% } else if (canWork && job.status !== 'cancelled') { %>
     <div class="card no-print" id="complete">
@@ -239,7 +239,7 @@
   <% if (can('jobs.dispatch', 'jobs.manage')) { %>
     <div class="card no-print">
       <h2>Schedule &amp; crew</h2>
-      <% if (conflicts.length) { %><div class="alert alert-error">Conflict: <%= conflicts.map(function(c) { return c.memberName + ' on ' + c.job_number + ' at ' + fmt.shortDateTime(c.scheduled_start); }).join('; ') %></div><% } %>
+      <% if (conflicts.length) { %><div class="alert alert-error">Conflict: <%= conflicts.map(function(c) { return c.memberName + ' on ' + c.job_number + ' at ' + fmt.dt(c.scheduled_start); }).join('; ') %></div><% } %>
       <form method="POST" action="/jobs/<%= job.id %>/assign" class="stack-form">
         <label>Start <input type="datetime-local" name="scheduled_start" value="<%= fmt.toLocalInput(job.scheduled_start) %>" /></label>
         <label>End <input type="datetime-local" name="scheduled_end" value="<%= fmt.toLocalInput(job.scheduled_end) %>" /></label>
@@ -326,13 +326,13 @@
   <% if (history.length) { %>
     <div class="card">
       <h2>Previous work at this address</h2>
-      <% history.forEach(function(h) { %><p class="small" style="margin:0.3rem 0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> · <%= fmt.dateOnly(h.completed_at) || fmt.label(h.status) %></p><% }); %>
+      <% history.forEach(function(h) { %><p class="small" style="margin:0.3rem 0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> · <%= fmt.d(h.completed_at) || fmt.label(h.status) %></p><% }); %>
     </div>
   <% } %>
 
   <div class="card">
     <h2>Status history</h2>
-    <% job.history.forEach(function(h) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.shortDateTime(h.created_at) %> · <%= h.from_status ? fmt.label(h.from_status) + ' → ' : '' %><strong><%= fmt.label(h.to_status) %></strong><%= h.memberName ? ' · ' + h.memberName : '' %></p><% }); %>
+    <% job.history.forEach(function(h) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.dt(h.created_at) %> · <%= h.from_status ? fmt.label(h.from_status) + ' → ' : '' %><strong><%= fmt.label(h.to_status) %></strong><%= h.memberName ? ' · ' + h.memberName : '' %></p><% }); %>
   </div>
 </div>
 </div>

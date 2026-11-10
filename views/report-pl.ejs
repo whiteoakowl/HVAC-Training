@@ -1,5 +1,5 @@
 <%- include('partials/page-start') %>
-<%- include('partials/report-head', { subtitle: from + ' to ' + to, query: 'from=' + from + '&to=' + to }) %>
+<%- include('partials/report-head', { subtitle: fmt.d(from) + ' to ' + fmt.d(to), query: 'from=' + from + '&to=' + to }) %>
 <div class="doc">
   <% function section(type, heading) { var list = pl.rows.filter(function(r) { return r.type === type && r.balance; }); %>
     <h3><%= heading %></h3>

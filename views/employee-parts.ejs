@@ -17,7 +17,7 @@
   <thead><tr><th>Date</th><th>Request</th><th class="num">Qty</th><th>Job</th><th>Status</th><th>Note</th></tr></thead>
   <tbody>
   <% rows.forEach(function(r) { %>
-    <tr><td class="small"><%= fmt.shortDateTime(r.created_at) %></td><td><%= r.itemName || r.description %><% if (r.itemName && r.description !== r.itemName) { %><br><span class="hint"><%= r.description %></span><% } %></td><td class="num"><%= Number(r.quantity) %></td><td><%= r.job_number || '' %></td><td><span class="status status-<%= r.status %>"><%= r.status %></span></td><td class="small"><%= r.decision_note || '' %><%= r.decidedByName ? ' (' + r.decidedByName + ')' : '' %></td></tr>
+    <tr><td class="small"><%= fmt.dt(r.created_at) %></td><td><%= r.itemName || r.description %><% if (r.itemName && r.description !== r.itemName) { %><br><span class="hint"><%= r.description %></span><% } %></td><td class="num"><%= Number(r.quantity) %></td><td><%= r.job_number || '' %></td><td><span class="status status-<%= r.status %>"><%= r.status %></span></td><td class="small"><%= r.decision_note || '' %><%= r.decidedByName ? ' (' + r.decidedByName + ')' : '' %></td></tr>
   <% }); %>
   </tbody>
 </table>

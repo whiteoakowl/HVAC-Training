@@ -25,6 +25,13 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 // now_text() = wall-clock time in the company timezone (utils/format.js).
 db.function('now_text', () => require('../utils/format').nowText());
+// Column defaults written as datetime('now') (schema.sql, migrations) use
+// the company timezone too, matching Postgres's now_text(). The app only
+// ever calls datetime('now'); any other use is rejected loudly.
+db.function('datetime', { varargs: true, deterministic: false }, (...args) => {
+  if (args.length === 1 && args[0] === 'now') return require('../utils/format').nowText();
+  throw new Error("Only datetime('now') is supported");
+});
 
 function initSchema() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');

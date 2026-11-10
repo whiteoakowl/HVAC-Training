@@ -35,7 +35,7 @@
 <% if (!rows.length) { %><p class="empty">No purchase orders here.</p><% } else { %>
 <table class="data-table">
   <thead><tr><th>PO</th><th>Vendor</th><th>Deliver to</th><th>Created</th><th>Expected</th><th class="num">Total</th><th>Status</th></tr></thead>
-  <tbody><% rows.forEach(function(p) { %><tr><td><a href="/purchasing/<%= p.id %>"><%= p.po_number %></a></td><td><%= p.vendorName %></td><td><%= p.locationName %></td><td><%= fmt.dateOnly(p.created_at) %></td><td><%= p.expected_on || '' %></td><td class="num"><%= fmt.money(p.total_cents) %></td><td><span class="status status-<%= p.status === 'pending_approval' ? 'pending' : p.status === 'received' ? 'completed' : p.status === 'ordered' ? 'scheduled' : p.status %>"><%= fmt.label(p.status) %></span></td></tr><% }); %></tbody>
+  <tbody><% rows.forEach(function(p) { %><tr><td><a href="/purchasing/<%= p.id %>"><%= p.po_number %></a></td><td><%= p.vendorName %></td><td><%= p.locationName %></td><td><%= fmt.d(p.created_at) %></td><td><%= fmt.d(p.expected_on) || '' %></td><td class="num"><%= fmt.money(p.total_cents) %></td><td><span class="status status-<%= p.status === 'pending_approval' ? 'pending' : p.status === 'received' ? 'completed' : p.status === 'ordered' ? 'scheduled' : p.status %>"><%= fmt.label(p.status) %></span></td></tr><% }); %></tbody>
 </table>
 <% } %>
 <%- include('partials/page-end') %>

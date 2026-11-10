@@ -42,7 +42,7 @@ router.get('/:id', load, (req, res) => {
       { label: 'Reimbursement', value: (i) => fmt.centsInput(i.reimbursement_cents) }, { label: 'Net', value: (i) => fmt.centsInput(i.net_cents) },
     ]));
   }
-  res.render('payroll-run', { title: `Payroll ${req.run.period_start} to ${req.run.period_end}`, run: req.run });
+  res.render('payroll-run', { title: `Payroll ${fmt.d(req.run.period_start)} to ${fmt.d(req.run.period_end)}`, run: req.run });
 });
 
 router.post('/:id/items/:itemId', requirePermission('payroll.manage'), load, action(async (req, res) => {

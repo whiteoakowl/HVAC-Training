@@ -19,6 +19,8 @@ const PASSWORD = process.env.SEED_PASSWORD || 'password123';
 // trucks, inventory, customers, jobs). Used by `npm run seed` locally and
 // by SEED_DEMO=1; never loaded automatically on a production deploy.
 async function main(opts = {}) {
+  await db.ready;
+  await require('../utils/settings').applyTimezone(true);
   const adminId = await ensureMember('Pat Reyes', 'admin@hvactraining.test', PASSWORD, 'admin');
   const instructorId = await ensureMember('Sam Kowalski', 'instructor@hvactraining.test', PASSWORD, 'instructor');
   const studentId = await ensureMember('Jordan Lee', 'student@hvactraining.test', PASSWORD, 'student');

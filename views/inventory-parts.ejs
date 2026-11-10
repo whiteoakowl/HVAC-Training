@@ -7,7 +7,7 @@
   <tbody>
   <% rows.forEach(function(r) { %>
     <tr>
-      <td class="small"><%= fmt.shortDateTime(r.created_at) %></td>
+      <td class="small"><%= fmt.dt(r.created_at) %></td>
       <td><%= r.memberName %></td>
       <td><% if (r.item_id) { %><a href="/inventory/items/<%= r.item_id %>"><%= r.itemName %></a><br><% } %><span class="small"><%= r.description %></span></td>
       <td class="num"><%= Number(r.quantity) %></td>

@@ -33,7 +33,7 @@ async function applyTimezone(force = false) {
   if (!force && Date.now() - tzCheckedAt < 60000) return;
   tzCheckedAt = Date.now();
   const fmt = require('./format');
-  const tz = process.env.APP_TIMEZONE || (await get('company_timezone', 'UTC'));
+  const tz = process.env.APP_TIMEZONE || (await get('company_timezone', 'America/New_York'));
   if (!fmt.validTimezone(tz)) return;
   if (tz !== fmt.timezone() || force) {
     fmt.setTimezone(tz);

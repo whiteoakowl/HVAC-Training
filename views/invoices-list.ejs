@@ -20,7 +20,7 @@
       <tr>
         <td><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a></td><td><a href="/customers/<%= i.customer_id %>"><%= i.customerName %></a></td>
         <td><% if (i.job_id) { %><a href="/jobs/<%= i.job_id %>"><%= i.job_number %></a><% } %></td>
-        <td><%= i.issue_date || '' %></td><td class="<%= late ? 'priority-emergency' : '' %>"><%= i.due_date || '' %><%= late ? ' (overdue)' : '' %></td>
+        <td><%= fmt.d(i.issue_date) || '' %></td><td class="<%= late ? 'priority-emergency' : '' %>"><%= fmt.d(i.due_date) || '' %><%= late ? ' (overdue)' : '' %></td>
         <td class="num"><%= fmt.money(i.total_cents) %></td><td class="num"><%= ['issued','partial'].includes(i.status) ? fmt.money(bal) : '' %></td>
         <td><span class="status status-<%= i.status %>"><%= i.status %></span></td>
       </tr>

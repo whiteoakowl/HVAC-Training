@@ -1,5 +1,5 @@
 <%- include('partials/page-start') %>
-<%- include('partials/report-head', { subtitle: 'As of ' + asOf, query: 'as_of=' + asOf }) %>
+<%- include('partials/report-head', { subtitle: 'As of ' + fmt.d(asOf), query: 'as_of=' + asOf }) %>
 <div class="doc">
   <% [['asset','Assets', bs.assets], ['liability','Liabilities', bs.liabilities], ['equity','Equity', bs.equity]].forEach(function(s) { var list = bs.rows.filter(function(r) { return r.type === s[0] && r.balance; }); %>
     <h3><%= s[1] %></h3>

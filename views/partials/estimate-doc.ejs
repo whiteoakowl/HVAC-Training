@@ -8,7 +8,7 @@
     </div>
     <div style="text-align:right;">
       <h2 style="margin:0;">ESTIMATE <%= e.estimate_number %></h2>
-      <p class="small" style="margin:0.3rem 0;">Date: <%= fmt.dateOnly(e.sent_at || e.created_at) %><br>Valid until: <%= e.expires_on || '-' %></p>
+      <p class="small" style="margin:0.3rem 0;">Date: <%= fmt.d(e.sent_at || e.created_at) %><br>Valid until: <%= fmt.d(e.expires_on) || '-' %></p>
     </div>
   </div>
   <div class="two-col" style="grid-template-columns: 1fr 1fr;">
@@ -36,9 +36,9 @@
   <% if (e.warranty) { %><p class="small" style="white-space:pre-wrap;"><strong>Warranty:</strong> <%= e.warranty %></p><% } %>
   <% if (e.terms) { %><p class="small" style="white-space:pre-wrap;"><strong>Terms &amp; conditions:</strong> <%= e.terms %></p><% } %>
   <% if (['approved','converted'].includes(e.status)) { %>
-    <p class="mt"><strong>Approved</strong> by <%= e.approved_name %> on <%= fmt.shortDateTime(e.decided_at) %></p>
+    <p class="mt"><strong>Approved</strong> by <%= e.approved_name %> on <%= fmt.dt(e.decided_at) %></p>
     <% if (e.signature_data) { %><img src="<%= e.signature_data %>" alt="Signature" style="max-width:300px; border:1px solid var(--border); border-radius:8px;" /><% } %>
   <% } else if (e.status === 'rejected') { %>
-    <p class="mt"><strong>Declined</strong> <%= fmt.shortDateTime(e.decided_at) %><%= e.rejection_reason ? ': ' + e.rejection_reason : '' %></p>
+    <p class="mt"><strong>Declined</strong> <%= fmt.dt(e.decided_at) %><%= e.rejection_reason ? ': ' + e.rejection_reason : '' %></p>
   <% } %>
 </div>

@@ -11,7 +11,7 @@
     <% m.rows.forEach(function(r) { %>
       <tr><td><%= r.p.name %><br><span class="hint"><%= r.p.roleName %></span></td>
         <% r.cells.forEach(function(c) { %>
-          <td class="small"><% if (c.state === 'passed') { %><span class="status status-<%= c.expires && c.expires < fmt.addDays(fmt.today(), 30) ? 'pending' : 'completed' %>">done <%= c.completed %></span><%= c.expires ? '<br>' : '' %><% if (c.expires) { %><span class="hint">exp <%= c.expires %></span><% } %>
+          <td class="small"><% if (c.state === 'passed') { %><span class="status status-<%= c.expires && c.expires < fmt.addDays(fmt.today(), 30) ? 'pending' : 'completed' %>">done <%= fmt.d(c.completed) %></span><%= c.expires ? '<br>' : '' %><% if (c.expires) { %><span class="hint">exp <%= fmt.d(c.expires) %></span><% } %>
           <% } else if (c.state === 'none') { %><span class="hint">-</span>
           <% } else { %><span class="status status-<%= ['missing','overdue','retry_required','failed'].includes(c.state) ? 'rejected' : 'pending' %>"><%= fmt.label(c.state) %></span><% } %><%= c.required ? ' *' : '' %></td>
         <% }); %></tr>

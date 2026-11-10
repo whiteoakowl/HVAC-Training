@@ -12,7 +12,7 @@
     <div class="card-grid">
       <% events.forEach(function(e) { %>
         <div class="card">
-          <span class="hint"><%= e.starts_at %></span>
+          <span class="hint"><%= fmt.dt(e.starts_at) %></span>
           <h3><a href="/events/<%= e.id %>"><%= e.title %></a></h3>
           <% if (e.category) { %><span class="badge-pill"><%= e.category %></span><% } %>
           <% if (e.location) { %><p class="hint"><%= e.location %></p><% } %>

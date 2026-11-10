@@ -1,0 +1,76 @@
+<%- include('partials/page-start') %>
+<% var max = Math.max.apply(null, months.map(function(m) { return Math.max(m.income, m.expense, 1); })); %>
+<div class="page-header">
+  <div><h1>Accounting</h1><p class="hint">Your books, built in: every invoice, payment, bill, expense, payroll run and inventory movement posts here automatically.</p></div>
+  <div class="btn-row">
+    <% if (can('invoices.manage')) { %><a class="btn" href="/invoices">+ Invoice</a><% } %>
+    <% if (can('expenses.manage')) { %><a class="btn btn-secondary" href="/expenses">+ Expense</a><% } %>
+    <% if (can('bills.manage')) { %><a class="btn btn-secondary" href="/bills">+ Bill</a><% } %>
+    <% if (can('accounting.manage')) { %><a class="btn btn-secondary" href="/accounting/journal/new">+ Journal entry</a><% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <a class="stat" href="/accounting/reports/profit-loss"><div class="stat-label">Income this month</div><div class="stat-value"><%= fmt.money(month.income) %></div><div class="stat-sub">year: <%= fmt.money(year.income) %></div></a>
+  <a class="stat" href="/accounting/reports/profit-loss"><div class="stat-label">Expenses this month</div><div class="stat-value"><%= fmt.money(month.cogs + month.expense) %></div><div class="stat-sub">year: <%= fmt.money(year.cogs + year.expense) %></div></a>
+  <a class="stat <%= month.netIncome < 0 ? 'bad' : 'good' %>" href="/accounting/reports/profit-loss"><div class="stat-label">Profit this month</div><div class="stat-value"><%= fmt.money(month.netIncome) %></div><div class="stat-sub">year: <%= fmt.money(year.netIncome) %></div></a>
+  <a class="stat <%= ar.overdue ? 'warn' : '' %>" href="/accounting/reports/ar-aging"><div class="stat-label">Customers owe you</div><div class="stat-value"><%= fmt.money(ar.open) %></div><div class="stat-sub"><%= fmt.money(ar.overdue) %> overdue · <%= ar.drafts %> draft invoice(s)</div></a>
+  <% if (can('bills.manage')) { %><a class="stat <%= ap.overdue ? 'warn' : '' %>" href="/bills"><div class="stat-label">You owe vendors</div><div class="stat-value"><%= fmt.money(ap.open) %></div><div class="stat-sub"><%= fmt.money(ap.overdue) %> overdue</div></a><% } else { %><div class="stat"><div class="stat-label">You owe vendors</div><div class="stat-value"><%= fmt.money(ap.open) %></div></div><% } %>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>Income vs. expenses - last 6 months</h2>
+    <div style="display:flex; align-items:flex-end; gap:0.8rem; height:200px; padding-top:0.5rem;">
+      <% months.forEach(function(m) { %>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:0.3rem; height:100%; justify-content:flex-end;" title="<%= m.label %>: income <%= fmt.money(m.income) %>, expenses <%= fmt.money(m.expense) %>, profit <%= fmt.money(m.net) %>">
+          <div style="display:flex; gap:3px; align-items:flex-end; height:100%; width:100%; justify-content:center;">
+            <div style="width:42%; background:#2e7d32; border-radius:4px 4px 0 0; height:<%= Math.max(1, Math.round(m.income / max * 100)) %>%;"></div>
+            <div style="width:42%; background:#c62828; border-radius:4px 4px 0 0; height:<%= Math.max(1, Math.round(m.expense / max * 100)) %>%;"></div>
+          </div>
+          <div class="small"><%= m.label %></div>
+          <div class="small <%= m.net < 0 ? 'priority-emergency' : '' %>"><%= fmt.money(m.net) %></div>
+        </div>
+      <% }); %>
+    </div>
+    <p class="hint"><span style="color:#2e7d32;">■</span> Income <span style="color:#c62828;">■</span> Expenses &amp; cost of goods · profit under each month</p>
+  </div>
+  <div class="card">
+    <div class="grid-box-header"><h2>Bank &amp; credit card accounts</h2><a href="/accounting/banking">Banking</a></div>
+    <% if (!banks.length) { %><p class="empty">No bank accounts yet.</p><% } %>
+    <% banks.forEach(function(b) { %>
+      <div style="border-top:1px solid var(--border); padding:0.45rem 0;">
+        <a href="/accounting/banking/<%= b.id %>"><strong><%= b.subtype === 'credit_card' ? '💳' : '🏦' %> <%= b.name %></strong></a><%= b.account_last4 ? ' ···' + b.account_last4 : '' %>
+        <span class="num" style="float:right;"><strong><%= fmt.money(b.balance) %></strong></span><br>
+        <span class="hint"><%= b.toReview ? b.toReview + ' to review · ' : '' %><%= b.lastReconciled ? 'reconciled through ' + fmt.d(b.lastReconciled.statement_date) : 'never reconciled' %></span>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<div class="card-grid">
+  <div class="card"><h2>Reports</h2>
+    <p><a href="/accounting/reports/profit-loss">Profit &amp; Loss</a> · <a href="/accounting/reports/balance-sheet">Balance Sheet</a> · <a href="/accounting/reports/cash-flow">Cash Flow</a></p>
+    <p><a href="/accounting/reports/ar-aging">A/R Aging</a> · <a href="/accounting/reports/sales-by-customer">Sales by Customer</a> · <a href="/accounting/reports/expenses-by-payee">Expenses by Vendor</a></p>
+    <p><a href="/accounting/reports/general-ledger">General Ledger</a> · <a href="/accounting/reports/trial-balance">Trial Balance</a> · <a href="/accounting/reports/sales-tax">Sales Tax</a></p>
+    <% if (can('jobs.costing')) { %><p><a href="/manage/reports">Job profitability</a></p><% } %>
+  </div>
+  <div class="card"><h2>Books</h2>
+    <p><a href="/accounting/accounts">Chart of accounts</a> · <a href="/accounting/journal">Journal</a></p>
+    <p class="small">Books closed through: <strong><%= closed ? fmt.d(closed) : 'not closed' %></strong></p>
+    <% if (can('accounting.manage')) { %>
+      <form method="POST" action="/accounting/close" class="inline-fields" onsubmit="return confirm('Lock all entries on or before this date?');">
+        <label>Close through <input type="date" name="closed_through" value="<%= closed || '' %>" /></label>
+        <button type="submit" class="btn-secondary">Close books</button>
+        <% if (closed) { %><button type="submit" name="clear" value="1" class="btn-danger">Reopen</button><% } %>
+      </form>
+      <p class="hint">After filing a month or year, close it so nobody can change those numbers by accident.</p>
+    <% } %>
+  </div>
+  <div class="card"><h2>Recent entries</h2>
+    <% recent.forEach(function(e) { %><p class="small" style="margin:0.2rem 0;"><a href="/accounting/journal/<%= e.id %>"><%= fmt.d(e.entry_date) %></a> · <%= fmt.usText(e.memo) %> · <%= fmt.money(e.amount) %></p><% }); %>
+    <% if (!recent.length) { %><p class="empty">No entries yet.</p><% } %>
+  </div>
+</div>
+<p class="hint">Management reports from your recorded transactions - not tax returns or audited statements. Have your accountant review before filing.</p>
+<%- include('partials/page-end') %>

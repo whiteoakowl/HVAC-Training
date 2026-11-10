@@ -1,0 +1,164 @@
+<%- include('partials/page-start') %>
+<style>
+  .wb { display: grid; grid-template-columns: 400px 1fr; gap: 1rem; align-items: start; }
+  .wb-side { max-height: calc(100vh - 140px); overflow-y: auto; padding-right: 0.3rem; }
+  .wb-preview { position: sticky; top: 0.5rem; }
+  .wb-frame-wrap { background: #e9edf2; border-radius: 10px; padding: 0.6rem; display: flex; justify-content: center; }
+  .wb-frame { width: 100%; height: calc(100vh - 170px); border: 0; background: #fff; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.12); transition: width .2s; }
+  .wb-block { border: 1px solid var(--border); border-radius: 8px; background: #fff; margin-bottom: 0.45rem; }
+  .wb-block > summary { list-style: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.7rem; cursor: pointer; }
+  .wb-block > summary::-webkit-details-marker { display: none; }
+  .wb-block[open] { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(31,111,235,0.15); }
+  .wb-handle { cursor: grab; color: var(--text-muted); }
+  .wb-block .wb-body { padding: 0 0.75rem 0.75rem; }
+  .wb-item { border: 1px dashed var(--border); border-radius: 8px; padding: 0.5rem; margin: 0.4rem 0; }
+  .wb-add { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
+  .wb-add button { background: #fff; color: var(--text); border-color: var(--border); text-align: left; font-weight: 500; font-size: 0.85rem; }
+  .wb-add button:hover { border-color: var(--brand); background: #f3f7fe; }
+  .wb-toast { position: fixed; bottom: 1rem; right: 1rem; background: #1f7a3a; color: #fff; padding: 0.5rem 0.9rem; border-radius: 8px; display: none; z-index: 50; }
+  @media (max-width: 1100px) { .wb { grid-template-columns: 1fr; } .wb-side { max-height: none; } .wb-frame { height: 70vh; } }
+</style>
+<datalist id="site-links"><option value="/"></option><option value="/request-service"></option><option value="/request-service?type=estimate"></option><option value="/request-service?type=maintenance"></option><option value="/contact"></option><option value="/services"></option><option value="/about"></option><option value="/maintenance-plans"></option><option value="tel:{{company_phone}}"></option><option value="tel:{{emergency_phone}}"></option></datalist>
+
+<div class="page-header">
+  <div>
+    <h1><%= p.title %> <span class="status status-<%= p.status === 'published' ? 'completed' : p.status === 'hidden' ? 'cancelled' : 'draft' %>"><%= p.status %></span><% if (p.published && p.draft_json !== p.published_json) { %> <span class="status status-pending">unpublished edits</span><% } %></h1>
+    <p class="hint"><a href="/website">&larr; All pages</a> · address <strong><%= p.slug === 'home' ? '/' : '/' + p.slug %></strong><% if (p.published_at) { %> · last published <%= fmt.dt(p.published_at) %><% } %></p>
+  </div>
+  <div class="btn-row">
+    <% if (p.status === 'published') { %><a class="btn btn-secondary" target="_blank" href="<%= p.slug === 'home' ? '/' : '/' + p.slug %>">View live</a><% } %>
+    <form method="POST" action="/website/pages/<%= p.id %>/publish" class="inline-form"><button type="submit" class="btn-success">Publish</button></form>
+  </div>
+</div>
+
+<div class="wb">
+  <div class="wb-side">
+    <p class="hint" style="margin-top:0;">Click a section here or in the preview to edit it. Drag ⋮⋮ to reorder. Edits save to the draft; visitors see them after you <strong>Publish</strong>.</p>
+    <div id="blocks">
+    <% p.draft.forEach(function(b, idx) { var def = BLOCKS[b.type]; if (!def) return; var d = b.data || {}; %>
+      <details class="wb-block" id="blk-<%= b.id %>" data-id="<%= b.id %>" <%= open === b.id ? 'open' : '' %>>
+        <summary draggable="true"><span class="wb-handle" title="Drag to reorder">⋮⋮</span> <span><%= def.icon %></span> <strong><%= def.label %></strong> <span class="hint" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;"><%= d.heading || d.text || '' %></span></summary>
+        <div class="wb-body">
+          <p class="hint"><%= def.help %></p>
+          <form method="POST" action="/website/pages/<%= p.id %>/blocks/<%= b.id %>" class="form-grid block-form" style="grid-template-columns:1fr;">
+            <% def.fields.forEach(function(f) { %><%- include('partials/site-field', { f: f, name: 'f_' + f.key, value: d[f.key], media: media }) %><% }); %>
+            <% if (def.items) { var items = (d.items || []).slice(); var slots = Math.min(def.items.max, items.length + 2); %>
+              <% for (var i = 0; i < slots; i++) { var it = items[i] || {}; %>
+                <div class="wb-item full"><div class="grid-box-header"><strong class="small"><%= def.items.label %> <%= i + 1 %><%= items[i] ? '' : ' (new)' %></strong><% if (items[i]) { %><label class="small" style="flex-direction:row; gap:0.3rem; font-weight:400;"><input type="checkbox" name="i<%= i %>_remove" value="1" style="width:auto;" /> remove</label><% } %></div>
+                  <% def.items.fields.forEach(function(f) { %><%- include('partials/site-field', { f: f, name: 'i' + i + '_' + f.key, value: it[f.key], media: media }) %><% }); %></div>
+              <% } %>
+              <% if (items.length + 2 <= def.items.max) { %><p class="hint full">Save to get more empty slots.</p><% } %>
+            <% } %>
+            <div class="btn-row"><button type="submit">Save</button></div>
+          </form>
+          <div class="btn-row mt">
+            <form method="POST" action="/website/pages/<%= p.id %>/blocks/<%= b.id %>/up" class="inline-form"><button class="btn-secondary small" <%= idx === 0 ? 'disabled' : '' %>>↑</button></form>
+            <form method="POST" action="/website/pages/<%= p.id %>/blocks/<%= b.id %>/down" class="inline-form"><button class="btn-secondary small" <%= idx === p.draft.length - 1 ? 'disabled' : '' %>>↓</button></form>
+            <form method="POST" action="/website/pages/<%= p.id %>/blocks/<%= b.id %>/duplicate" class="inline-form"><button class="btn-secondary small">Duplicate</button></form>
+            <form method="POST" action="/website/pages/<%= p.id %>/blocks/<%= b.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this section?');"><button class="btn-danger small">Delete</button></form>
+          </div>
+        </div>
+      </details>
+    <% }); %>
+    </div>
+    <% if (!p.draft.length) { %><p class="empty">No sections yet - add one below.</p><% } %>
+
+    <div class="card" style="margin-top:0.6rem;">
+      <h2 style="font-size:1rem;">+ Add a section</h2>
+      <form method="POST" action="/website/pages/<%= p.id %>/blocks">
+        <label class="small" style="margin-bottom:0.4rem;">Position <select name="at"><option value="<%= p.draft.length %>">At the bottom</option><option value="0">At the top</option><% p.draft.forEach(function(b, i) { if (!BLOCKS[b.type]) return; %><option value="<%= i + 1 %>">After <%= BLOCKS[b.type].label %><%= b.data && b.data.heading ? ': ' + b.data.heading.slice(0, 30) : '' %></option><% }); %></select></label>
+        <div class="wb-add"><% Object.keys(BLOCKS).forEach(function(k) { %><button type="submit" name="type" value="<%= k %>" title="<%= BLOCKS[k].help %>"><%= BLOCKS[k].icon %> <%= BLOCKS[k].label %></button><% }); %></div>
+      </form>
+    </div>
+
+    <details class="card" style="margin-top:0.6rem;"><summary><strong>Upload images</strong></summary>
+      <form method="POST" action="/website/media" enctype="multipart/form-data" class="stack-form mt">
+        <input type="hidden" name="back" value="/website/pages/<%= p.id %>" />
+        <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
+        <input name="alt" placeholder="Short description of the photo" />
+        <button type="submit" class="btn-secondary">Upload</button>
+      </form>
+    </details>
+
+    <details class="card" style="margin-top:0.6rem;"><summary><strong>Page settings &amp; SEO</strong></summary>
+      <form method="POST" action="/website/pages/<%= p.id %>/settings" class="stack-form mt">
+        <label>Page title <input name="title" value="<%= p.title %>" required /></label>
+        <% if (p.slug !== 'home') { %><label>Address <input name="slug" value="<%= p.slug %>" required /></label><% } %>
+        <label>Menu label <input name="nav_label" value="<%= p.nav_label || '' %>" /></label>
+        <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="show_in_nav" value="1" <%= p.show_in_nav ? 'checked' : '' %> style="width:auto;" /> Show in the menu</label>
+        <label>Search engine title <input name="seo_title" value="<%= p.seo_title || '' %>" maxlength="120" placeholder="HVAC Repair & Installation in Springfield | Company" /></label>
+        <label>Search engine description <textarea name="seo_description" maxlength="300" style="min-height:60px;"><%= p.seo_description || '' %></textarea></label>
+        <button type="submit" class="btn-secondary">Save settings</button>
+      </form>
+    </details>
+
+    <details class="card" style="margin-top:0.6rem;"><summary><strong>Versions &amp; visibility</strong></summary>
+      <div class="mt">
+        <% if (p.published) { %><form method="POST" action="/website/pages/<%= p.id %>/discard" onsubmit="return confirm('Throw away unpublished edits?');" style="margin-bottom:0.4rem;"><button class="btn-secondary small">Discard unpublished edits</button></form><% } %>
+        <% if (p.status === 'published') { %><form method="POST" action="/website/pages/<%= p.id %>/unpublish" onsubmit="return confirm('Hide this page from the public site?');" style="margin-bottom:0.4rem;"><button class="btn-secondary small">Hide from public site</button></form><% } %>
+        <% if (p.slug !== 'home') { %><form method="POST" action="/website/pages/<%= p.id %>/delete" onsubmit="return confirm('Delete this page permanently?');" style="margin-bottom:0.4rem;"><button class="btn-danger small">Delete page</button></form><% } %>
+        <p class="hint">Published versions:</p>
+        <% if (!revisions.length) { %><p class="empty">Not published yet.</p><% } %>
+        <% revisions.forEach(function(r) { %><form method="POST" action="/website/pages/<%= p.id %>/restore/<%= r.id %>" class="small" style="margin:0.2rem 0;"><%= fmt.dt(r.created_at) %> · <%= r.byName || '' %> <button class="btn-secondary small">Load into draft</button></form><% }); %>
+      </div>
+    </details>
+  </div>
+
+  <div class="wb-preview">
+    <div class="btn-row" style="margin-bottom:0.4rem;">
+      <strong class="small">Draft preview</strong>
+      <button type="button" class="btn-secondary small dev" data-w="100%">🖥 Desktop</button>
+      <button type="button" class="btn-secondary small dev" data-w="820px">Tablet</button>
+      <button type="button" class="btn-secondary small dev" data-w="390px">📱 Phone</button>
+      <button type="button" class="btn-secondary small" id="reload">↻ Refresh</button>
+    </div>
+    <div class="wb-frame-wrap"><iframe class="wb-frame" id="frame" src="/website/preview/<%= p.id %>" title="Page preview"></iframe></div>
+  </div>
+</div>
+<div class="wb-toast" id="toast">Saved to draft</div>
+
+<script>
+  (function () {
+    var frame = document.getElementById('frame'), toast = document.getElementById('toast');
+    function reload() { var y = 0; try { y = frame.contentWindow.scrollY; } catch (e) {} frame.onload = function () { try { frame.contentWindow.scrollTo(0, y); } catch (e) {} }; frame.contentWindow.location.reload(); }
+    document.getElementById('reload').onclick = reload;
+    document.querySelectorAll('.dev').forEach(function (b) { b.onclick = function () { frame.style.width = b.dataset.w; }; });
+    // Save a section without leaving the page, then refresh the preview.
+    document.querySelectorAll('.block-form').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        fetch(f.action, { method: 'POST', body: new URLSearchParams(new FormData(f)), headers: { 'x-requested-with': 'fetch' }, credentials: 'same-origin' })
+          .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+          .then(function () { toast.style.display = 'block'; setTimeout(function () { toast.style.display = 'none'; }, 1500); reload(); })
+          .catch(function () { f.submit(); });
+      });
+    });
+    // Image picker previews.
+    document.querySelectorAll('.img-pick').forEach(function (s) {
+      s.addEventListener('change', function () { var im = s.parentNode.querySelector('.img-pick-preview'); im.src = s.value ? '/media/' + s.value : ''; im.style.display = s.value ? '' : 'none'; });
+    });
+    // Opening a section highlights it in the preview, and vice versa.
+    document.querySelectorAll('.wb-block').forEach(function (d) {
+      d.addEventListener('toggle', function () { if (d.open) { document.querySelectorAll('.wb-block[open]').forEach(function (o) { if (o !== d) o.open = false; }); frame.contentWindow.postMessage({ hvacFocusBlock: d.dataset.id }, location.origin); } });
+    });
+    window.addEventListener('message', function (e) {
+      if (e.origin !== location.origin || !e.data || !e.data.hvacEditBlock) return;
+      var d = document.getElementById('blk-' + e.data.hvacEditBlock);
+      if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+    frame.addEventListener('load', function () { var o = document.querySelector('.wb-block[open]'); if (o) frame.contentWindow.postMessage({ hvacFocusBlock: o.dataset.id }, location.origin); });
+    // Drag sections to reorder.
+    var list = document.getElementById('blocks'), dragged = null;
+    list.querySelectorAll('.wb-block').forEach(function (d) {
+      var s = d.querySelector('summary');
+      s.addEventListener('dragstart', function (e) { dragged = d; d.style.opacity = '0.5'; e.dataTransfer.effectAllowed = 'move'; });
+      s.addEventListener('dragend', function () { d.style.opacity = ''; saveOrder(); });
+      d.addEventListener('dragover', function (e) { e.preventDefault(); if (!dragged || dragged === d) return; var r = d.getBoundingClientRect(); list.insertBefore(dragged, e.clientY < r.top + r.height / 2 ? d : d.nextSibling); });
+    });
+    function saveOrder() {
+      var p = new URLSearchParams(); list.querySelectorAll('.wb-block').forEach(function (d) { p.append('ids', d.dataset.id); });
+      fetch('/website/pages/<%= p.id %>/order', { method: 'POST', body: p, credentials: 'same-origin' }).then(function (r) { if (r.ok) reload(); else location.reload(); });
+    }
+  })();
+</script>
+<%- include('partials/page-end') %>

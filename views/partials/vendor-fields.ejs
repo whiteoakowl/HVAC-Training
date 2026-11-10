@@ -1,0 +1,8 @@
+<label>Name <input name="name" value="<%= v.name || '' %>" required /></label>
+<label>Contact <input name="contact_name" value="<%= v.contact_name || '' %>" /></label>
+<label>Phone <input name="phone" value="<%= v.phone || '' %>" /></label>
+<label>Email <input type="email" name="email" value="<%= v.email || '' %>" /></label>
+<label>Our account # <input name="account_number" value="<%= v.account_number || '' %>" /></label>
+<label>Payment terms (days) <input name="terms_days" inputmode="numeric" value="<%= v.terms_days === undefined ? 30 : v.terms_days %>" /></label>
+<label class="full">Address <input name="address" value="<%= v.address || '' %>" /></label>
+<label class="full">Notes <input name="notes" value="<%= v.notes || '' %>" /></label>

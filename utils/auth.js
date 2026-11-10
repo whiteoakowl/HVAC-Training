@@ -7,6 +7,8 @@
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 
+// The original three role keys; the full, configurable list now lives
+// in the roles table (see utils/permissions.js).
 const ROLES = ['student', 'instructor', 'admin'];
 
 async function findByEmail(email) {
@@ -28,7 +30,7 @@ function hashPassword(password) {
 async function createMember({ name, email, password, role }) {
   const info = await db
     .prepare('INSERT INTO members (name, email, password_hash, role) VALUES (?, ?, ?, ?)')
-    .run(name, email.trim().toLowerCase(), hashPassword(password), ROLES.includes(role) ? role : 'student');
+    .run(name, email.trim().toLowerCase(), hashPassword(password), role || 'student');
   return info.lastInsertRowid;
 }
 

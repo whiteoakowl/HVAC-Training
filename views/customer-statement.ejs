@@ -1,0 +1,26 @@
+<%- include('partials/page-start') %>
+<div class="page-header no-print">
+  <div><a href="/customers/<%= c.id %>">&larr; <%= c.name %></a></div>
+  <form class="toolbar" method="GET"><label>From <input type="date" name="from" value="<%= st.from %>" /></label><label>To <input type="date" name="to" value="<%= st.to %>" /></label><button type="submit">Update</button><button type="button" class="btn-secondary" onclick="window.print()">Print / Save PDF</button></form>
+</div>
+<div class="doc">
+  <div class="doc-head">
+    <div><h1><%= company.company_name || 'Statement' %></h1><p class="small" style="margin:0; white-space:pre-wrap;"><%= company.company_address || '' %></p><p class="small" style="margin:0;"><%= [company.company_phone, company.company_email].filter(Boolean).join(' · ') %></p></div>
+    <div style="text-align:right;"><h2 style="margin:0;">STATEMENT</h2><p class="small" style="margin:0.3rem 0;"><%= fmt.d(st.from) %> to <%= fmt.d(st.to) %><br>Account <%= c.customer_number %></p></div>
+  </div>
+  <p><strong><%= c.name %></strong><%= c.company_name ? ' · ' + c.company_name : '' %><br><%= c.billing_address || '' %></p>
+  <table class="data-table">
+    <thead><tr><th>Date</th><th>Activity</th><th>Reference</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead>
+    <tbody>
+      <tr><td><%= fmt.d(st.from) %></td><td colspan="3"><em>Balance forward</em></td><td class="num"><%= fmt.money(st.opening) %></td></tr>
+      <% st.items.forEach(function(i) { %><tr><td><%= fmt.d(i.date) %></td><td><%= i.type %><%= i.detail ? ' - ' + i.detail : '' %></td><td><%= i.ref %></td><td class="num"><%= fmt.money(i.amount) %></td><td class="num"><%= fmt.money(i.balance) %></td></tr><% }); %>
+      <tr class="total"><td colspan="4">Amount due</td><td class="num"><%= fmt.money(st.closing) %></td></tr>
+    </tbody>
+  </table>
+  <% if (aging.length) { var b = { current: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0 }; aging.forEach(function(r) { b[r.bucket] += r.balance; }); %>
+    <table class="data-table"><thead><tr><th class="num">Current</th><th class="num">1-30 days</th><th class="num">31-60 days</th><th class="num">61-90 days</th><th class="num">Over 90</th></tr></thead>
+      <tbody><tr><td class="num"><%= fmt.money(b.current) %></td><td class="num"><%= fmt.money(b.d1_30) %></td><td class="num"><%= fmt.money(b.d31_60) %></td><td class="num"><%= fmt.money(b.d61_90) %></td><td class="num"><%= fmt.money(b.d90_plus) %></td></tr></tbody></table>
+  <% } %>
+  <% if (company.invoice_payment_instructions) { %><p class="small" style="white-space:pre-wrap;"><strong>How to pay:</strong> <%= company.invoice_payment_instructions %></p><% } %>
+</div>
+<%- include('partials/page-end') %>

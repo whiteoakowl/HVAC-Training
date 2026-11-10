@@ -1,0 +1,16 @@
+<%- include('partials/page-start') %>
+<h1>Checklists &amp; Inspection Forms</h1>
+<p class="hint">Technicians fill these in on the job page (pass / fail / n/a with readings). One item per line.</p>
+<% rows.forEach(function(t) { %>
+  <details class="card" style="margin-bottom:0.5rem;"><summary><strong><%= t.name %></strong> <span class="hint"><%= t.items.split('\n').length %> items</span><% if (!t.active) { %> <span class="status status-cancelled">inactive</span><% } %></summary>
+    <form method="POST" action="/admin/checklists" class="stack-form mt"><input type="hidden" name="id" value="<%= t.id %>" />
+      <label>Name <input name="name" value="<%= t.name %>" required /></label>
+      <label>Items <textarea name="items" style="min-height:200px;"><%= t.items %></textarea></label>
+      <label>Status <select name="active"><option value="1" <%= t.active ? 'selected' : '' %>>Active</option><option value="0" <%= !t.active ? 'selected' : '' %>>Inactive</option></select></label>
+      <button type="submit" class="btn-secondary">Save</button></form>
+  </details>
+<% }); %>
+<details class="card"><summary><strong>+ New checklist</strong></summary>
+  <form method="POST" action="/admin/checklists" class="stack-form mt"><label>Name <input name="name" required /></label><label>Items (one per line) <textarea name="items" required style="min-height:160px;"></textarea></label><button type="submit">Create</button></form>
+</details>
+<%- include('partials/page-end') %>

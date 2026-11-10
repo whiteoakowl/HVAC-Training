@@ -1,0 +1,41 @@
+<%- include('partials/page-start') %>
+<% const draft = run.status === 'draft'; %>
+<div class="page-header">
+  <div><h1>Payroll <%= fmt.d(run.period_start) %> to <%= fmt.d(run.period_end) %> <span class="status status-<%= run.status === 'posted' ? 'paid' : run.status === 'void' ? 'void' : run.status === 'draft' ? 'draft' : 'approved' %>"><%= run.status %></span></h1>
+    <p class="hint">Pay date <%= fmt.d(run.pay_date) %> · prepared by <%= run.createdByName || '-' %><%= run.approvedByName ? ' · approved by ' + run.approvedByName : '' %><% if (run.journal_entry_id) { %> · <a href="/accounting/journal/<%= run.journal_entry_id %>">ledger entry</a><% } %></p></div>
+  <div class="btn-row"><a class="btn btn-secondary" href="/payroll/<%= run.id %>?format=csv">Export CSV</a><a class="btn btn-secondary" href="/payroll">&larr; Payroll</a></div>
+</div>
+<% if (run.pendingTime && draft) { %><div class="alert alert-error"><%= run.pendingTime %> time entr<%= run.pendingTime === 1 ? 'y' : 'ies' %> in this period are not approved and are NOT included. <a href="/manage/timesheets">Review timesheets</a>, then void and re-prepare this run.</div><% } %>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Gross</div><div class="stat-value"><%= fmt.money(run.gross_cents) %></div></div>
+  <div class="stat"><div class="stat-label">Withholdings</div><div class="stat-value"><%= fmt.money(run.withholding_cents) %></div></div>
+  <div class="stat"><div class="stat-label">Deductions</div><div class="stat-value"><%= fmt.money(run.deduction_cents) %></div></div>
+  <div class="stat"><div class="stat-label">Reimbursements</div><div class="stat-value"><%= fmt.money(run.reimbursement_cents) %></div></div>
+  <div class="stat good"><div class="stat-label">Net pay</div><div class="stat-value"><%= fmt.money(run.net_cents) %></div></div>
+</div>
+<table class="data-table">
+  <thead><tr><th>Employee</th><th class="num">Reg h</th><th class="num">OT h</th><th class="num">PTO h</th><th class="num">Base pay</th><th class="num">Bonus</th><th class="num">Commission</th><th class="num">Gross</th><th class="num">Withholding</th><th class="num">Deductions</th><th class="num">Reimb.</th><th class="num">Net</th><% if (draft && can('payroll.manage')) { %><th></th><% } %></tr></thead>
+  <tbody>
+  <% run.items.forEach(function(i) { var base = i.regular_pay_cents + i.overtime_pay_cents + i.pto_pay_cents + i.salary_pay_cents; %>
+    <% if (draft && can('payroll.manage')) { %>
+      <tr><td><%= i.name %><br><span class="hint"><%= i.pay_type %> <%= fmt.money(i.rate_cents) %><%= i.pay_type === 'salary' ? '/yr' : '/h' %></span></td>
+        <td class="num"><%= fmt.hours(i.regular_minutes) %></td><td class="num"><%= fmt.hours(i.overtime_minutes) %></td><td class="num"><%= i.pto_hours %></td><td class="num"><%= fmt.money(base) %></td>
+        <td><input form="pi-<%= i.id %>" name="bonus" value="<%= fmt.centsInput(i.bonus_cents) %>" style="width:80px;" /></td><td><input form="pi-<%= i.id %>" name="commission" value="<%= fmt.centsInput(i.commission_cents) %>" style="width:80px;" /></td>
+        <td class="num"><%= fmt.money(i.gross_cents) %></td>
+        <td><input form="pi-<%= i.id %>" name="withholding" value="<%= fmt.centsInput(i.withholding_cents) %>" style="width:80px;" /></td><td><input form="pi-<%= i.id %>" name="deduction" value="<%= fmt.centsInput(i.deduction_cents) %>" style="width:80px;" /></td>
+        <td><input form="pi-<%= i.id %>" name="reimbursement" value="<%= fmt.centsInput(i.reimbursement_cents) %>" style="width:80px;" /></td>
+        <td class="num"><%= fmt.money(i.net_cents) %></td><td><form id="pi-<%= i.id %>" method="POST" action="/payroll/<%= run.id %>/items/<%= i.id %>"><input type="hidden" name="notes" value="<%= i.notes || '' %>" /><button class="small" type="submit">Save</button></form></td></tr>
+    <% } else { %>
+      <tr><td><%= i.name %></td><td class="num"><%= fmt.hours(i.regular_minutes) %></td><td class="num"><%= fmt.hours(i.overtime_minutes) %></td><td class="num"><%= i.pto_hours %></td><td class="num"><%= fmt.money(base) %></td><td class="num"><%= fmt.money(i.bonus_cents) %></td><td class="num"><%= fmt.money(i.commission_cents) %></td><td class="num"><%= fmt.money(i.gross_cents) %></td><td class="num"><%= fmt.money(i.withholding_cents) %></td><td class="num"><%= fmt.money(i.deduction_cents) %></td><td class="num"><%= fmt.money(i.reimbursement_cents) %></td><td class="num"><%= fmt.money(i.net_cents) %></td></tr>
+    <% } %>
+  <% }); %>
+  </tbody>
+</table>
+<% if (can('payroll.manage')) { %>
+<div class="card-grid">
+  <% if (draft) { %><div class="card"><h2>Approve</h2><p class="hint">A second person (not the preparer) must approve.</p><form method="POST" action="/payroll/<%= run.id %>/approve"><button type="submit" class="btn-success">Approve payroll</button></form></div><% } %>
+  <% if (run.status === 'approved') { %><div class="card"><h2>Post to ledger</h2><p class="hint">After your payroll provider has paid employees. Records payroll expense, liabilities and the net cash paid; publishes pay stubs.</p><form method="POST" action="/payroll/<%= run.id %>/post"><button type="submit" class="btn-success">Post payroll</button></form></div><% } %>
+  <% if (run.status !== 'void') { %><div class="card"><h2>Void</h2><form method="POST" action="/payroll/<%= run.id %>/void" class="stack-form" onsubmit="return confirm('Void this payroll run?');"><label>Reason <input name="reason" required /></label><button type="submit" class="btn-danger">Void run</button></form></div><% } %>
+</div>
+<% } %>
+<%- include('partials/page-end') %>

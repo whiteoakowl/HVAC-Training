@@ -1,0 +1,37 @@
+<%- include('partials/page-start') %>
+<h1>Trucks</h1>
+<p class="hint">Each truck has its own inventory location. A technician can be assigned to one truck at a time; materials they use on jobs come off that truck.</p>
+<% if (can('trucks.manage')) { %>
+  <details class="card" style="margin-bottom:1rem;"><summary><strong>+ Add truck</strong></summary>
+    <form method="POST" action="/trucks/new" class="form-grid mt">
+      <label>Name / number <input name="name" required placeholder="Truck 4" /></label>
+      <label>Assigned to <select name="assigned_member_id"><option value="">- nobody -</option><% staff.forEach(function(s) { %><option value="<%= s.id %>"><%= s.name %></option><% }); %></select></label>
+      <label>Make / model <input name="make_model" /></label>
+      <label>Year <input name="year" inputmode="numeric" /></label>
+      <label>Plate <input name="plate" /></label>
+      <label>VIN <input name="vin" /></label>
+      <label class="full">Notes <input name="notes" /></label>
+      <div class="full"><button type="submit">Add truck</button></div>
+    </form>
+  </details>
+<% } %>
+<% if (!trucks.length) { %><p class="empty">No trucks yet.</p><% } %>
+<% trucks.forEach(function(t) { %>
+  <details class="card" style="margin-bottom:0.6rem;">
+    <summary><strong><%= t.name %></strong> · <%= t.assignedName || 'unassigned' %> · stock value <%= fmt.money(t.stockValue) %><% if (!t.active) { %> <span class="status status-cancelled">inactive</span><% } %> · <a href="/inventory/locations/<%= t.locationId %>">view stock</a></summary>
+    <% if (can('trucks.manage')) { %>
+      <form method="POST" action="/trucks/<%= t.id %>/edit" class="form-grid mt">
+        <label>Name <input name="name" value="<%= t.name %>" required /></label>
+        <label>Assigned to <select name="assigned_member_id"><option value="">- nobody -</option><% staff.forEach(function(s) { %><option value="<%= s.id %>" <%= t.assigned_member_id === s.id ? 'selected' : '' %>><%= s.name %></option><% }); %></select></label>
+        <label>Make / model <input name="make_model" value="<%= t.make_model || '' %>" /></label>
+        <label>Year <input name="year" value="<%= t.year || '' %>" /></label>
+        <label>Plate <input name="plate" value="<%= t.plate || '' %>" /></label>
+        <label>VIN <input name="vin" value="<%= t.vin || '' %>" /></label>
+        <label>Status <select name="active"><option value="1" <%= t.active ? 'selected' : '' %>>Active</option><option value="0" <%= !t.active ? 'selected' : '' %>>Out of service</option></select></label>
+        <label>Notes <input name="notes" value="<%= t.notes || '' %>" /></label>
+        <div class="full"><button type="submit">Save</button></div>
+      </form>
+    <% } %>
+  </details>
+<% }); %>
+<%- include('partials/page-end') %>

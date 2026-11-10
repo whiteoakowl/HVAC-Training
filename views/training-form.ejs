@@ -10,6 +10,8 @@
   <form method="POST" action="/training/manage/new" class="form-grid">
     <label class="full">Title <input type="text" name="title" required /></label>
     <label class="full">Description <textarea name="description"></textarea></label>
+    <label>Category <input name="category" list="tcats" /><datalist id="tcats"><option>HVAC Fundamentals</option><option>Heating Systems</option><option>Air Conditioning</option><option>Heat Pumps</option><option>Electrical Fundamentals</option><option>Refrigeration</option><option>Airflow &amp; Ductwork</option><option>Troubleshooting</option><option>Installation</option><option>Preventative Maintenance</option><option>Customer Service</option><option>Sales</option><option>Safety</option><option>EPA Certification Prep</option><option>Company Policies</option><option>Manufacturer Training</option></datalist></label>
+    <label>Renew every (months, blank = never) <input type="number" name="renewMonths" min="1" max="120" /></label>
     <label>Estimated Minutes <input type="number" name="estimatedMinutes" min="1" /></label>
     <label>Passing Score (%) <input type="number" name="passingScore" min="0" max="100" value="80" /></label>
     <label><input type="checkbox" name="sequentialLessons" value="1" checked style="width:auto;" /> Require lessons in order</label>

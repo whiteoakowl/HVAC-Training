@@ -18,15 +18,25 @@ const fs = require('fs');
 const Database = require('better-sqlite3');
 
 const { DATA_DIR } = require('../utils/paths');
+const { migrateSqlite } = require('./migrate');
 
 const db = new Database(path.join(DATA_DIR, 'hvac_training.sqlite'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
-db.function('now_text', () => new Date().toISOString().slice(0, 19).replace('T', ' '));
+// now_text() = wall-clock time in the company timezone (utils/format.js).
+db.function('now_text', () => require('../utils/format').nowText());
+// Column defaults written as datetime('now') (schema.sql, migrations) use
+// the company timezone too, matching Postgres's now_text(). The app only
+// ever calls datetime('now'); any other use is rejected loudly.
+db.function('datetime', { varargs: true, deterministic: false }, (...args) => {
+  if (args.length === 1 && args[0] === 'now') return require('../utils/format').nowText();
+  throw new Error("Only datetime('now') is supported");
+});
 
 function initSchema() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
+  migrateSqlite(db);
 }
 initSchema();
 
@@ -51,6 +61,7 @@ db.withTransaction = async function withTransaction(fn) {
   }
 };
 
+db.setTimezone = async () => {};
 db.driver = 'sqlite';
 db.ready = Promise.resolve();
 

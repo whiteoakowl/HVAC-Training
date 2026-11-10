@@ -1,0 +1,46 @@
+<%- include('partials/page-start') %>
+<div class="page-header"><div><h1>Banking</h1><p class="hint">Import statements from your bank, match or categorize each transaction, and reconcile every month - like QuickBooks, but built in. <a href="/accounting">&larr; Accounting</a></p></div></div>
+<% if (!banks.length) { %><p class="empty">No bank or credit card accounts yet.</p><% } %>
+<div class="card-grid">
+  <% banks.forEach(function(b) { %>
+    <a class="card job-card" href="/accounting/banking/<%= b.id %>" style="margin:0;">
+      <div class="row"><strong><%= b.subtype === 'credit_card' ? '💳' : '🏦' %> <%= b.name %></strong><span class="hint"><%= b.code %><%= b.account_last4 ? ' ···' + b.account_last4 : '' %></span></div>
+      <div class="stat-value"><%= fmt.money(b.balance) %></div>
+      <div class="hint"><%= b.subtype === 'credit_card' ? 'balance owed' : 'balance in books' %> · <%= b.toReview ? b.toReview + ' to review' : 'nothing to review' %></div>
+      <div class="hint"><%= b.lastReconciled ? 'Reconciled through ' + fmt.d(b.lastReconciled.statement_date) : 'Never reconciled' %></div>
+    </a>
+  <% }); %>
+</div>
+<% if (can('accounting.manage')) { %>
+<div class="card-grid mt">
+  <div class="card"><h2>+ Add bank or credit card account</h2>
+    <form method="POST" action="/accounting/banking/accounts" class="stack-form">
+      <label>Type <select name="subtype"><% Object.keys(subtypes).forEach(function(k) { %><option value="<%= k %>"><%= subtypes[k] %></option><% }); %></select></label>
+      <label>Name <input name="name" required placeholder="Chase Business Checking" /></label>
+      <label>Last 4 digits <input name="last4" maxlength="4" inputmode="numeric" /></label>
+      <div class="inline-fields"><label>Opening balance <input name="opening_balance" inputmode="decimal" placeholder="0.00" /></label><label>As of <input type="date" name="opening_date" value="<%= today %>" /></label></div>
+      <button type="submit">Add account</button>
+    </form>
+  </div>
+  <div class="card"><h2>Transfer between accounts</h2>
+    <form method="POST" action="/accounting/banking/transfer" class="stack-form">
+      <label>From <select name="from_id"><% banks.forEach(function(b) { %><option value="<%= b.id %>"><%= b.name %></option><% }); %></select></label>
+      <label>To <select name="to_id"><% banks.forEach(function(b, i) { %><option value="<%= b.id %>" <%= i === 1 ? 'selected' : '' %>><%= b.name %></option><% }); %></select></label>
+      <div class="inline-fields"><label>Amount <input name="amount" inputmode="decimal" required /></label><label>Date <input type="date" name="date" value="<%= today %>" /></label></div>
+      <label>Memo <input name="memo" placeholder="Credit card payment" /></label>
+      <button type="submit" class="btn-secondary">Record transfer</button>
+    </form>
+  </div>
+  <div class="card" id="rules"><h2>Rules</h2>
+    <p class="hint">When a bank description contains this text, the category is filled in for you.</p>
+    <% rules.forEach(function(r) { %><form method="POST" action="/accounting/banking/rules/<%= r.id %>/delete" class="small" style="margin:0.2rem 0;">"<strong><%= r.match_text %></strong>"<%= r.direction !== 'any' ? ' (' + fmt.label(r.direction) + ')' : '' %> → <%= r.code %> <%= r.accountName %><%= r.payee ? ' · ' + r.payee : '' %> <button class="btn-secondary small">Delete</button></form><% }); %>
+    <form method="POST" action="/accounting/banking/rules" class="stack-form mt">
+      <label>Description contains <input name="match_text" required placeholder="SHELL" /></label>
+      <label>Category <select name="account_id"><% categories.forEach(function(a) { %><option value="<%= a.id %>" <%= a.code === '6100' ? 'selected' : '' %>><%= a.code %> <%= a.name %></option><% }); %></select></label>
+      <div class="inline-fields"><label>Applies to <select name="direction"><option value="any">Money in or out</option><option value="money_out">Money out</option><option value="money_in">Money in</option></select></label><label>Payee <input name="payee" /></label></div>
+      <button type="submit" class="btn-secondary">Save rule</button>
+    </form>
+  </div>
+</div>
+<% } %>
+<%- include('partials/page-end') %>

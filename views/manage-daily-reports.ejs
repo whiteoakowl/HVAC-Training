@@ -1,0 +1,13 @@
+<%- include('partials/page-start') %>
+<div class="page-header"><h1>End-of-Day Reports</h1>
+  <div class="btn-row"><a class="btn btn-secondary" href="/manage/daily-reports?date=<%= prev %>">&larr;</a><form method="GET"><input type="date" name="date" value="<%= date %>" onchange="this.form.submit()" /></form><a class="btn btn-secondary" href="/manage/daily-reports?date=<%= next %>">&rarr;</a></div></div>
+<% if (!rows.length) { %><p class="empty">No reports for <%= fmt.d(date) %>.</p><% } %>
+<% rows.forEach(function(r) { %>
+  <div class="card" style="margin-bottom:0.6rem;">
+    <h3><%= r.name %><%= r.mileage !== null && r.mileage !== undefined ? ' · ' + r.mileage + ' mi' : '' %></h3>
+    <p style="white-space:pre-wrap;"><%= r.summary %></p>
+    <% if (r.issues) { %><p class="priority-high" style="white-space:pre-wrap;">Issues: <%= r.issues %></p><% } %>
+    <% if (r.materials_needed) { %><p class="small" style="white-space:pre-wrap;">Needs: <%= r.materials_needed %></p><% } %>
+  </div>
+<% }); %>
+<%- include('partials/page-end') %>

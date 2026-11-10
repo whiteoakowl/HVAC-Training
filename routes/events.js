@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 const events = require('../utils/events');
 const notifications = require('../utils/notifications');
 
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('events.view', 'events.manage'));
 
 router.get('/', async (req, res) => {
   const upcoming = await events.listUpcoming();
@@ -13,16 +13,16 @@ router.get('/', async (req, res) => {
   res.render('events-list', { title: 'Events', events: withStatus });
 });
 
-router.get('/manage', requireRole('instructor'), async (req, res) => {
+router.get('/manage', requirePermission('events.manage'), async (req, res) => {
   const all = await events.listAll();
   res.render('events-manage', { title: 'Manage Events', events: all, notice: req.query.notice || null });
 });
 
-router.get('/new', requireRole('instructor'), (req, res) => {
+router.get('/new', requirePermission('events.manage'), (req, res) => {
   res.render('events-form', { title: 'New Event', event: null, error: req.query.error || null });
 });
 
-router.post('/new', requireRole('instructor'), async (req, res) => {
+router.post('/new', requirePermission('events.manage'), async (req, res) => {
   const title = (req.body.title || '').trim();
   const startsAt = req.body.startsAt ? req.body.startsAt.replace('T', ' ') + ':00' : null;
   if (!title || !startsAt) return res.redirect('/events/new?error=' + encodeURIComponent('Title and start date/time are required.'));
@@ -42,13 +42,13 @@ router.post('/new', requireRole('instructor'), async (req, res) => {
   res.redirect('/events/manage?notice=' + encodeURIComponent('Event created.'));
 });
 
-router.get('/:id/edit', requireRole('instructor'), async (req, res) => {
+router.get('/:id/edit', requirePermission('events.manage'), async (req, res) => {
   const event = await events.getEvent(req.params.id);
   if (!event) return res.status(404).render('404', { title: 'Not Found' });
   res.render('events-form', { title: 'Edit Event', event, error: req.query.error || null });
 });
 
-router.post('/:id/edit', requireRole('instructor'), async (req, res) => {
+router.post('/:id/edit', requirePermission('events.manage'), async (req, res) => {
   const title = (req.body.title || '').trim();
   const startsAt = req.body.startsAt ? req.body.startsAt.replace('T', ' ') + ':00' : null;
   if (!title || !startsAt) return res.redirect(`/events/${req.params.id}/edit?error=` + encodeURIComponent('Title and start date/time are required.'));
@@ -65,7 +65,7 @@ router.post('/:id/edit', requireRole('instructor'), async (req, res) => {
   res.redirect('/events/manage?notice=' + encodeURIComponent('Event updated.'));
 });
 
-router.post('/:id/delete', requireRole('instructor'), async (req, res) => {
+router.post('/:id/delete', requirePermission('events.manage'), async (req, res) => {
   await events.deleteEvent(req.params.id);
   res.redirect('/events/manage?notice=' + encodeURIComponent('Event deleted.'));
 });

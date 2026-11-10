@@ -1,0 +1,64 @@
+<%- include('partials/page-start') %>
+<% const draft = ['draft','rejected'].includes(po.status); const receivable = ['approved','ordered','partial'].includes(po.status); %>
+<div class="page-header no-print">
+  <div><h1><%= po.po_number %> <span class="status status-<%= po.status === 'pending_approval' ? 'pending' : po.status === 'received' ? 'completed' : po.status %>"><%= fmt.label(po.status) %></span></h1>
+    <p class="hint">Created <%= fmt.d(po.created_at) %> by <%= po.createdByName || '-' %><%= po.approvedByName ? ' · approved by ' + po.approvedByName : '' %></p></div>
+  <div class="btn-row"><button type="button" class="btn-secondary" onclick="window.print()">Print / PDF</button><a class="btn btn-secondary" href="/purchasing">&larr; Purchase orders</a></div>
+</div>
+<div class="doc">
+  <div class="doc-head"><div><h1>Purchase Order</h1><p class="small" style="margin:0;"><%= po.po_number %> · <%= fmt.d(po.created_at) %></p></div>
+    <div style="text-align:right;"><strong><%= po.vendorName %></strong><br><span class="small"><%= po.vendorAddress || '' %><br><%= [po.vendorPhone, po.vendorEmail].filter(Boolean).join(' · ') %><% if (po.account_number) { %><br>Account <%= po.account_number %><% } %></span></div></div>
+  <p class="small">Deliver to: <strong><%= po.locationName %></strong><%= po.expected_on ? ' · expected ' + fmt.d(po.expected_on) : '' %><%= po.notes ? ' · ' + po.notes : '' %></p>
+  <form method="POST" action="/purchasing/<%= po.id %>/receive" id="recv">
+  <table class="data-table">
+    <thead><tr><th>Item</th><th class="num">Ordered</th><th class="num">Received</th><th class="num">Backordered</th><th class="num">Unit cost</th><th class="num">Amount</th><% if (receivable && can('purchasing.manage')) { %><th class="no-print">Receive now</th><% } %><% if (draft && can('purchasing.manage')) { %><th class="no-print"></th><% } %></tr></thead>
+    <tbody>
+      <% if (!po.lines.length) { %><tr><td colspan="7" class="empty">No lines yet.</td></tr><% } %>
+      <% po.lines.forEach(function(l) { var left = Number(l.quantity) - Number(l.received_qty); %>
+        <tr><td><%= l.description %><%= l.item_id ? '' : ' (non-stock)' %></td><td class="num"><%= Number(l.quantity) %></td><td class="num"><%= Number(l.received_qty) %></td><td class="num"><%= left > 0 && po.status !== 'draft' ? left : '' %></td><td class="num"><%= fmt.money(l.unit_cost_cents) %></td><td class="num"><%= fmt.money(l.quantity * l.unit_cost_cents) %></td>
+          <% if (receivable && can('purchasing.manage')) { %><td class="no-print"><% if (left > 0) { %><input name="qty_<%= l.id %>" inputmode="decimal" value="<%= left %>" style="width:90px;" /><% } %></td><% } %>
+          <% if (draft && can('purchasing.manage')) { %><td class="no-print"><button form="del-<%= l.id %>" class="btn-secondary small" type="submit">Remove</button></td><% } %></tr>
+      <% }); %>
+      <tr class="total"><td colspan="5" class="num">Total</td><td class="num"><%= fmt.money(po.total_cents) %></td></tr>
+    </tbody>
+  </table>
+  <% if (receivable && can('purchasing.manage') && po.lines.some(function(l) { return Number(l.quantity) > Number(l.received_qty); })) { %><div class="no-print"><button type="submit" class="btn-success">Receive into <%= po.locationName %></button> <span class="hint">Leave an amount blank or 0 if it didn't arrive (backorder).</span></div><% } %>
+  </form>
+  <% if (draft && can('purchasing.manage')) { po.lines.forEach(function(l) { %><form id="del-<%= l.id %>" method="POST" action="/purchasing/<%= po.id %>/lines/<%= l.id %>/delete"></form><% }); } %>
+</div>
+<div class="card-grid no-print">
+  <% if (draft && can('purchasing.manage')) { %>
+    <div class="card"><h2>Add line</h2>
+      <form method="POST" action="/purchasing/<%= po.id %>/lines" class="stack-form">
+        <label>Stock item <select name="item_id"><option value="">- non-stock / supplies -</option><% items.forEach(function(i) { %><option value="<%= i.id %>"><%= i.name %> (<%= i.sku %>) - avg <%= fmt.money(i.unit_cost_cents) %></option><% }); %></select></label>
+        <label>Description <input name="description" placeholder="Blank = item name" /></label>
+        <div class="inline-fields"><label>Qty <input name="quantity" inputmode="decimal" required /></label><label>Unit cost <input name="unit_cost" inputmode="decimal" placeholder="Blank = avg cost" /></label></div>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card"><h2>Submit</h2><form method="POST" action="/purchasing/<%= po.id %>/status"><button name="action" value="submit">Submit for approval</button></form></div>
+  <% } %>
+  <% if (po.status === 'pending_approval' && can('purchasing.approve')) { %>
+    <div class="card"><h2>Approval</h2><form method="POST" action="/purchasing/<%= po.id %>/status" class="btn-row"><button name="action" value="approve" class="btn-success">Approve</button><button name="action" value="reject" class="btn-danger">Reject</button></form><p class="hint">You can't approve an order you created.</p></div>
+  <% } %>
+  <% if (po.status === 'approved' && can('purchasing.manage')) { %>
+    <div class="card"><h2>Place order</h2><p class="hint">Send/print this PO to the vendor, then mark it ordered.</p><form method="POST" action="/purchasing/<%= po.id %>/status"><button name="action" value="order">Mark ordered</button></form></div>
+  <% } %>
+  <% if (['partial','received'].includes(po.status) && can('bills.manage') && po.lines.some(function(l) { return Number(l.received_qty) > Number(l.billed_qty); })) { %>
+    <div class="card"><h2>Enter vendor bill</h2>
+      <form method="POST" action="/purchasing/<%= po.id %>/bill" enctype="multipart/form-data" class="stack-form">
+        <label>Vendor's invoice # <input name="bill_number" required /></label>
+        <div class="inline-fields"><label>Bill date <input type="date" name="bill_date" /></label><label>Due <input type="date" name="due_date" /></label></div>
+        <% if (po.lines.some(function(l) { return !l.item_id; })) { %><label>Expense account for non-stock lines <select name="expense_account_id"><% expenseAccounts.forEach(function(a) { %><option value="<%= a.id %>" <%= a.code === '6300' ? 'selected' : '' %>><%= a.code %> <%= a.name %></option><% }); %></select></label><% } %>
+        <label>Scan / PDF of the bill <input type="file" name="attachment" accept="image/*,application/pdf" /></label>
+        <button type="submit">Enter bill for received items</button>
+      </form>
+    </div>
+  <% } %>
+  <% if (po.bills.length) { %><div class="card"><h2>Bills</h2><% po.bills.forEach(function(b) { %><p><a href="/bills/<%= b.id %>"><%= b.bill_number || '#' + b.id %></a> <%= fmt.money(b.total_cents) %> <span class="status status-<%= b.status === 'open' ? 'issued' : b.status %>"><%= b.status %></span></p><% }); %></div><% } %>
+  <% if (receipts.length) { %><div class="card"><h2>Deliveries</h2><% receipts.forEach(function(r) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.dt(r.created_at) %> · <%= Number(r.quantity) %> × <%= r.description %><%= r.memberName ? ' · ' + r.memberName : '' %></p><% }); %></div><% } %>
+  <% if (['draft','pending_approval','approved','rejected','ordered'].includes(po.status) && can('purchasing.manage')) { %>
+    <div class="card"><h2>Cancel</h2><form method="POST" action="/purchasing/<%= po.id %>/status" onsubmit="return confirm('Cancel this purchase order?');"><button name="action" value="cancel" class="btn-danger">Cancel order</button></form></div>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

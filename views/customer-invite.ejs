@@ -1,0 +1,11 @@
+<%- include('partials/page-start') %>
+<h1>Portal access created</h1>
+<div class="card">
+  <p><strong><%= c.name %></strong> can now log in at <strong>/login</strong> with <strong><%= c.email %></strong>.</p>
+  <% if (emailed) { %><p>The login details were emailed to the customer.</p><% } else { %>
+    <p>Email isn't configured, so give the customer this temporary password yourself (it's shown only once). They'll choose their own password at first login.</p>
+    <p style="font-size:1.3rem;"><code><%= temp %></code></p>
+  <% } %>
+  <p><a class="btn" href="/customers/<%= c.id %>">Back to customer</a></p>
+</div>
+<%- include('partials/page-end') %>

@@ -1,0 +1,15 @@
+<%- include('partials/page-start') %>
+<h1>My Jobs</h1>
+<div class="toolbar">
+  <a class="btn <%= show === 'open' ? '' : 'btn-secondary' %>" href="/employee/jobs">Open</a>
+  <a class="btn <%= show === 'done' ? '' : 'btn-secondary' %>" href="/employee/jobs?show=done">Completed</a>
+</div>
+<% if (!rows.length) { %><p class="empty">Nothing here.</p><% } %>
+<% rows.forEach(function(j) { %>
+  <a class="job-card" href="/jobs/<%= j.id %>">
+    <div class="row"><strong><%= j.job_number %></strong><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></div>
+    <div class="<%= 'priority-' + j.priority %>"><%= j.title %></div>
+    <div class="hint"><%= fmt.dt(j.scheduled_start) || 'unscheduled' %> · <%= j.customerName %> · <%= [j.address, j.city].filter(Boolean).join(', ') %></div>
+  </a>
+<% }); %>
+<%- include('partials/page-end') %>

@@ -1,0 +1,30 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Service Requests</h1><p class="hint">From your website's request forms, phone calls and walk-ins. Emergencies are listed first.</p></div>
+  <% if (can('requests.manage')) { %><a class="primary-btn" href="/requests/new">+ New Request</a><% } %>
+</div>
+<div class="toolbar">
+  <a class="btn <%= open ? '' : 'btn-secondary' %>" href="/requests">Open</a>
+  <% statuses.forEach(function(s) { %><a class="btn <%= status === s ? '' : 'btn-secondary' %>" href="/requests?status=<%= s %>"><%= fmt.label(s) %></a><% }); %>
+  <a class="btn <%= !open && !status ? '' : 'btn-secondary' %>" href="/requests?all=1">All</a>
+</div>
+<% if (!rows.length) { %><p class="empty">No requests here.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>#</th><th>Received</th><th>Type</th><th>Customer</th><th>Address</th><th>Preferred</th><th>Source</th><th>Status</th></tr></thead>
+  <tbody>
+  <% rows.forEach(function(r) { %>
+    <tr>
+      <td><a href="/requests/<%= r.id %>"><%= r.request_number %></a></td>
+      <td class="small"><%= fmt.dt(r.created_at) %></td>
+      <td><span class="<%= r.kind === 'emergency' ? 'priority-emergency' : '' %>"><%= fmt.label(r.kind) %></span></td>
+      <td><%= r.customerName %><br><span class="hint"><%= r.customerPhone || '' %></span></td>
+      <td class="small"><%= r.address || '' %></td>
+      <td class="small"><%= [fmt.d(r.preferred_date), r.preferred_time].filter(Boolean).join(' ') %></td>
+      <td><%= r.source %></td>
+      <td><span class="status status-<%= r.status %>"><%= r.status %></span><% if (r.job_number) { %><br><a class="small" href="/jobs/<%= r.job_id %>"><%= r.job_number %></a><% } %></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

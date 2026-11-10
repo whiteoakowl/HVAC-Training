@@ -1,0 +1,197 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div>
+    <h1><%= c.name %> <span class="status status-<%= c.active ? 'approved' : 'cancelled' %>"><%= c.customer_number %></span></h1>
+    <p class="hint"><%= fmt.label(c.account_type) %><%= c.company_name ? ' · ' + c.company_name : '' %> · customer since <%= fmt.d(c.created_at) %><%= c.source ? ' · source: ' + c.source : '' %></p>
+  </div>
+  <div class="btn-row no-print">
+    <% if (can('requests.manage')) { %><a class="btn" href="/requests/new?customer_id=<%= c.id %>">+ Service Request</a><% } %>
+    <% if (can('jobs.manage')) { %><a class="btn" href="/jobs/new?customer_id=<%= c.id %>">+ Job</a><% } %>
+    <% if (can('estimates.manage')) { %><a class="btn btn-secondary" href="/estimates/new?customer_id=<%= c.id %>">+ Estimate</a><% } %>
+    <% if (can('agreements.manage')) { %><a class="btn btn-secondary" href="/agreements/new?customer_id=<%= c.id %>">+ Maintenance agreement</a><% } %>
+    <% if (can('invoices.manage')) { %><form method="POST" action="/invoices/new" class="inline-form"><input type="hidden" name="customer_id" value="<%= c.id %>" /><button type="submit" class="btn-secondary">+ Invoice</button></form><% } %>
+    <% if (can('customers.edit')) { %><a class="btn btn-secondary" href="/customers/<%= c.id %>/edit">Edit</a><% } %>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="stack">
+    <div class="card">
+      <h2>Contact</h2>
+      <dl class="kv">
+        <dt>Phone</dt><dd><% if (c.phone) { %><a href="tel:<%= c.phone %>"><%= c.phone %></a><% } else { %>-<% } %><%= c.alt_phone ? ' · alt ' + c.alt_phone : '' %></dd>
+        <dt>Email</dt><dd><% if (c.email) { %><a href="mailto:<%= c.email %>"><%= c.email %></a><% } else { %>-<% } %><%= c.alt_email ? ' · ' + c.alt_email : '' %></dd>
+        <dt>Billing</dt><dd><%= c.billing_address || '-' %></dd>
+        <% if (c.preferences) { %><dt>Preferences</dt><dd style="white-space:pre-wrap"><%= c.preferences %></dd><% } %>
+        <% if (c.notes) { %><dt>Notes</dt><dd style="white-space:pre-wrap"><%= c.notes %></dd><% } %>
+      </dl>
+    </div>
+
+    <div class="card" id="properties">
+      <h2>Properties &amp; service addresses</h2>
+      <% if (!properties.length) { %><p class="empty">No properties yet.</p><% } %>
+      <% properties.forEach(function(p) { %>
+        <details style="margin-bottom:0.5rem;">
+          <summary><strong><%= p.label || 'Property' %></strong> - <%= [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ') %>
+            <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent([p.address, p.city, p.state, p.zip].filter(Boolean).join(', ')) %>">map</a></summary>
+          <% if (p.access_notes) { %><p class="hint">Access: <%= p.access_notes %></p><% } %>
+          <% if (can('customers.edit')) { %>
+            <form method="POST" action="/customers/<%= c.id %>/properties/<%= p.id %>/edit" class="form-grid" style="margin-top:0.5rem;">
+              <label>Label <input name="label" value="<%= p.label || '' %>" /></label>
+              <label>Street address <input name="address" value="<%= p.address %>" required /></label>
+              <label>City <input name="city" value="<%= p.city || '' %>" /></label>
+              <div class="inline-fields"><label>State <input name="state" value="<%= p.state || '' %>" /></label><label>ZIP <input name="zip" value="<%= p.zip || '' %>" /></label></div>
+              <label class="full">Access notes <input name="access_notes" value="<%= p.access_notes || '' %>" /></label>
+              <div class="full"><button type="submit" class="btn-secondary">Save property</button></div>
+            </form>
+          <% } %>
+        </details>
+      <% }); %>
+      <% if (can('customers.edit')) { %>
+        <details><summary>+ Add property</summary>
+          <form method="POST" action="/customers/<%= c.id %>/properties" class="form-grid" style="margin-top:0.5rem;">
+            <label>Label <input name="label" placeholder="Home, Rental, Store #2" /></label>
+            <label>Street address <input name="address" required /></label>
+            <label>City <input name="city" /></label>
+            <div class="inline-fields"><label>State <input name="state" /></label><label>ZIP <input name="zip" /></label></div>
+            <label class="full">Access notes <input name="access_notes" /></label>
+            <div class="full"><button type="submit">Add property</button></div>
+          </form>
+        </details>
+      <% } %>
+    </div>
+
+    <div class="card" id="equipment">
+      <h2>Equipment</h2>
+      <% if (!equipment.length) { %><p class="empty">No equipment on file.</p><% } else { %>
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Make / model</th><th>Serial</th><th>Installed</th><th>Warranty</th><th>Filter</th><th>Property</th></tr></thead>
+          <tbody>
+            <% equipment.forEach(function(e) { %>
+              <tr>
+                <td><a href="/customers/<%= c.id %>/equipment/<%= e.id %>"><%= e.equipment_type %></a><% if (!e.active) { %> <span class="status status-cancelled">retired</span><% } %></td>
+                <td><%= [e.manufacturer, e.model_number].filter(Boolean).join(' ') %></td>
+                <td><%= e.serial_number || '' %></td>
+                <td><%= fmt.d(e.install_date) || '' %></td>
+                <td><% if (e.warranty_expires) { %><span class="<%= e.warranty_expires < fmt.today() ? 'muted' : '' %>"><%= fmt.d(e.warranty_expires) %></span><% } %></td>
+                <td><%= e.filter_size || '' %></td>
+                <td class="small"><%= e.propertyLabel || e.address %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+      <% if (can('customers.edit') && properties.length) { %>
+        <details class="mt"><summary>+ Add equipment</summary>
+          <form method="POST" action="/customers/<%= c.id %>/equipment" class="form-grid" style="margin-top:0.5rem;">
+            <label>Property <select name="property_id" required><% properties.forEach(function(p) { %><option value="<%= p.id %>"><%= p.label || p.address %></option><% }); %></select></label>
+            <%- include('partials/equipment-fields', { e: {} }) %>
+            <div class="full"><button type="submit">Add equipment</button></div>
+          </form>
+        </details>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <h2>Service history</h2>
+      <% if (!jobList.length) { %><p class="empty">No jobs yet.</p><% } else { %>
+        <table class="data-table">
+          <thead><tr><th>Job</th><th>Title</th><th>Status</th><th>Scheduled</th><th>Completed</th></tr></thead>
+          <tbody>
+            <% jobList.forEach(function(j) { %>
+              <tr><td><a href="/jobs/<%= j.id %>"><%= j.job_number %></a></td><td><%= j.title %></td><td><span class="status status-<%= j.status %>"><%= fmt.label(j.status) %></span></td><td><%= fmt.dt(j.scheduled_start) %></td><td><%= fmt.d(j.completed_at) || '' %></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+
+    <% if (photos.length) { %>
+      <div class="card"><h2>Job photos</h2>
+        <div class="photo-grid">
+          <% photos.forEach(function(p) { %><a href="/jobs/files/<%= p.id %>" target="_blank"><img src="/jobs/files/<%= p.id %>" alt="<%= p.caption || p.job_number %>" loading="lazy" /></a><% }); %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="stack">
+    <% if (can('invoices.view', 'invoices.manage')) { %>
+      <div class="card">
+        <h2>Billing</h2>
+        <div class="stat <%= balance > 0 ? 'warn' : 'good' %>" style="margin-bottom:0.6rem;"><div class="stat-label">Outstanding balance</div><div class="stat-value"><%= fmt.money(balance) %></div></div>
+        <% if (!invoiceList.length) { %><p class="empty">No invoices.</p><% } %>
+        <% invoiceList.forEach(function(i) { %>
+          <p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <span class="num"><%= fmt.money(i.total_cents) %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">due <%= fmt.d(i.due_date) %></span><% } %></p>
+        <% }); %>
+        <p class="small"><a href="/invoices/statement/<%= c.id %>">Customer statement</a></p>
+        <% if (payments.length) { %>
+          <p class="hint mt">Payments</p>
+          <% payments.forEach(function(p) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.d(p.received_on) %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %> · <%= p.invoice_number %></p><% }); %>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (estimateList.length) { %>
+      <div class="card"><h2>Estimates</h2>
+        <% estimateList.forEach(function(e) { %><p style="margin:0.3rem 0;"><a href="/estimates/<%= e.id %>"><%= e.estimate_number %></a> <%= e.title %> · <%= fmt.money(e.total_cents) %> <span class="status status-<%= e.status === 'sent' ? 'pending' : e.status === 'converted' ? 'completed' : e.status %>"><%= e.status %></span></p><% }); %>
+      </div>
+    <% } %>
+    <div class="card"><h2>Maintenance agreements</h2>
+      <% if (!agreementList.length) { %><p class="empty">None.</p><% } %>
+      <% agreementList.forEach(function(a) { %><p style="margin:0.3rem 0;"><% if (can('agreements.manage')) { %><a href="/agreements/<%= a.id %>"><%= a.agreement_number %></a><% } else { %><%= a.agreement_number %><% } %> <%= a.name %> <span class="status status-<%= a.status === 'active' ? 'approved' : 'cancelled' %>"><%= a.status %></span><br><span class="hint">to <%= fmt.d(a.end_date) %><%= a.nextVisit ? ' · next visit ' + fmt.d(a.nextVisit) : '' %></span></p><% }); %>
+    </div>
+    <div class="card"><h2>Customer portal</h2>
+      <% if (portalUser) { %>
+        <p class="small"><%= portalUser.email %> · <%= portalUser.active ? 'active' : 'disabled' %> · last login <%= fmt.dt(portalUser.last_login_at) || 'never' %></p>
+        <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/portal-revoke" onsubmit="return confirm('Remove portal access?');"><button class="btn-secondary small" type="submit">Remove access</button></form><% } %>
+      <% } else { %>
+        <p class="hint">Let the customer see service history, estimates, invoices and request service online.</p>
+        <% if (can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/portal-invite"><button class="btn-secondary small" type="submit" <%= c.email ? '' : 'disabled' %>>Create portal login</button></form><% if (!c.email) { %><p class="hint">Needs an email address.</p><% } %><% } %>
+      <% } %>
+    </div>
+    <%- include('partials/record-files', { files: files, target: 'customer', targetId: c.id, canEdit: can('customers.edit') }) %>
+    <div class="card">
+      <h2>Service requests</h2>
+      <% if (!requests.length) { %><p class="empty">None.</p><% } %>
+      <% requests.forEach(function(r) { %>
+        <p style="margin:0.3rem 0;"><a href="/requests/<%= r.id %>"><%= r.request_number %></a> <span class="status status-<%= r.status %>"><%= r.status %></span> <span class="hint"><%= fmt.label(r.kind) %> · <%= fmt.d(r.created_at) %></span></p>
+      <% }); %>
+    </div>
+
+    <div class="card" id="communication">
+      <h2>Communication log</h2>
+      <% if (can('customers.edit')) { %>
+        <details style="margin-bottom:0.6rem;"><summary><strong>Send email / text</strong><%= !messaging.email && !messaging.sms ? ' (no provider configured - will be logged only)' : '' %></summary>
+          <form method="POST" action="/customers/<%= c.id %>/message" class="stack-form mt">
+            <label>Via <select name="channel"><option value="email">Email (<%= c.email || 'none on file' %>)</option><option value="sms">Text (<%= c.phone || 'none on file' %>)</option></select></label>
+            <label>Subject (email) <input name="subject" /></label>
+            <label>Message <textarea name="body" required style="min-height:70px;"></textarea></label>
+            <button type="submit">Send</button>
+          </form>
+        </details>
+        <form method="POST" action="/customers/<%= c.id %>/interactions" class="stack-form" style="margin-bottom:0.75rem;">
+          <div class="inline-fields">
+            <label>Type <select name="channel"><% channels.forEach(function(ch) { %><option value="<%= ch %>"><%= fmt.label(ch) %></option><% }); %></select></label>
+            <label>Direction <select name="direction"><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="internal">Internal</option></select></label>
+          </div>
+          <label>Summary <textarea name="summary" required style="min-height:70px;"></textarea></label>
+          <label>Follow up on <input type="date" name="follow_up_on" /></label>
+          <button type="submit">Log</button>
+        </form>
+      <% } %>
+      <% if (!interactions.length) { %><p class="empty">Nothing logged yet.</p><% } %>
+      <% interactions.forEach(function(i) { %>
+        <div style="border-top:1px solid var(--border); padding:0.45rem 0;">
+          <p class="hint" style="margin:0;"><%= fmt.dt(i.created_at) %> · <%= fmt.label(i.channel) %> · <%= i.direction %><%= i.memberName ? ' · ' + i.memberName : '' %></p>
+          <p style="margin:0.2rem 0; white-space:pre-wrap;"><%= i.summary %></p>
+          <% if (i.follow_up_on) { %>
+            <p class="small" style="margin:0;">Follow up <%= fmt.d(i.follow_up_on) %>: <%= i.follow_up_done ? 'done' : 'open' %>
+              <% if (!i.follow_up_done && can('customers.edit')) { %><form method="POST" action="/customers/<%= c.id %>/interactions/<%= i.id %>/done" class="inline-form"><button class="btn-secondary small" type="submit">Mark done</button></form><% } %></p>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+<%- include('partials/page-end') %>

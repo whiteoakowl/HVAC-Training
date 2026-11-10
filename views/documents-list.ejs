@@ -4,6 +4,7 @@
 <body>
 <%- include('partials/portal-nav') %>
   <h1>Documents</h1>
+  <form class="toolbar" method="GET" action="/documents"><input type="search" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Search manuals, policies, forms..." /><button type="submit">Search</button></form>
   <p class="hint">Reference materials, safety data sheets, and handouts.</p>
 
   <% if (documents.length === 0) { %>
@@ -16,7 +17,7 @@
           <tr>
             <td><%= d.title %><% if (d.description) { %><br /><span class="hint"><%= d.description %></span><% } %></td>
             <td><%= d.categoryName || '-' %></td>
-            <td><%= d.created_at %></td>
+            <td><%= fmt.dt(d.created_at) %></td>
             <td><a class="btn-secondary" href="/documents/<%= d.id %>/download"><svg class="icon" style="width:14px;height:14px;"><use href="#icon-download"/></svg> Download</a></td>
           </tr>
         <% }); %>

@@ -1,0 +1,62 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Expenses</h1><p class="hint">Fuel, vehicle, tools, insurance, utilities, advertising, office, repairs... Each expense posts to the ledger. Vendor invoices you'll pay later go under <a href="/bills">Vendor bills</a>.</p></div>
+  <a class="btn btn-secondary" href="/expenses?from=<%= from %>&to=<%= to %><%= accountId ? '&account_id=' + accountId : '' %>&format=csv">Export CSV</a>
+</div>
+<% if (due.length) { %>
+  <div class="alert alert-error">Recurring expenses due: <% due.forEach(function(d) { %><strong><%= d.payee %></strong> (<%= fmt.money(d.amount_cents) %>, <%= fmt.d(d.next_due) %>) <% }); %>- post them below.</div>
+<% } %>
+<details class="card" open style="margin-bottom:1rem;"><summary><strong>+ Record an expense</strong></summary>
+  <form method="POST" action="/expenses" enctype="multipart/form-data" class="form-grid mt">
+    <label>Date <input type="date" name="expense_date" value="<%= today %>" required /></label>
+    <label>Paid to <input name="payee" list="payees" required /><datalist id="payees"><% vendors.forEach(function(v) { %><option><%= v.name %></option><% }); %></datalist></label>
+    <label>Category <select name="account_id" required><% accounts.forEach(function(a) { %><option value="<%= a.id %>"><%= a.code %> <%= a.name %></option><% }); %></select></label>
+    <label>Amount <input name="amount" inputmode="decimal" required /></label>
+    <label>Paid from <select name="paid_from"><% Object.keys(paidFrom).forEach(function(k) { %><option value="<%= k %>"><%= paidFrom[k] %></option><% }); %></select></label>
+    <label>Truck (vehicle expenses) <select name="truck_id"><option value="">-</option><% trucks.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }); %></select></label>
+    <label>Employee (reimbursements) <select name="member_id"><option value="">-</option><% staff.forEach(function(s) { %><option value="<%= s.id %>"><%= s.name %></option><% }); %></select></label>
+    <label>Job # (optional) <input name="job_number" placeholder="J-000123" /></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="job_cost" value="1" style="width:auto;" /> Also add to that job's costs</label>
+    <label>Receipt photo / PDF <input type="file" name="receipt" accept="image/*,application/pdf" capture="environment" /></label>
+    <label class="full">Description <input name="description" /></label>
+    <div class="full"><button type="submit">Record expense</button></div>
+  </form>
+</details>
+<form class="toolbar" method="GET"><label>From <input type="date" name="from" value="<%= from %>" /></label><label>To <input type="date" name="to" value="<%= to %>" /></label>
+  <label>Category <select name="account_id"><option value="">All</option><% accounts.forEach(function(a) { %><option value="<%= a.id %>" <%= accountId === a.id ? 'selected' : '' %>><%= a.code %> <%= a.name %></option><% }); %></select></label><button type="submit">Filter</button></form>
+<% if (Object.keys(byCategory).length) { %>
+  <div class="stat-grid"><% Object.keys(byCategory).forEach(function(k) { %><div class="stat"><div class="stat-label"><%= k %></div><div class="stat-value" style="font-size:1.1rem;"><%= fmt.money(byCategory[k]) %></div></div><% }); %></div>
+<% } %>
+<% if (!rows.length) { %><p class="empty">No expenses in this range.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Date</th><th>Paid to</th><th>Category</th><th>For</th><th class="num">Amount</th><th>Receipt</th><th></th></tr></thead>
+  <tbody><% rows.forEach(function(r) { %>
+    <tr class="<%= r.status === 'void' ? 'muted' : '' %>"><td><%= fmt.d(r.expense_date) %></td><td><%= r.payee %><% if (r.description) { %><br><span class="hint"><%= r.description %></span><% } %></td><td class="small"><%= r.code %> <%= r.accountName %></td>
+      <td class="small"><%= [r.job_number, r.truckName, r.memberName].filter(Boolean).join(' · ') %></td><td class="num"><%= r.status === 'void' ? 'void' : fmt.money(r.amount_cents) %></td>
+      <td><% if (r.receipt_name) { %><a href="/expenses/<%= r.id %>/receipt" target="_blank">view</a><% } %></td>
+      <td><% if (r.status === 'posted') { %><details><summary class="small">Void</summary><form method="POST" action="/expenses/<%= r.id %>/void" class="inline-fields"><input name="reason" required placeholder="Reason" /><button class="btn-danger small" type="submit">Void</button></form></details><% } %></td></tr>
+  <% }); %></tbody>
+</table>
+<% } %>
+<h2 class="mt" id="recurring">Recurring expenses</h2>
+<p class="hint">Rent, insurance, software, loan payments... You're reminded when each is due; nothing posts until you click Post.</p>
+<% if (recurring.length) { %>
+<table class="data-table"><thead><tr><th>Payee</th><th>Category</th><th>Every</th><th class="num">Amount</th><th>Next due</th><th></th></tr></thead><tbody>
+  <% recurring.forEach(function(r) { %><tr class="<%= r.active ? '' : 'muted' %>"><td><%= r.payee %></td><td class="small"><%= r.code %> <%= r.accountName %></td><td><%= r.frequency %></td><td class="num"><%= fmt.money(r.amount_cents) %></td><td class="<%= r.active && r.next_due <= today ? 'priority-emergency' : '' %>"><%= fmt.d(r.next_due) %></td>
+    <td><% if (r.active) { %><form method="POST" action="/expenses/recurring/<%= r.id %>/post" class="inline-fields"><input name="amount" value="<%= fmt.centsInput(r.amount_cents) %>" style="width:100px;" /><input type="date" name="date" value="<%= r.next_due %>" /><button type="submit" class="small">Post</button></form><% } %>
+      <form method="POST" action="/expenses/recurring/<%= r.id %>/active" class="inline-form"><input type="hidden" name="active" value="<%= r.active ? '0' : '1' %>" /><button class="btn-secondary small" type="submit"><%= r.active ? 'Stop' : 'Resume' %></button></form></td></tr><% }); %>
+</tbody></table>
+<% } %>
+<details class="card mt"><summary><strong>+ Add recurring expense</strong></summary>
+  <form method="POST" action="/expenses/recurring" class="form-grid mt">
+    <label>Payee <input name="payee" required /></label>
+    <label>Category <select name="account_id"><% accounts.forEach(function(a) { %><option value="<%= a.id %>"><%= a.code %> <%= a.name %></option><% }); %></select></label>
+    <label>Amount <input name="amount" inputmode="decimal" required /></label>
+    <label>Every <select name="frequency"><% frequencies.forEach(function(f) { %><option value="<%= f %>" <%= f === 'monthly' ? 'selected' : '' %>><%= f %></option><% }); %></select></label>
+    <label>Paid from <select name="paid_from"><% Object.keys(paidFrom).forEach(function(k) { %><option value="<%= k %>"><%= paidFrom[k] %></option><% }); %></select></label>
+    <label>Next due <input type="date" name="next_due" required /></label>
+    <label class="full">Description <input name="description" /></label>
+    <div class="full"><button type="submit">Save</button></div>
+  </form>
+</details>
+<%- include('partials/page-end') %>

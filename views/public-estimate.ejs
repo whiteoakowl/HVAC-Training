@@ -1,0 +1,34 @@
+<%- include('partials/public-start') %>
+<%- include('partials/estimate-doc', { e: e, company: company }) %>
+<% if (e.status === 'sent' && !expired) { %>
+  <div class="card mt no-print">
+    <h2>Approve this estimate</h2>
+    <form method="POST" class="stack-form" id="approve-form">
+      <label>Your full name <input name="name" required maxlength="200" /></label>
+      <label>Signature <canvas class="signature-pad" id="sig"></canvas></label>
+      <input type="hidden" name="signature_data" id="sig-data" />
+      <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="agree" value="1" required style="width:auto;" /> I approve the work and price above (<%= fmt.money(e.total_cents) %>) and agree to the terms.</label>
+      <div class="btn-row"><button type="button" class="btn-secondary" id="sig-clear">Clear signature</button><button type="submit" name="decision" value="approve" class="btn-success">Approve &amp; sign</button></div>
+    </form>
+    <details class="mt"><summary>Decline</summary>
+      <form method="POST" class="stack-form mt"><label>Tell us why (optional) <input name="reason" /></label><button type="submit" name="decision" value="reject" class="btn-danger">Decline estimate</button></form>
+    </details>
+  </div>
+  <script>
+    (function () {
+      var c = document.getElementById('sig'), ctx = c.getContext('2d'), drawing = false, dirty = false;
+      function size() { var r = c.getBoundingClientRect(); c.width = r.width * 2; c.height = r.height * 2; ctx.scale(2, 2); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; }
+      size();
+      function pos(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+      c.addEventListener('pointerdown', function (e) { drawing = true; dirty = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); c.setPointerCapture(e.pointerId); });
+      c.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+      c.addEventListener('pointerup', function () { drawing = false; });
+      document.getElementById('sig-clear').addEventListener('click', function () { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); size(); dirty = false; });
+      document.getElementById('approve-form').addEventListener('submit', function () { document.getElementById('sig-data').value = dirty ? c.toDataURL('image/png') : ''; });
+    })();
+  </script>
+<% } else if (expired || e.status === 'expired') { %>
+  <div class="alert alert-error mt">This estimate expired on <%= fmt.d(e.expires_on) %>. Please call <%= company.company_phone || 'us' %> for an updated price.</div>
+<% } %>
+<p class="hint mt no-print">Questions? Call <%= company.company_phone || 'us' %>. <button type="button" class="btn-secondary small" onclick="window.print()">Print / save PDF</button></p>
+</main></body></html>

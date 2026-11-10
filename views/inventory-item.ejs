@@ -1,0 +1,71 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1><%= item.name %><% if (!item.active) { %> <span class="status status-cancelled">inactive</span><% } %></h1><p class="hint"><%= item.sku %> · <%= item.category || 'uncategorized' %> · avg cost <%= fmt.money(item.unit_cost_cents) %> · price <%= fmt.money(item.price_cents) %> per <%= item.unit %></p></div>
+  <p><a href="/inventory">&larr; Inventory</a></p>
+</div>
+<div class="two-col">
+  <div class="stack">
+    <div class="card">
+      <h2>Stock by location</h2>
+      <% if (!stock.length) { %><p class="empty">No stock anywhere yet.</p><% } else { %>
+      <table class="data-table"><thead><tr><th>Location</th><th class="num">On hand</th><th class="num">Minimum</th><th>Bin</th><th class="num">Value</th></tr></thead><tbody>
+        <% stock.forEach(function(s) { %><tr><td><a href="/inventory/locations/<%= s.location_id %>"><%= s.locationName %></a></td><td class="num <%= s.min_quantity > 0 && s.quantity <= s.min_quantity ? 'priority-emergency' : '' %>"><%= Number(s.quantity) %></td><td class="num"><%= Number(s.min_quantity) || '' %></td><td><%= s.bin || '' %></td><td class="num"><%= fmt.money(s.quantity * item.unit_cost_cents) %></td></tr><% }); %>
+      </tbody></table>
+      <% } %>
+    </div>
+    <div class="card">
+      <h2>Transaction history</h2>
+      <% if (!history.length) { %><p class="empty">No movements yet.</p><% } else { %>
+      <table class="data-table"><thead><tr><th>When</th><th>Location</th><th>Kind</th><th class="num">Change</th><th>Job</th><th>By</th><th>Note</th></tr></thead><tbody>
+        <% history.forEach(function(t) { %><tr><td class="small"><%= fmt.dt(t.created_at) %></td><td><%= t.locationName %></td><td><%= fmt.label(t.kind) %></td><td class="num"><%= t.quantity_change > 0 ? '+' : '' %><%= Number(t.quantity_change) %></td><td><% if (t.job_id) { %><a href="/jobs/<%= t.job_id %>"><%= t.job_number %></a><% } %></td><td class="small"><%= t.memberName || '' %></td><td class="small"><%= t.note || '' %></td></tr><% }); %>
+      </tbody></table>
+      <% } %>
+    </div>
+  </div>
+  <% if (can('inventory.manage')) { %>
+  <div class="stack">
+    <details class="card" open><summary><strong>Receive stock (purchase)</strong></summary>
+      <form method="POST" action="/inventory/items/<%= item.id %>/receive" class="stack-form mt">
+        <label>Into <select name="location_id"><% locations.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }); %></select></label>
+        <div class="inline-fields"><label>Quantity <input name="quantity" inputmode="decimal" required /></label><label>Unit cost <input name="unit_cost" inputmode="decimal" required /></label></div>
+        <label>Paid <select name="funding"><option value="2000">On account (accounts payable)</option><option value="1000">Paid now (cash/checking)</option></select></label>
+        <label>Reference (PO, vendor invoice #) <input name="reference" /></label>
+        <button type="submit">Receive</button>
+      </form>
+    </details>
+    <details class="card"><summary><strong>Transfer</strong></summary>
+      <form method="POST" action="/inventory/items/<%= item.id %>/transfer" class="stack-form mt">
+        <label>From <select name="from_id"><% locations.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }); %></select></label>
+        <label>To <select name="to_id"><% locations.forEach(function(l, i) { %><option value="<%= l.id %>" <%= i === 1 ? 'selected' : '' %>><%= l.name %><%= l.assignedName ? ' (' + l.assignedName + ')' : '' %></option><% }); %></select></label>
+        <label>Quantity <input name="quantity" inputmode="decimal" required /></label>
+        <label>Note <input name="note" /></label>
+        <button type="submit">Transfer</button>
+      </form>
+    </details>
+    <details class="card"><summary><strong>Count / audit</strong></summary>
+      <form method="POST" action="/inventory/items/<%= item.id %>/count" class="stack-form mt">
+        <label>Location <select name="location_id"><% locations.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }); %></select></label>
+        <label>Counted quantity <input name="counted" inputmode="decimal" required /></label>
+        <label>Reason <input name="reason" required placeholder="Monthly count, damaged, found..." /></label>
+        <button type="submit">Record count</button>
+      </form>
+    </details>
+    <details class="card"><summary><strong>Minimum &amp; bin per location</strong></summary>
+      <form method="POST" action="/inventory/items/<%= item.id %>/minimum" class="stack-form mt">
+        <label>Location <select name="location_id"><% locations.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }); %></select></label>
+        <label>Minimum (alert at or below) <input name="min_quantity" inputmode="decimal" required /></label>
+        <label>Bin / shelf <input name="bin" /></label>
+        <button type="submit">Save</button>
+      </form>
+    </details>
+    <details class="card"><summary><strong>Edit item</strong></summary>
+      <form method="POST" action="/inventory/items/<%= item.id %>/edit" class="stack-form mt">
+        <%- include('partials/item-fields', { item: item, categories: categories, vendors: vendors }) %>
+        <label>Status <select name="active"><option value="1" <%= item.active ? 'selected' : '' %>>Active</option><option value="0" <%= !item.active ? 'selected' : '' %>>Inactive</option></select></label>
+        <button type="submit">Save</button>
+      </form>
+    </details>
+  </div>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

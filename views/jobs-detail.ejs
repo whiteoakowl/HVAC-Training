@@ -1,0 +1,339 @@
+<%- include('partials/page-start') %>
+<% const closed = ['completed','invoiced','paid','cancelled'].includes(job.status); const addr = [job.address, job.city, job.state, job.zip].filter(Boolean).join(', '); %>
+<div class="page-header">
+  <div>
+    <h1><%= job.job_number %> <span class="status status-<%= job.status %>"><%= fmt.label(job.status) %></span><% if (job.priority !== 'normal') { %> <span class="priority-<%= job.priority %>"><%= job.priority.toUpperCase() %></span><% } %></h1>
+    <p style="margin:0.2rem 0; font-weight:600;"><%= job.title %></p>
+    <p class="hint"><%= fmt.label(job.job_type) %> · <%= job.scheduled_start ? 'scheduled ' + fmt.dt(job.scheduled_start) + (job.scheduled_end ? ' - ' + fmt.time(job.scheduled_end) : '') : 'not scheduled' %></p>
+  </div>
+  <p class="no-print"><a href="<%= can('jobs.view_all') ? '/jobs' : '/employee/jobs' %>">&larr; Jobs</a></p>
+</div>
+
+<div class="two-col">
+<div class="stack">
+  <div class="card">
+    <h2>Customer &amp; site</h2>
+    <dl class="kv">
+      <dt>Customer</dt><dd><% if (can('customers.view')) { %><a href="/customers/<%= job.customer_id %>"><%= job.customerName %></a><% } else { %><%= job.customerName %><% } %> <span class="hint"><%= job.customer_number %> · <%= job.account_type %></span></dd>
+      <dt>Phone</dt><dd><% if (job.customerPhone) { %><a href="tel:<%= job.customerPhone %>"><%= job.customerPhone %></a><% } else { %>-<% } %></dd>
+      <dt>Address</dt><dd><% if (addr) { %><%= addr %> · <a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=<%= encodeURIComponent(addr) %>">Directions</a><% } else { %>-<% } %></dd>
+      <% if (job.access_notes) { %><dt>Access</dt><dd><%= job.access_notes %></dd><% } %>
+      <dt>Crew</dt><dd><%= job.assignees.map(function(a) { return a.name + (a.is_lead ? ' (lead)' : ''); }).join(', ') || 'unassigned' %></dd>
+      <dt>Truck</dt><dd><%= job.truckName || '-' %></dd>
+      <% if (job.service_request_id) { %><dt>Request</dt><dd><a href="/requests/<%= job.service_request_id %>">service request</a></dd><% } %>
+    </dl>
+    <% if (job.description) { %><p style="white-space:pre-wrap; margin-top:0.6rem;"><%= job.description %></p><% } %>
+  </div>
+
+  <% if (canWork && !closed) { %>
+    <div class="card no-print">
+      <h2>Update status</h2>
+      <div class="big-actions">
+        <% fieldStatuses.forEach(function(s) { %>
+          <form method="POST" action="/jobs/<%= job.id %>/status"><input type="hidden" name="status" value="<%= s %>" /><button type="submit" class="<%= job.status === s ? '' : 'btn-secondary' %>"><%= fmt.label(s) %></button></form>
+        <% }); %>
+        <a class="btn btn-success" href="#complete">Complete job</a>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="card">
+    <h2>Equipment</h2>
+    <% if (!job.equipment.length) { %><p class="empty">No equipment linked to this job.</p><% } %>
+    <% job.equipment.forEach(function(e) { %>
+      <p style="margin:0.3rem 0;"><strong><%= e.equipment_type %></strong> <%= [e.manufacturer, e.model_number].filter(Boolean).join(' ') %> <span class="hint">S/N <%= e.serial_number || '-' %> · filter <%= e.filter_size || '-' %> · <%= e.refrigerant_type || '' %></span></p>
+    <% }); %>
+    <% if (canWork && equipment.length) { %>
+      <form method="POST" action="/jobs/<%= job.id %>/equipment" class="inline-fields no-print">
+        <select name="equipment_id"><% equipment.forEach(function(e) { %><option value="<%= e.id %>"><%= e.equipment_type %> <%= e.manufacturer || '' %> <%= e.serial_number ? '#' + e.serial_number : '' %></option><% }); %></select>
+        <button type="submit" class="btn-secondary">Link equipment</button>
+      </form>
+    <% } %>
+    <% if (can('customers.edit')) { %><p class="hint">New unit on site? <a href="/customers/<%= job.customer_id %>#equipment">Add it to the customer's equipment</a>.</p><% } %>
+  </div>
+
+  <div class="card" id="materials">
+    <h2>Materials used</h2>
+    <% if (!job.materials.length) { %><p class="empty">None recorded.</p><% } else { %>
+      <table class="data-table">
+        <thead><tr><th>Item</th><th class="num">Qty</th><th>From</th><% if (can('jobs.costing')) { %><th class="num">Cost</th><% } %><th class="num">Price</th><th></th></tr></thead>
+        <tbody>
+          <% job.materials.forEach(function(m) { %>
+            <tr>
+              <td><%= m.name %> <span class="hint"><%= m.sku %></span></td>
+              <td class="num"><%= Number(m.quantity) %> <%= m.unit %></td>
+              <td class="small"><%= m.locationName %></td>
+              <% if (can('jobs.costing')) { %><td class="num"><%= fmt.money(m.quantity * m.unit_cost_cents) %></td><% } %>
+              <td class="num"><%= fmt.money(m.quantity * m.unit_price_cents) %></td>
+              <td><% if (canWork && !['invoiced','paid'].includes(job.status)) { %><form method="POST" action="/jobs/<%= job.id %>/materials/<%= m.id %>/remove" class="inline-form" onsubmit="return confirm('Remove this material and return it to stock?');"><button class="btn-secondary small" type="submit">Undo</button></form><% } %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+    <% if (canWork && !['invoiced','paid','cancelled'].includes(job.status)) { %>
+      <% if (allItems.length) { %>
+        <form method="POST" action="/jobs/<%= job.id %>/materials" class="form-grid no-print mt">
+          <label>Item <select name="item_id" required><% allItems.forEach(function(i) { %><option value="<%= i.id %>"><%= i.name %> (<%= i.sku %>)</option><% }); %></select></label>
+          <label>Taken from <select name="location_id" required><% locations.forEach(function(l) { %><option value="<%= l.id %>" <%= sourceLocation && sourceLocation.id === l.id ? 'selected' : '' %>><%= l.name %></option><% }); %></select></label>
+          <label>Quantity <input name="quantity" inputmode="decimal" required value="1" /></label>
+          <% if (can('inventory.manage')) { %><label style="flex-direction:row; align-items:center; font-weight:400;"><input type="checkbox" name="allow_negative" value="1" style="width:auto;" /> Allow stock to go negative (manager override)</label><% } %>
+          <div class="full"><button type="submit">Record material</button></div>
+        </form>
+      <% } else if (sourceLocation) { %>
+        <% if (stock.length) { %>
+          <form method="POST" action="/jobs/<%= job.id %>/materials" class="form-grid no-print mt">
+            <input type="hidden" name="location_id" value="<%= sourceLocation.id %>" />
+            <label>From <%= sourceLocation.name %>
+              <select name="item_id" required><% stock.forEach(function(s) { %><option value="<%= s.item_id %>"><%= s.name %> - <%= Number(s.quantity) %> <%= s.unit %> on truck</option><% }); %></select>
+            </label>
+            <label>Quantity <input name="quantity" inputmode="decimal" required value="1" /></label>
+            <div class="full"><button type="submit">Record material</button></div>
+          </form>
+        <% } else { %><p class="hint">Your truck has no stock on record.</p><% } %>
+        <p class="hint">Need something that isn't on the truck? <a href="/employee/parts?job_id=<%= job.id %>">Request parts</a>.</p>
+      <% } else { %>
+        <p class="hint">No truck is assigned to you or this job, so materials can't be deducted. <a href="/employee/parts?job_id=<%= job.id %>">Request parts</a>.</p>
+      <% } %>
+    <% } %>
+  </div>
+
+  <div class="card" id="checklists">
+    <h2>Checklists &amp; inspections</h2>
+    <% checklists.forEach(function(c) { var fails = c.results.filter(function(r) { return r.result === 'fail'; }).length; %>
+      <details style="margin-bottom:0.4rem;"><summary><strong><%= c.name %></strong> <span class="hint"><%= fmt.dt(c.created_at) %> · <%= c.memberName || '' %></span> <% if (fails) { %><span class="status status-rejected"><%= fails %> fail</span><% } else { %><span class="status status-completed">ok</span><% } %></summary>
+        <% c.results.forEach(function(r) { %><p class="small" style="margin:0.15rem 0;"><span class="status status-<%= r.result === 'pass' ? 'completed' : r.result === 'fail' ? 'rejected' : 'cancelled' %>"><%= r.result === 'na' ? 'n/a' : r.result.replace('_', ' ') %></span> <%= r.label %><%= r.note ? ' - ' + r.note : '' %></p><% }); %>
+        <% if (c.notes) { %><p class="small" style="white-space:pre-wrap;"><%= c.notes %></p><% } %>
+      </details>
+    <% }); %>
+    <% if (!checklists.length) { %><p class="empty">None completed.</p><% } %>
+    <% if (canWork && checklistTemplates.length) { %>
+      <% checklistTemplates.forEach(function(t) { var items = t.items.split('\n').map(function(x) { return x.trim(); }).filter(Boolean); %>
+        <details class="no-print" style="margin-top:0.4rem;"><summary>+ <%= t.name %></summary>
+          <form method="POST" action="/jobs/<%= job.id %>/checklists" class="stack-form mt">
+            <input type="hidden" name="template_id" value="<%= t.id %>" />
+            <% items.forEach(function(label, i) { %>
+              <div style="border-top:1px solid var(--border); padding:0.35rem 0;">
+                <div class="small" style="font-weight:600;"><%= label %></div>
+                <div class="btn-row small">
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="pass" style="width:auto;" /> Pass</label>
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="fail" style="width:auto;" /> Fail</label>
+                  <label style="flex-direction:row; gap:0.25rem; font-weight:400;"><input type="radio" name="item_<%= i %>" value="na" style="width:auto;" /> N/A</label>
+                  <input name="note_<%= i %>" placeholder="Reading / note" style="flex:1; min-width:120px;" />
+                </div>
+              </div>
+            <% }); %>
+            <label>Notes <textarea name="notes" style="min-height:60px;"></textarea></label>
+            <button type="submit">Save <%= t.name %></button>
+          </form>
+        </details>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <div class="card" id="change-orders">
+    <h2>Change orders</h2>
+    <% if (estimate) { %><p class="hint">Based on estimate <a href="/estimates/<%= estimate.id %>"><%= estimate.estimate_number %></a> (<%= fmt.money(estimate.total_cents) %>).</p><% } %>
+    <% if (!changeOrders.length) { %><p class="empty">None.</p><% } %>
+    <% changeOrders.forEach(function(co) { %>
+      <div style="border-top:1px solid var(--border); padding:0.4rem 0;">
+        <p style="margin:0;"><strong>#<%= co.number %></strong> <%= co.description %> · <strong><%= fmt.money(co.amount_cents) %></strong> <span class="status status-<%= co.status === 'pending' ? 'pending' : co.status === 'approved' ? 'completed' : 'rejected' %>"><%= co.status %></span><%= co.approved_name ? ' · ' + co.approved_name : '' %><%= co.invoiced ? ' · invoiced' : '' %></p>
+        <% if (co.signature_data) { %><img src="<%= co.signature_data %>" alt="signature" style="max-width:200px; border:1px solid var(--border); border-radius:6px;" /><% } %>
+        <% if (co.status === 'pending' && canWork) { %>
+          <form method="POST" action="/jobs/<%= job.id %>/change-orders/<%= co.id %>" class="stack-form no-print co-form" style="margin-top:0.4rem;">
+            <label>Customer name <input name="approved_name" /></label>
+            <canvas class="signature-pad co-sig" style="height:120px;"></canvas>
+            <input type="hidden" name="signature_data" class="co-sig-data" />
+            <div class="btn-row"><button name="decision" value="approve" class="btn-success small">Customer approves</button><button name="decision" value="reject" class="btn-danger small">Declined</button></div>
+          </form>
+        <% } %>
+      </div>
+    <% }); %>
+    <% if (canWork && !['invoiced','paid','cancelled'].includes(job.status)) { %>
+      <details class="no-print mt"><summary>+ Add change order</summary>
+        <form method="POST" action="/jobs/<%= job.id %>/change-orders" class="stack-form mt">
+          <label>Additional work / change <input name="description" required placeholder="Replace corroded drain pan" /></label>
+          <label>Price change (negative for a reduction) <input name="amount" inputmode="decimal" required /></label>
+          <button type="submit">Add</button>
+        </form>
+      </details>
+    <% } %>
+    <script>
+      document.querySelectorAll('.co-form').forEach(function (f) {
+        var c = f.querySelector('.co-sig'), ctx = c.getContext('2d'), drawing = false, dirty = false;
+        var r0 = c.getBoundingClientRect(); c.width = r0.width * 2; c.height = r0.height * 2; ctx.scale(2, 2); ctx.lineWidth = 2; ctx.lineCap = 'round';
+        function pos(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        c.addEventListener('pointerdown', function (e) { drawing = true; dirty = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); c.setPointerCapture(e.pointerId); });
+        c.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+        c.addEventListener('pointerup', function () { drawing = false; });
+        f.addEventListener('submit', function () { f.querySelector('.co-sig-data').value = dirty ? c.toDataURL('image/png') : ''; });
+      });
+    </script>
+  </div>
+
+  <div class="card" id="notes">
+    <h2>Job notes</h2>
+    <% if (canWork) { %>
+      <form method="POST" action="/jobs/<%= job.id %>/notes" class="stack-form no-print" style="margin-bottom:0.6rem;">
+        <textarea name="body" required placeholder="Findings, readings, customer conversation..." style="min-height:70px;"></textarea>
+        <button type="submit">Add note</button>
+      </form>
+    <% } %>
+    <% if (!job.notes.length) { %><p class="empty">No notes.</p><% } %>
+    <% job.notes.forEach(function(n) { %>
+      <div style="border-top:1px solid var(--border); padding:0.4rem 0;"><p class="hint" style="margin:0;"><%= n.memberName || 'Unknown' %> · <%= fmt.dt(n.created_at) %></p><p style="margin:0.2rem 0; white-space:pre-wrap;"><%= n.body %></p></div>
+    <% }); %>
+  </div>
+
+  <div class="card" id="files">
+    <h2>Photos, receipts &amp; documents</h2>
+    <% if (canWork) { %>
+      <form method="POST" action="/jobs/<%= job.id %>/files" enctype="multipart/form-data" class="form-grid no-print">
+        <label>Files <input type="file" name="files" accept="image/*,application/pdf" capture="environment" multiple required /></label>
+        <label>Kind <select name="kind"><option value="photo">Photo</option><option value="receipt">Receipt</option><option value="document">Inspection / document</option></select></label>
+        <label class="full">Caption <input name="caption" maxlength="300" /></label>
+        <div class="full"><button type="submit">Upload</button> <span class="hint">Up to 6 files, 8 MB each.</span></div>
+      </form>
+    <% } %>
+    <% const photos = job.files.filter(function(f) { return f.kind === 'photo' && /^image\//.test(f.mime_type || ''); }); const others = job.files.filter(function(f) { return photos.indexOf(f) < 0; }); %>
+    <% if (!job.files.length) { %><p class="empty">Nothing uploaded.</p><% } %>
+    <% if (photos.length) { %><div class="photo-grid mt"><% photos.forEach(function(f) { %><a href="/jobs/files/<%= f.id %>" target="_blank"><img src="/jobs/files/<%= f.id %>" alt="<%= f.caption || f.original_name %>" loading="lazy" /></a><% }); %></div><% } %>
+    <% others.forEach(function(f) { %><p class="small"><a href="/jobs/files/<%= f.id %>"><%= f.original_name %></a> · <%= f.kind %><%= f.caption ? ' · ' + f.caption : '' %></p><% }); %>
+  </div>
+
+  <% if (job.completed_at) { %>
+    <div class="card">
+      <h2>Completion</h2>
+      <p class="hint">Completed <%= fmt.dt(job.completed_at) %></p>
+      <p style="white-space:pre-wrap;"><%= job.work_performed %></p>
+      <% if (job.signature_data) { %><p class="hint">Customer signature<%= job.signature_name ? ' - ' + job.signature_name : '' %> (<%= fmt.dt(job.signed_at) %>)</p><img src="<%= job.signature_data %>" alt="Customer signature" style="max-width:320px; border:1px solid var(--border); border-radius:8px;" /><% } else if (job.signature_name) { %><p class="hint">Acknowledged by <%= job.signature_name %></p><% } %>
+    </div>
+  <% } else if (canWork && job.status !== 'cancelled') { %>
+    <div class="card no-print" id="complete">
+      <h2>Complete job</h2>
+      <form method="POST" action="/jobs/<%= job.id %>/complete" class="stack-form" id="complete-form">
+        <label>Work performed <textarea name="work_performed" required placeholder="Diagnosis, repairs made, readings, recommendations"></textarea></label>
+        <label>Customer name <input name="signature_name" maxlength="200" /></label>
+        <label>Customer signature <canvas class="signature-pad" id="sig"></canvas></label>
+        <input type="hidden" name="signature_data" id="sig-data" />
+        <div class="btn-row"><button type="button" class="btn-secondary" id="sig-clear">Clear signature</button><button type="submit" class="btn-success">Complete job</button></div>
+      </form>
+    </div>
+    <script>
+      (function () {
+        var c = document.getElementById('sig'), ctx = c.getContext('2d'), drawing = false, dirty = false;
+        function size() { var r = c.getBoundingClientRect(); c.width = r.width * 2; c.height = r.height * 2; ctx.scale(2, 2); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.strokeStyle = '#111'; }
+        size();
+        function pos(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        c.addEventListener('pointerdown', function (e) { drawing = true; dirty = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); c.setPointerCapture(e.pointerId); });
+        c.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+        c.addEventListener('pointerup', function () { drawing = false; });
+        document.getElementById('sig-clear').addEventListener('click', function () { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); size(); dirty = false; });
+        document.getElementById('complete-form').addEventListener('submit', function () { document.getElementById('sig-data').value = dirty ? c.toDataURL('image/png') : ''; });
+      })();
+    </script>
+  <% } %>
+</div>
+
+<div class="stack">
+  <% if (can('jobs.dispatch', 'jobs.manage')) { %>
+    <div class="card no-print">
+      <h2>Schedule &amp; crew</h2>
+      <% if (conflicts.length) { %><div class="alert alert-error">Conflict: <%= conflicts.map(function(c) { return c.memberName + ' on ' + c.job_number + ' at ' + fmt.dt(c.scheduled_start); }).join('; ') %></div><% } %>
+      <form method="POST" action="/jobs/<%= job.id %>/assign" class="stack-form">
+        <label>Start <input type="datetime-local" name="scheduled_start" value="<%= fmt.toLocalInput(job.scheduled_start) %>" /></label>
+        <label>End <input type="datetime-local" name="scheduled_end" value="<%= fmt.toLocalInput(job.scheduled_end) %>" /></label>
+        <fieldset style="border:1px solid var(--border); border-radius:8px;"><legend class="small">Technicians</legend>
+          <% if (!techs.length) { %><p class="hint">No users have a field role yet. Add them under Users &amp; Roles.</p><% } %>
+          <% const assignedIds = job.assignees.map(function(a) { return a.member_id; }); const leadId = (job.assignees.find(function(a) { return a.is_lead; }) || {}).member_id; %>
+          <% techs.forEach(function(t) { %>
+            <div style="display:flex; gap:0.6rem; align-items:center; margin:0.2rem 0;">
+              <label style="flex-direction:row; align-items:center; font-weight:400; gap:0.35rem;"><input type="checkbox" name="member_ids" value="<%= t.id %>" <%= assignedIds.includes(t.id) ? 'checked' : '' %> style="width:auto;" /> <%= t.name %></label>
+              <label class="small" style="flex-direction:row; align-items:center; font-weight:400; gap:0.25rem; margin-left:auto;"><input type="radio" name="lead_id" value="<%= t.id %>" <%= leadId === t.id ? 'checked' : '' %> style="width:auto;" /> lead</label>
+            </div>
+          <% }); %>
+        </fieldset>
+        <label>Truck <select name="truck_id"><option value="">- none -</option><% trucks.forEach(function(t) { %><option value="<%= t.id %>" <%= job.truck_id === t.id ? 'selected' : '' %>><%= t.name %><%= t.assignedName ? ' (' + t.assignedName + ')' : '' %></option><% }); %></select></label>
+        <button type="submit">Save assignment</button>
+      </form>
+    </div>
+  <% } %>
+
+  <% if (can('jobs.manage')) { %>
+    <div class="card no-print">
+      <h2>Office status</h2>
+      <form method="POST" action="/jobs/<%= job.id %>/status" class="inline-fields">
+        <select name="status"><% statuses.filter(function(s) { return !['completed','invoiced','paid'].includes(s[0]); }).forEach(function(s) { %><option value="<%= s[0] %>" <%= job.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }); %></select>
+        <button type="submit" class="btn-secondary">Set</button>
+      </form>
+    </div>
+    <details class="card no-print">
+      <summary><strong>Edit job details</strong></summary>
+      <form method="POST" action="/jobs/<%= job.id %>/edit" class="stack-form mt">
+        <label>Title <input name="title" value="<%= job.title %>" required /></label>
+        <label>Service address <select name="property_id"><option value="">- none -</option><% properties.forEach(function(p) { %><option value="<%= p.id %>" <%= job.property_id === p.id ? 'selected' : '' %>><%= p.label ? p.label + ' - ' : '' %><%= p.address %></option><% }); %></select></label>
+        <label>Type <select name="job_type"><% types.forEach(function(t) { %><option value="<%= t %>" <%= job.job_type === t ? 'selected' : '' %>><%= fmt.label(t) %></option><% }); %></select></label>
+        <label>Priority <select name="priority"><% ['normal','high','emergency'].forEach(function(p) { %><option value="<%= p %>" <%= job.priority === p ? 'selected' : '' %>><%= fmt.label(p) %></option><% }); %></select></label>
+        <label>Estimated hours <input name="estimated_hours" value="<%= job.estimated_hours === null ? '' : job.estimated_hours %>" inputmode="decimal" /></label>
+        <label>Quoted price <input name="quoted_price" value="<%= fmt.centsInput(job.quoted_price_cents) %>" inputmode="decimal" /></label>
+        <label>Description <textarea name="description"><%= job.description || '' %></textarea></label>
+        <button type="submit">Save</button>
+      </form>
+    </details>
+  <% } %>
+
+  <% if (can('invoices.view', 'invoices.manage')) { %>
+    <div class="card">
+      <h2>Invoice</h2>
+      <% if (!job.invoices.length) { %><p class="empty">Not invoiced yet.</p><% } %>
+      <% job.invoices.forEach(function(i) { %><p><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <%= fmt.money(i.total_cents) %></p><% }); %>
+      <% if (can('invoices.manage') && !job.invoices.some(function(i) { return i.status !== 'void'; })) { %>
+        <form method="POST" action="/jobs/<%= job.id %>/invoice" class="no-print"><button type="submit">Create invoice from job</button></form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (costing) { %>
+    <div class="card" id="costing">
+      <h2>Job costing</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><td>Materials</td><td class="num"><%= fmt.money(costing.materials) %></td></tr>
+          <tr><td>Labor (<%= fmt.hours(costing.laborMinutes) %> h clocked)</td><td class="num"><%= fmt.money(costing.labor) %></td></tr>
+          <tr><td>Equipment</td><td class="num"><%= fmt.money(costing.equipment) %></td></tr>
+          <tr><td>Subcontractors</td><td class="num"><%= fmt.money(costing.subcontractor) %></td></tr>
+          <tr><td>Permits</td><td class="num"><%= fmt.money(costing.permit) %></td></tr>
+          <tr><td>Other</td><td class="num"><%= fmt.money(costing.other) %></td></tr>
+          <tr class="total"><td>Total cost</td><td class="num"><%= fmt.money(costing.totalCost) %></td></tr>
+          <tr><td>Customer price (<%= costing.priceSource %>)</td><td class="num"><%= fmt.money(costing.price) %></td></tr>
+          <tr class="total"><td>Gross profit</td><td class="num"><%= fmt.money(costing.grossProfit) %><%= costing.margin === null ? '' : ' (' + costing.margin + '%)' %></td></tr>
+        </tbody>
+      </table>
+      <% job.costs.forEach(function(c) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.label(c.category) %>: <%= c.description %> - <%= fmt.money(c.amount_cents) %></p><% }); %>
+      <% if (can('jobs.manage')) { %>
+        <form method="POST" action="/jobs/<%= job.id %>/costs" class="stack-form mt no-print">
+          <div class="inline-fields">
+            <label>Category <select name="category"><option value="equipment">Equipment</option><option value="subcontractor">Subcontractor</option><option value="permit">Permit</option><option value="other">Other</option></select></label>
+            <label>Amount <input name="amount" inputmode="decimal" required /></label>
+          </div>
+          <label>Description <input name="description" required /></label>
+          <button type="submit" class="btn-secondary">Add cost</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (history.length) { %>
+    <div class="card">
+      <h2>Previous work at this address</h2>
+      <% history.forEach(function(h) { %><p class="small" style="margin:0.3rem 0;"><a href="/jobs/<%= h.id %>"><%= h.job_number %></a> <%= h.title %> · <%= fmt.d(h.completed_at) || fmt.label(h.status) %></p><% }); %>
+    </div>
+  <% } %>
+
+  <div class="card">
+    <h2>Status history</h2>
+    <% job.history.forEach(function(h) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.dt(h.created_at) %> · <%= h.from_status ? fmt.label(h.from_status) + ' → ' : '' %><strong><%= fmt.label(h.to_status) %></strong><%= h.memberName ? ' · ' + h.memberName : '' %></p><% }); %>
+  </div>
+</div>
+</div>
+<%- include('partials/page-end') %>

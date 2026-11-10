@@ -24,6 +24,8 @@
     <form method="POST" action="/training/manage/<%= training.id %>/edit" class="form-grid">
       <label class="full">Title <input type="text" name="title" value="<%= training.title %>" required /></label>
       <label class="full">Description <textarea name="description"><%= training.description || '' %></textarea></label>
+      <label>Category <input name="category" list="tcats" value="<%= training.category || '' %>" /><datalist id="tcats"><option>HVAC Fundamentals</option><option>Heating Systems</option><option>Air Conditioning</option><option>Heat Pumps</option><option>Electrical Fundamentals</option><option>Refrigeration</option><option>Airflow &amp; Ductwork</option><option>Troubleshooting</option><option>Installation</option><option>Preventative Maintenance</option><option>Customer Service</option><option>Sales</option><option>Safety</option><option>EPA Certification Prep</option><option>Company Policies</option><option>Manufacturer Training</option></datalist></label>
+      <label>Renew every (months) <input type="number" name="renewMonths" min="1" max="120" value="<%= training.renew_months || '' %>" /></label>
       <label>Estimated Minutes <input type="number" name="estimatedMinutes" min="1" value="<%= training.estimated_minutes || '' %>" /></label>
       <label>Passing Score (%) <input type="number" name="passingScore" min="0" max="100" value="<%= training.passing_score %>" /></label>
       <label><input type="checkbox" name="sequentialLessons" value="1" <%= training.sequential_lessons ? 'checked' : '' %> style="width:auto;" /> Require lessons in order</label>

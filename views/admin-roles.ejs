@@ -1,0 +1,37 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Role Permissions</h1><p class="hint">Each user has one role; each role's permissions are configurable. The Owner role always has full access. Changes apply within a few seconds.</p></div>
+  <a class="btn btn-secondary" href="/portal/members">Users &amp; Roles</a>
+</div>
+<table class="data-table" style="margin-bottom:1rem;">
+  <thead><tr><th>Permission</th><% roles.forEach(function(r) { %><th class="small" style="writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap;"><%= r.name %></th><% }); %></tr></thead>
+  <tbody>
+    <% modules.forEach(function(mod) { %>
+      <tr><td colspan="<%= roles.length + 1 %>"><strong><%= mod %></strong></td></tr>
+      <% perms.filter(function(p) { return p.module === mod; }).forEach(function(p) { %>
+        <tr><td class="small"><%= p.label %></td><% roles.forEach(function(r) { var on = grants[r.key].has(p.key) || grants[r.key].has('system.admin'); %><td style="text-align:center;"><%= on ? '●' : '' %></td><% }); %></tr>
+      <% }); %>
+    <% }); %>
+  </tbody>
+</table>
+<h2>Edit a role</h2>
+<% roles.forEach(function(r) { %>
+  <details class="card" id="role-<%= r.key %>" style="margin-bottom:0.5rem;">
+    <summary><strong><%= r.name %></strong> <span class="hint"><%= r.description || '' %></span></summary>
+    <% if (r.key === 'admin') { %>
+      <p class="hint mt">Full access. Not editable.</p>
+    <% } else { %>
+      <form method="POST" action="/admin/roles/<%= r.key %>" class="mt">
+        <% modules.forEach(function(mod) { %>
+          <fieldset style="border:1px solid var(--border); border-radius:8px; margin-bottom:0.5rem;"><legend class="small"><strong><%= mod %></strong></legend>
+            <% perms.filter(function(p) { return p.module === mod; }).forEach(function(p) { %>
+              <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="permissions" value="<%= p.key %>" <%= grants[r.key].has(p.key) ? 'checked' : '' %> style="width:auto;" <%= (p.key === 'system.admin' || p.key === 'roles.manage') && !can('system.admin') ? 'disabled' : '' %> /> <%= p.label %> <span class="hint">(<%= p.key %>)</span></label>
+            <% }); %>
+          </fieldset>
+        <% }); %>
+        <button type="submit">Save <%= r.name %></button>
+      </form>
+    <% } %>
+  </details>
+<% }); %>
+<%- include('partials/page-end') %>

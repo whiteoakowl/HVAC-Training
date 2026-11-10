@@ -1,0 +1,19 @@
+<%# Files attached to a record. Expects: files, target, targetId, canEdit %>
+<div class="card" id="files">
+  <h2><%= typeof heading !== 'undefined' ? heading : 'Documents' %></h2>
+  <% if (!files.length) { %><p class="empty">No documents attached.</p><% } %>
+  <% files.forEach(function(f) { %>
+    <p class="small" style="margin:0.25rem 0;"><a href="/files/<%= f.id %>"><%= f.title %></a><%= f.doc_type ? ' · ' + f.doc_type : '' %> <span class="hint"><%= fmt.d(f.created_at) %><%= f.uploadedByName ? ' · ' + f.uploadedByName : '' %></span>
+      <% if (canEdit) { %><form method="POST" action="/files/<%= f.id %>/delete" class="inline-form" onsubmit="return confirm('Remove this file?');"><button class="btn-secondary small" type="submit">Remove</button></form><% } %></p>
+  <% }); %>
+  <% if (canEdit) { %>
+    <details class="no-print"><summary>+ Attach a document</summary>
+      <form method="POST" action="/files/<%= target %>/<%= targetId %>" enctype="multipart/form-data" class="stack-form mt">
+        <input type="file" name="file" required />
+        <label>Title <input name="title" placeholder="Blank = file name" /></label>
+        <label>Type <input name="doc_type" list="doc-types-<%= target %>" /><datalist id="doc-types-<%= target %>"><option>Contract</option><option>Warranty</option><option>Manual</option><option>Inspection report</option><option>Permit</option><option>Certification</option><option>Tax form</option><option>Insurance</option><option>Photo</option><option>Other</option></datalist></label>
+        <button type="submit">Upload</button>
+      </form>
+    </details>
+  <% } %>
+</div>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+  <div class="auth-page"><div class="auth-card">
+    <h1>Reset password</h1>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <% if (emailReady) { %>
+      <form method="POST" action="/forgot" class="stack-form">
+        <label>Your account email <input type="email" name="email" required autofocus /></label>
+        <button type="submit" class="primary-btn">Email me a reset link</button>
+      </form>
+    <% } else { %>
+      <p>Password reset by email isn't set up for this company yet. Ask a manager to set a temporary password for you under Users &amp; Roles.</p>
+    <% } %>
+    <p class="hint"><a href="/login">Back to log in</a></p>
+  </div></div>
+</body>
+</html>

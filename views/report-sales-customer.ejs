@@ -1,0 +1,12 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: 'Invoices issued ' + fmt.d(from) + ' to ' + fmt.d(to) + ' (before tax)', query: 'from=' + from + '&to=' + to }) %>
+<% if (!rows.length) { %><p class="empty">No sales in this period.</p><% } else { var tot = rows.reduce(function(s, r) { return s + r.net; }, 0); %>
+<table class="data-table">
+  <thead><tr><th>Customer</th><th class="num">Invoices</th><th class="num">Sales</th><th class="num">Credits</th><th class="num">Net sales</th><th class="num">% of total</th><th class="num">Still owed</th><th class="no-print"></th></tr></thead>
+  <tbody>
+    <% rows.forEach(function(r) { %><tr><td><a href="/customers/<%= r.id %>"><%= r.name %></a></td><td class="num"><%= r.invoices %></td><td class="num"><%= fmt.money(r.sales) %></td><td class="num"><%= r.credits ? fmt.money(r.credits) : '' %></td><td class="num"><%= fmt.money(r.net) %></td><td class="num"><%= tot ? Math.round(r.net / tot * 1000) / 10 : 0 %>%</td><td class="num"><%= r.open ? fmt.money(r.open) : '' %></td><td class="no-print"><a class="small" href="/invoices/statement/<%= r.id %>">Statement</a></td></tr><% }); %>
+    <tr class="total"><td>Total</td><td class="num"><%= rows.reduce(function(s, r) { return s + r.invoices; }, 0) %></td><td class="num"><%= fmt.money(rows.reduce(function(s, r) { return s + r.sales; }, 0)) %></td><td class="num"><%= fmt.money(rows.reduce(function(s, r) { return s + r.credits; }, 0)) %></td><td class="num"><%= fmt.money(tot) %></td><td class="num">100%</td><td class="num"><%= fmt.money(rows.reduce(function(s, r) { return s + r.open; }, 0)) %></td><td></td></tr>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

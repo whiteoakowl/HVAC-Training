@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 const forums = require('../utils/forums');
 const notifications = require('../utils/notifications');
 
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('forums.use', 'forums.moderate'));
 
 function canModerate(req) {
-  return req.member.role === 'instructor' || req.member.role === 'admin';
+  return req.can('forums.moderate');
 }
 
 async function loadCategory(req, res, next) {
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
   res.render('forums-list', { title: 'Chat', categories: await forums.listCategories() });
 });
 
-router.post('/categories', requireRole('admin'), async (req, res) => {
+router.post('/categories', requirePermission('forums.moderate'), async (req, res) => {
   await forums.createCategory((req.body.name || '').trim(), (req.body.description || '').trim());
   res.redirect('/forums');
 });

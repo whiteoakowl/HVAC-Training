@@ -1,0 +1,43 @@
+<%- include('partials/page-start') %>
+<h1>New Job</h1>
+<p><a href="/jobs">&larr; Jobs</a></p>
+<% if (!customer) { %>
+  <div class="card">
+    <h2>1. Choose the customer</h2>
+    <form method="GET" action="/jobs/new" class="inline-fields">
+      <input type="search" name="q" value="<%= q %>" placeholder="Name, phone, email, address..." autofocus />
+      <button type="submit">Search</button>
+    </form>
+    <% if (q && !results.length) { %><p class="empty">No match. <a href="/customers/new">Create the customer</a> first.</p><% } %>
+    <% results.forEach(function(c) { %>
+      <p><a class="btn btn-secondary" href="/jobs/new?customer_id=<%= c.id %>">Select</a> <strong><%= c.name %></strong> <span class="hint"><%= c.customer_number %> · <%= c.phone || '' %> · <%= c.billing_address || '' %></span></p>
+    <% }); %>
+  </div>
+<% } else { %>
+  <form method="POST" action="/jobs/new" class="form-grid card">
+    <input type="hidden" name="customer_id" value="<%= customer.id %>" />
+    <p class="full"><strong>Customer:</strong> <a href="/customers/<%= customer.id %>"><%= customer.name %></a> (<%= customer.customer_number %>) · <a href="/jobs/new">change</a></p>
+    <label class="full">Service address
+      <select name="property_id">
+        <option value="">- none -</option>
+        <% properties.forEach(function(p, i) { %><option value="<%= p.id %>" <%= i === 0 ? 'selected' : '' %>><%= p.label ? p.label + ' - ' : '' %><%= p.address %></option><% }); %>
+      </select>
+      <% if (!properties.length) { %><span class="hint">No properties on file - <a href="/customers/<%= customer.id %>#properties">add one</a>.</span><% } %>
+    </label>
+    <label class="full">Title <input name="title" required maxlength="200" placeholder="No heat - furnace not igniting" /></label>
+    <label>Job type <select name="job_type"><% types.forEach(function(t) { %><option value="<%= t %>"><%= fmt.label(t) %></option><% }); %></select></label>
+    <label>Priority <select name="priority"><option value="normal">Normal</option><option value="high">High</option><option value="emergency">Emergency</option></select></label>
+    <label>Starting status
+      <select name="status">
+        <% statuses.filter(function(s) { return ['new_lead','estimate_requested','estimate_scheduled','awaiting_approval','approved','ready_to_schedule'].includes(s[0]); }).forEach(function(s) { %>
+          <option value="<%= s[0] %>" <%= s[0] === 'ready_to_schedule' ? 'selected' : '' %>><%= s[1] %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label>Estimated labor hours <input name="estimated_hours" inputmode="decimal" /></label>
+    <label>Quoted price (optional) <input name="quoted_price" inputmode="decimal" placeholder="0.00" /></label>
+    <label class="full">Description <textarea name="description"></textarea></label>
+    <div class="full"><button type="submit">Create Job</button> <span class="hint">You'll assign technicians and the schedule on the next screen.</span></div>
+  </form>
+<% } %>
+<%- include('partials/page-end') %>

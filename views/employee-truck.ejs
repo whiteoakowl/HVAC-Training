@@ -1,0 +1,25 @@
+<%- include('partials/page-start') %>
+<h1>My Truck</h1>
+<% if (!truck) { %>
+  <p class="empty">No truck is assigned to you. Ask your manager to assign one under Trucks.</p>
+<% } else { %>
+  <p class="hint"><%= truck.name %><%= truck.make_model ? ' · ' + truck.make_model : '' %><%= truck.plate ? ' · plate ' + truck.plate : '' %></p>
+  <% if (!stock.length) { %><p class="empty">No stock recorded on this truck.</p><% } else { %>
+  <table class="data-table">
+    <thead><tr><th>Item</th><th>SKU</th><th class="num">On truck</th><th class="num">Minimum</th></tr></thead>
+    <tbody>
+      <% stock.forEach(function(s) { %>
+        <tr><td><%= s.name %></td><td><%= s.sku %></td><td class="num <%= s.min_quantity > 0 && s.quantity <= s.min_quantity ? 'priority-emergency' : '' %>"><%= Number(s.quantity) %> <%= s.unit %></td><td class="num"><%= Number(s.min_quantity) || '' %></td></tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="mt"><a class="btn" href="/employee/parts">Request restock / parts</a></p>
+  <h2 class="mt">Tools &amp; equipment</h2>
+  <% if (!tools.length) { %><p class="empty">No tools assigned.</p><% } %>
+  <% tools.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= t.name %><%= t.serial_number ? ' #' + t.serial_number : '' %> · <%= fmt.label(t.status) %><%= t.next_service_on ? ' · service due ' + fmt.d(t.next_service_on) : '' %></p><% }); %>
+  <h2 class="mt">Recent activity</h2>
+  <% if (!history.length) { %><p class="empty">None.</p><% } %>
+  <% history.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.dt(t.created_at) %> · <%= fmt.label(t.kind) %> · <%= t.itemName %> <%= t.quantity_change > 0 ? '+' : '' %><%= Number(t.quantity_change) %><%= t.job_number ? ' · ' + t.job_number : '' %></p><% }); %>
+<% } %>
+<%- include('partials/page-end') %>

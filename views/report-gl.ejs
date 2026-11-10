@@ -1,0 +1,15 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: fmt.d(from) + ' to ' + fmt.d(to), query: 'from=' + from + '&to=' + to }) %>
+<% if (!gl.length) { %><p class="empty">No activity in this period.</p><% } %>
+<% gl.forEach(function(g) { %>
+  <h3 style="margin-bottom:0.2rem;"><a href="/accounting/accounts/<%= g.account.id %>/register?from=<%= from %>&to=<%= to %>"><%= g.account.code %> <%= g.account.name %></a></h3>
+  <table class="data-table" style="margin-top:0;">
+    <thead><tr><th>Date</th><th>Description</th><th>Split</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
+    <tbody>
+      <tr><td></td><td colspan="4"><em>Beginning balance</em></td><td class="num"><%= fmt.money(g.opening) %></td></tr>
+      <% g.rows.forEach(function(r) { %><tr><td><%= fmt.d(r.entry_date) %></td><td><a href="/accounting/journal/<%= r.entry_id %>"><%= fmt.usText(r.memo) %></a></td><td class="small"><%= r.split %></td><td class="num"><%= r.debit_cents ? fmt.money(r.debit_cents) : '' %></td><td class="num"><%= r.credit_cents ? fmt.money(r.credit_cents) : '' %></td><td class="num"><%= fmt.money(r.balance) %></td></tr><% }); %>
+      <tr class="total"><td colspan="5">Ending balance</td><td class="num"><%= fmt.money(g.closing) %></td></tr>
+    </tbody>
+  </table>
+<% }); %>
+<%- include('partials/page-end') %>

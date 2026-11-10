@@ -9,7 +9,7 @@
 
   <h1><%= event.title %></h1>
   <% if (event.category) { %><span class="badge-pill"><%= event.category %></span><% } %>
-  <p class="hint"><%= event.starts_at %><% if (event.ends_at) { %> &ndash; <%= event.ends_at %><% } %></p>
+  <p class="hint"><%= fmt.dt(event.starts_at) %><% if (event.ends_at) { %> &ndash; <%= fmt.dt(event.ends_at) %><% } %></p>
   <% if (event.location) { %><p class="hint"><svg class="icon"><use href="#icon-map-pin"/></svg> <%= event.location %></p><% } %>
   <% if (event.description) { %><p><%= event.description %></p><% } %>
   <% if (event.capacity != null) { %><p class="hint"><%= registrations.length %>/<%= event.capacity %> registered</p><% } %>
@@ -26,7 +26,7 @@
     <% } %>
   </div>
 
-  <% if (member.role !== 'student') { %>
+  <% if (can('events.manage')) { %>
     <h2>Registered</h2>
     <% if (registrations.length === 0) { %>
       <p class="roster-empty">No one has registered yet.</p>

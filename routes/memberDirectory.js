@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 const memberDirectory = require('../utils/memberDirectory');
 
-router.use(requireAuth);
+router.use(requireAuth, requirePermission('directory.view', 'directory.settings'));
 
 function visibleFields(member, fieldSettings) {
   const isVisible = (key) => fieldSettings.find((f) => f.key === key)?.visible;
@@ -34,11 +34,11 @@ router.post('/opt-in', async (req, res) => {
   res.redirect('/member-directory/mine?notice=' + encodeURIComponent('Added back to the directory.'));
 });
 
-router.get('/settings', requireRole('admin'), async (req, res) => {
+router.get('/settings', requirePermission('directory.settings'), async (req, res) => {
   res.render('member-directory-settings', { title: 'Directory Settings', fieldSettings: await memberDirectory.getFieldSettings(), notice: req.query.notice || null });
 });
 
-router.post('/settings', requireRole('admin'), async (req, res) => {
+router.post('/settings', requirePermission('directory.settings'), async (req, res) => {
   const visibleKeys = [].concat(req.body.visibleFields || []);
   await memberDirectory.setFieldVisibility(visibleKeys);
   res.redirect('/member-directory/settings?notice=' + encodeURIComponent('Saved.'));

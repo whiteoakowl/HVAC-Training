@@ -1,0 +1,14 @@
+<%- include('partials/page-start') %>
+<h1>My Pay</h1>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label"><%= year %> gross</div><div class="stat-value"><%= fmt.money(ytd.gross) %></div></div>
+  <div class="stat"><div class="stat-label"><%= year %> withheld</div><div class="stat-value"><%= fmt.money(ytd.withholding) %></div></div>
+  <div class="stat good"><div class="stat-label"><%= year %> net</div><div class="stat-value"><%= fmt.money(ytd.net) %></div></div>
+</div>
+<% if (!stubs.length) { %><p class="empty">No pay stubs yet.</p><% } else { %>
+<table class="data-table"><thead><tr><th>Pay date</th><th>Period</th><th class="num">Gross</th><th class="num">Net</th></tr></thead><tbody>
+  <% stubs.forEach(function(s) { %><tr><td><a href="/employee/pay/<%= s.id %>"><%= fmt.d(s.pay_date) %></a></td><td><%= fmt.d(s.period_start) %> to <%= fmt.d(s.period_end) %></td><td class="num"><%= fmt.money(s.gross_cents) %></td><td class="num"><%= fmt.money(s.net_cents) %></td></tr><% }); %>
+</tbody></table>
+<% } %>
+<p class="hint">Official pay statements and W-2s come from the company's payroll provider.</p>
+<%- include('partials/page-end') %>

@@ -27,7 +27,7 @@
             </td>
             <td><%= t.authorName || 'Unknown' %></td>
             <td><%= t.postCount - 1 %></td>
-            <td><%= t.lastActivityAt %></td>
+            <td><%= fmt.dt(t.lastActivityAt) %></td>
           </tr>
         <% }); %>
       </tbody>

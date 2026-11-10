@@ -17,7 +17,7 @@
           <span class="badge-pill<%= a.status === 'passed' ? '' : a.status === 'retry_required' ? ' badge-pill-gray' : '' %>" style="<%= a.status === 'passed' ? 'background:#2e7d32;' : a.status === 'retry_required' ? 'background:#c62828;' : '' %>">
             <%= a.status.replace('_', ' ') %>
           </span>
-          <% if (a.due_at) { %><p class="hint">Due <%= a.due_at %></p><% } %>
+          <% if (a.due_at) { %><p class="hint">Due <%= fmt.dt(a.due_at) %></p><% } %>
           <div style="margin-top:0.6rem;">
             <% if (a.status === 'in_progress' || a.status === 'not_started') { %>
               <a class="primary-btn" href="/training/<%= a.id %>/play"><%= a.status === 'not_started' ? 'Start Training' : 'Continue Training' %></a>

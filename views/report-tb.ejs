@@ -1,0 +1,10 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: 'As of ' + fmt.d(asOf), query: 'as_of=' + asOf }) %>
+<table class="data-table">
+  <thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+  <tbody>
+    <% tb.rows.forEach(function(r) { %><tr><td><%= r.code %> <%= r.name %></td><td class="num"><%= r.debit ? fmt.money(r.debit) : '' %></td><td class="num"><%= r.credit ? fmt.money(r.credit) : '' %></td></tr><% }); %>
+    <tr class="total"><td>Totals</td><td class="num"><%= fmt.money(tb.totalDebit) %></td><td class="num"><%= fmt.money(tb.totalCredit) %></td></tr>
+  </tbody>
+</table>
+<%- include('partials/page-end') %>

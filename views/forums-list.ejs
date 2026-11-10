@@ -19,7 +19,7 @@
     </div>
   <% } %>
 
-  <% if (member.role === 'admin') { %>
+  <% if (can('forums.moderate')) { %>
     <details style="margin-top:1.5rem;">
       <summary>+ New Category</summary>
       <form method="POST" action="/forums/categories" class="stack-form" style="max-width:360px; margin-top:0.5rem;">

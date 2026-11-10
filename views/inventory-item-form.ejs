@@ -1,0 +1,10 @@
+<%- include('partials/page-start') %>
+<h1>New Inventory Item</h1>
+<p><a href="/inventory">&larr; Inventory</a></p>
+<form method="POST" action="/inventory/items/new" class="form-grid card">
+  <%- include('partials/item-fields', { item: item, categories: categories, vendors: vendors }) %>
+  <label>Warehouse minimum (low-stock alert) <input name="min_quantity" inputmode="decimal" /></label>
+  <label>Warehouse bin / shelf <input name="bin" /></label>
+  <div class="full"><button type="submit">Create Item</button> <span class="hint">Cost is set when you receive stock.</span></div>
+</form>
+<%- include('partials/page-end') %>

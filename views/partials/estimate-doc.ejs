@@ -1,0 +1,44 @@
+<%# Printable / customer-facing proposal body. Expects e, company. %>
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <h1><%= company.company_name || 'Proposal' %></h1>
+      <p class="small" style="margin:0.2rem 0; white-space:pre-wrap;"><%= company.company_address || '' %></p>
+      <p class="small" style="margin:0;"><%= [company.company_phone, company.company_email].filter(Boolean).join(' · ') %></p>
+    </div>
+    <div style="text-align:right;">
+      <h2 style="margin:0;">ESTIMATE <%= e.estimate_number %></h2>
+      <p class="small" style="margin:0.3rem 0;">Date: <%= fmt.d(e.sent_at || e.created_at) %><br>Valid until: <%= fmt.d(e.expires_on) || '-' %></p>
+    </div>
+  </div>
+  <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div><p class="hint" style="margin:0;">Prepared for</p><p style="margin:0.2rem 0;"><strong><%= e.customerName %></strong><br><%= e.billing_address || '' %></p></div>
+    <div><p class="hint" style="margin:0;">Job location</p><p style="margin:0.2rem 0;"><%= [e.address, e.city, e.state, e.zip].filter(Boolean).join(', ') || '-' %></p></div>
+  </div>
+  <h3 style="margin-bottom:0.3rem;"><%= e.title %></h3>
+  <% if (e.scope) { %><p style="white-space:pre-wrap;"><%= e.scope %></p><% } %>
+  <table class="data-table" id="lines">
+    <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th><% if (typeof editable !== 'undefined' && editable) { %><th class="no-print"></th><% } %></tr></thead>
+    <tbody>
+      <% if (!e.lines.length) { %><tr><td colspan="5" class="empty">No items yet.</td></tr><% } %>
+      <% e.lines.forEach(function(l) { %>
+        <tr><td><span class="hint"><%= fmt.label(l.kind) %>:</span> <%= l.description %></td><td class="num"><%= Number(l.quantity) %></td><td class="num"><%= fmt.money(l.unit_price_cents) %></td><td class="num"><%= fmt.money(l.amount_cents) %></td>
+          <% if (typeof editable !== 'undefined' && editable) { %><td class="no-print"><form method="POST" action="/estimates/<%= e.id %>/lines/<%= l.id %>/delete" class="inline-form"><button class="btn-secondary small" type="submit">Remove</button></form></td><% } %></tr>
+      <% }); %>
+      <tr><td colspan="3" class="num">Subtotal</td><td class="num"><%= fmt.money(e.subtotal_cents) %></td></tr>
+      <% if (e.discount_cents) { %><tr><td colspan="3" class="num">Discount</td><td class="num">-<%= fmt.money(e.discount_cents) %></td></tr><% } %>
+      <tr><td colspan="3" class="num">Tax (<%= (e.tax_rate_bp / 100).toFixed(2) %>%)</td><td class="num"><%= fmt.money(e.tax_cents) %></td></tr>
+      <tr class="total"><td colspan="3" class="num">Total</td><td class="num"><%= fmt.money(e.total_cents) %></td></tr>
+      <% if (e.deposit_cents) { %><tr><td colspan="3" class="num">Deposit required to schedule</td><td class="num"><%= fmt.money(e.deposit_cents) %></td></tr><% } %>
+    </tbody>
+  </table>
+  <% if (e.payment_schedule) { %><p class="small"><strong>Payment schedule:</strong> <%= e.payment_schedule %></p><% } %>
+  <% if (e.warranty) { %><p class="small" style="white-space:pre-wrap;"><strong>Warranty:</strong> <%= e.warranty %></p><% } %>
+  <% if (e.terms) { %><p class="small" style="white-space:pre-wrap;"><strong>Terms &amp; conditions:</strong> <%= e.terms %></p><% } %>
+  <% if (['approved','converted'].includes(e.status)) { %>
+    <p class="mt"><strong>Approved</strong> by <%= e.approved_name %> on <%= fmt.dt(e.decided_at) %></p>
+    <% if (e.signature_data) { %><img src="<%= e.signature_data %>" alt="Signature" style="max-width:300px; border:1px solid var(--border); border-radius:8px;" /><% } %>
+  <% } else if (e.status === 'rejected') { %>
+    <p class="mt"><strong>Declined</strong> <%= fmt.dt(e.decided_at) %><%= e.rejection_reason ? ': ' + e.rejection_reason : '' %></p>
+  <% } %>
+</div>

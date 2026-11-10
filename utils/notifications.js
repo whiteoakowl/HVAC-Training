@@ -10,6 +10,16 @@ const TYPES = {
   training_assigned: 'Training Assigned',
   forum_reply: 'Chat Reply',
   document_added: 'New Document',
+  service_request: 'New Service Request',
+  job_assigned: 'Job Assigned',
+  job_status: 'Job Status Changed',
+  job_completed: 'Job Completed',
+  invoice_ready: 'Invoice Ready for Review',
+  payment_received: 'Payment Received',
+  low_stock: 'Low Stock',
+  parts_request: 'Parts Request',
+  timesheet: 'Timesheet',
+  certification: 'Certification Expiring',
 };
 
 async function notify(memberId, typeKey, { title, body = null, linkUrl = null } = {}) {

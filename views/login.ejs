@@ -4,7 +4,8 @@
 <body>
   <div class="auth-page">
     <div class="auth-card">
-      <h1>HVAC Training Portal</h1>
+      <h1>HVAC Business Portal</h1>
+      <p class="hint">Employees, office staff and management sign in here.</p>
       <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
       <form method="POST" action="/login" class="stack-form">
         <input type="hidden" name="next" value="<%= next %>" />
@@ -12,7 +13,8 @@
         <label>Password <input type="password" name="password" required /></label>
         <button type="submit" class="primary-btn">Log In</button>
       </form>
-      <p class="hint">No account? <a href="/register">Register here</a>.</p>
+      <p class="hint"><a href="/forgot">Forgot your password?</a></p>
+      <% if (allowRegistration) { %><p class="hint">Trainee without an account? <a href="/register">Register here</a>.</p><% } %>
     </div>
   </div>
 </body>

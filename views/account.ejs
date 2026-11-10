@@ -1,0 +1,38 @@
+<%- include('partials/page-start') %>
+<h1>My Account</h1>
+<p class="hint"><%= member.name %> · <%= member.email %> · <%= fmt.label(member.role) %></p>
+<div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+  <div class="card">
+    <h2>Change password</h2>
+    <form method="POST" action="/account/password" class="stack-form">
+      <label>Current password <input type="password" name="current" autocomplete="current-password" required /></label>
+      <label>New password (10+ characters) <input type="password" name="password" minlength="10" autocomplete="new-password" required /></label>
+      <label>Confirm new password <input type="password" name="confirm" minlength="10" autocomplete="new-password" required /></label>
+      <button type="submit">Change password</button>
+    </form>
+  </div>
+  <div class="card" id="mfa">
+    <h2>Two-step verification</h2>
+    <% if (member.mfa_enabled) { %>
+      <p><span class="status status-completed">On</span> A code from your authenticator app is required at each login.</p>
+      <form method="POST" action="/account/mfa/disable" class="stack-form">
+        <label>Current code <input name="code" inputmode="numeric" maxlength="6" required /></label>
+        <button type="submit" class="btn-danger">Turn off</button>
+      </form>
+    <% } else if (setup) { %>
+      <ol class="small">
+        <li>Open an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password...).</li>
+        <li>Add an account and enter this setup key: <br><code style="font-size:1rem; letter-spacing:0.08em; word-break:break-all;"><%= setup.secret.replace(/(.{4})/g, '$1 ').trim() %></code><br><span class="hint">Or on this phone: <a href="<%= setup.uri %>">open in authenticator app</a></span></li>
+        <li>Type the 6-digit code it shows:</li>
+      </ol>
+      <form method="POST" action="/account/mfa/confirm" class="inline-fields">
+        <input name="code" inputmode="numeric" maxlength="6" required placeholder="123456" />
+        <button type="submit">Turn on</button>
+      </form>
+    <% } else { %>
+      <p>Protect your account with a code from your phone in addition to your password. Strongly recommended for owners, managers and accounting.</p>
+      <form method="POST" action="/account/mfa/start"><button type="submit">Set up two-step verification</button></form>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

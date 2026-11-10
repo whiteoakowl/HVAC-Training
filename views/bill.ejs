@@ -1,0 +1,34 @@
+<%- include('partials/page-start') %>
+<div class="page-header"><div><h1><%= b.vendorName %> - bill <%= b.bill_number || '#' + b.id %> <span class="status status-<%= b.status === 'open' ? 'issued' : b.status %>"><%= b.status %></span></h1>
+  <p class="hint">Dated <%= fmt.d(b.bill_date) %> · due <%= fmt.d(b.due_date) %><% if (b.po_id) { %> · <a href="/purchasing/<%= b.po_id %>"><%= b.po_number %></a><% } %><% if (b.journal_entry_id) { %> · <a href="/accounting/journal/<%= b.journal_entry_id %>">ledger entry</a><% } %></p></div>
+  <a class="btn btn-secondary" href="/bills">&larr; Bills</a></div>
+<div class="two-col">
+  <div class="card">
+    <table class="data-table"><thead><tr><th>Account</th><th>Description</th><th class="num">Amount</th></tr></thead><tbody>
+      <% b.lines.forEach(function(l) { %><tr><td><%= l.code %> <%= l.accountName %></td><td><%= fmt.usText(l.description) %><%= l.quantity ? ' (' + Number(l.quantity) + ')' : '' %></td><td class="num"><%= fmt.money(l.amount_cents) %></td></tr><% }); %>
+      <tr class="total"><td colspan="2">Total</td><td class="num"><%= fmt.money(b.total_cents) %></td></tr>
+      <tr><td colspan="2">Paid</td><td class="num"><%= fmt.money(b.amount_paid_cents) %></td></tr>
+      <tr class="total"><td colspan="2">Balance</td><td class="num"><%= fmt.money(b.balance) %></td></tr>
+    </tbody></table>
+    <% if (b.memo) { %><p class="small"><%= b.memo %></p><% } %>
+    <% if (b.attachment_name) { %><p><a href="/bills/<%= b.id %>/attachment" target="_blank">View attached bill (<%= b.attachment_name %>)</a></p><% } %>
+    <% if (b.payments.length) { %><h3>Payments</h3><% b.payments.forEach(function(p) { %><p class="small"><%= fmt.d(p.paid_on) %> · <%= fmt.money(p.amount_cents) %> · <%= fmt.label(p.method) %><%= p.reference ? ' #' + p.reference : '' %><%= p.recordedByName ? ' · ' + p.recordedByName : '' %></p><% }); %><% } %>
+  </div>
+  <div class="stack">
+    <% if (['open','partial'].includes(b.status)) { %>
+      <div class="card"><h2>Pay bill</h2>
+        <form method="POST" action="/bills/<%= b.id %>/pay" class="stack-form">
+          <label>Amount <input name="amount" inputmode="decimal" value="<%= fmt.centsInput(b.balance) %>" required /></label>
+          <label>Method <select name="method"><% methods.forEach(function(m) { %><option value="<%= m %>"><%= m === 'credit_card' ? 'Company credit card' : fmt.label(m) %></option><% }); %></select></label>
+          <label>Check # / reference <input name="reference" /></label>
+          <label>Paid on <input type="date" name="paid_on" value="<%= today %>" /></label>
+          <button type="submit" class="btn-success">Record payment</button>
+        </form>
+      </div>
+    <% } %>
+    <% if (['open'].includes(b.status) && !b.amount_paid_cents) { %>
+      <div class="card"><h2>Void</h2><form method="POST" action="/bills/<%= b.id %>/void" class="stack-form" onsubmit="return confirm('Void this bill?');"><label>Reason <input name="reason" required /></label><button class="btn-danger" type="submit">Void bill</button></form></div>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

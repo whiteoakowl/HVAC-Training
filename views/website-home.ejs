@@ -1,0 +1,87 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Website</h1>
+    <p class="hint">Your public website, built right here - no outside site builder needed. Edit pages section by section with a live preview, then publish.
+      <% if (live) { %><span class="status status-completed">Live</span> <a href="/" target="_blank">View site &rarr;</a><% } else { %><span class="status status-pending">Not live yet</span> Publish the Home page to put the site online at your address.<% } %></p></div>
+</div>
+
+<div class="card" style="margin-bottom:1rem;">
+  <div class="grid-box-header"><h2>Pages</h2><span class="hint">Drag to change the menu order</span></div>
+  <table class="data-table" id="page-table">
+    <thead><tr><th></th><th>Page</th><th>Address</th><th>In menu</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <% pages.forEach(function(p) { %>
+        <tr draggable="true" data-id="<%= p.id %>">
+          <td style="cursor:grab;" title="Drag">⋮⋮</td>
+          <td><a href="/website/pages/<%= p.id %>"><strong><%= p.title %></strong></a></td>
+          <td class="small"><%= p.slug === 'home' ? '/' : '/' + p.slug %></td>
+          <td><%= p.show_in_nav ? 'Yes' : '-' %></td>
+          <td><span class="status status-<%= p.status === 'published' ? 'completed' : p.status === 'hidden' ? 'cancelled' : 'draft' %>"><%= p.status %></span><% if (p.status === 'published' && Number(p.hasChanges)) { %> <span class="status status-pending">unpublished edits</span><% } %></td>
+          <td class="btn-row"><a class="btn btn-secondary small" href="/website/pages/<%= p.id %>">Edit</a><% if (p.status === 'published') { %><a class="btn btn-secondary small" target="_blank" href="<%= p.slug === 'home' ? '/' : '/' + p.slug %>">View</a><% } %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <details class="mt"><summary><strong>+ Add a page</strong></summary>
+    <form method="POST" action="/website/pages" class="inline-fields mt">
+      <label>Title <input name="title" required placeholder="Heat Pumps" /></label>
+      <label>Address (optional) <input name="slug" placeholder="heat-pumps" /></label>
+      <label>Start from <select name="template"><option value="basic">Banner + text + request form</option><option value="blank">Blank page</option><option value="copy-home">Copy of the home page</option></select></label>
+      <button type="submit">Create page</button>
+    </form>
+  </details>
+</div>
+
+<div class="two-col">
+  <form method="POST" action="/website/theme" enctype="multipart/form-data" class="card form-grid" id="theme">
+    <h2 class="full">Look &amp; feel</h2>
+    <p class="full hint">Company name, phone, email and address come from <% if (can('settings.manage')) { %><a href="/admin/settings">Company Settings</a><% } else { %>Company Settings<% } %>. Use {{company_name}}, {{company_phone}} or {{emergency_phone}} in any text and they fill in automatically.</p>
+    <label>Logo <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif" /><% if (t.logo) { %><img src="/media/<%= t.logo %>" alt="logo" style="max-height:48px; margin-top:0.4rem; width:auto;" /><span class="small" style="font-weight:400;"><input type="checkbox" name="remove_logo" value="1" style="width:auto;" /> remove logo</span><% } %></label>
+    <label>Tagline <input name="site_tagline" value="<%= s.site_tagline || '' %>" /></label>
+    <label>Brand color <input type="color" name="site_primary_color" value="<%= t.primary %>" style="height:42px;" /></label>
+    <label>Accent color (buttons) <input type="color" name="site_accent_color" value="<%= t.accent %>" style="height:42px;" /></label>
+    <label>Font style <select name="site_font"><% Object.keys(fonts).forEach(function(k) { %><option value="<%= k %>" <%= t.font === k ? 'selected' : '' %>><%= fonts[k].label %></option><% }); %></select></label>
+    <label>Emergency phone <input name="site_emergency_phone" value="<%= s.site_emergency_phone || '' %>" placeholder="Defaults to company phone" /></label>
+    <label class="full">Business hours <input name="site_hours" value="<%= s.site_hours || '' %>" /></label>
+    <label>Header button text <input name="site_header_cta_label" value="<%= s.site_header_cta_label || '' %>" /></label>
+    <label>Header button link <input name="site_header_cta_link" value="<%= s.site_header_cta_link || '' %>" /></label>
+    <label class="full">Footer text <input name="site_footer_text" value="<%= s.site_footer_text || '' %>" placeholder="Licensed & insured. License #..." /></label>
+    <label>Facebook page <input name="site_social_facebook" value="<%= s.site_social_facebook || '' %>" placeholder="https://facebook.com/..." /></label>
+    <label>Instagram <input name="site_social_instagram" value="<%= s.site_social_instagram || '' %>" /></label>
+    <label>Google reviews link <input name="site_social_google" value="<%= s.site_social_google || '' %>" /></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="site_show_staff_login" value="1" <%= t.staffLogin ? 'checked' : '' %> style="width:auto;" /> Show "Employee login" link in the footer</label>
+    <div class="full"><button type="submit">Save look &amp; feel</button></div>
+  </form>
+
+  <div class="card" id="media">
+    <h2>Image library</h2>
+    <form method="POST" action="/website/media" enctype="multipart/form-data" class="stack-form">
+      <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
+      <label>Description (for accessibility &amp; search engines) <input name="alt" placeholder="Technician servicing an AC unit" /></label>
+      <button type="submit">Upload</button>
+      <p class="hint">PNG, JPG, GIF or WebP up to 5 MB. Wide photos (at least 1600px) look best in banners.</p>
+    </form>
+    <% if (!media.length) { %><p class="empty">No images yet.</p><% } %>
+    <div class="photo-grid mt">
+      <% media.forEach(function(m) { %>
+        <div><img src="/media/<%= m.id %>" alt="<%= m.alt_text || m.file_name %>" loading="lazy" /><p class="small" style="margin:0.2rem 0; overflow-wrap:anywhere;"><%= m.file_name %></p>
+          <form method="POST" action="/website/media/<%= m.id %>/delete" onsubmit="return confirm('Delete this image?');"><button class="btn-secondary small" type="submit">Delete</button></form></div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    var body = document.querySelector('#page-table tbody'), dragged = null;
+    body.querySelectorAll('tr').forEach(function (tr) {
+      tr.addEventListener('dragstart', function () { dragged = tr; tr.style.opacity = '0.5'; });
+      tr.addEventListener('dragend', function () { tr.style.opacity = ''; save(); });
+      tr.addEventListener('dragover', function (e) { e.preventDefault(); var r = tr.getBoundingClientRect(); if (dragged && dragged !== tr) body.insertBefore(dragged, e.clientY < r.top + r.height / 2 ? tr : tr.nextSibling); });
+    });
+    function save() {
+      var p = new URLSearchParams(); body.querySelectorAll('tr').forEach(function (tr) { p.append('ids', tr.dataset.id); });
+      fetch('/website/pages/order', { method: 'POST', body: p, credentials: 'same-origin' });
+    }
+  })();
+</script>
+<%- include('partials/page-end') %>

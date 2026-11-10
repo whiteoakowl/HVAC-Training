@@ -26,7 +26,7 @@
     <div class="thread-post <%= p.status === 'removed' ? 'thread-post-removed' : '' %>">
       <div class="thread-post-header">
         <span class="thread-post-author"><%= p.authorName || 'Unknown' %></span>
-        <span class="hint"><%= p.created_at %></span>
+        <span class="hint"><%= fmt.dt(p.created_at) %></span>
         <% if (p.edited_at) { %><span class="hint">(edited)</span><% } %>
         <% if (p.status === 'removed') { %><span class="badge-pill badge-pill-gray">Removed</span><% } %>
       </div>

@@ -17,7 +17,7 @@
       <div class="card" style="<%= i.read_at ? '' : 'border-left: 3px solid var(--brand);' %> margin-bottom:0.6rem;">
         <h3><%= i.title %></h3>
         <% if (i.body) { %><p><%= i.body %></p><% } %>
-        <p class="hint"><%= i.created_at %></p>
+        <p class="hint"><%= fmt.dt(i.created_at) %></p>
         <div class="btn-row">
           <% if (i.link_url) { %><a class="btn-secondary" href="<%= i.link_url %>">View</a><% } %>
           <% if (!i.read_at) { %>

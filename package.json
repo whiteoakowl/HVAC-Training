@@ -1,11 +1,12 @@
 {
   "name": "hvac-training-portal",
   "version": "1.0.0",
-  "description": "HVAC Training member portal - Events, Training, Member Directory, Notifications, Chat, and Documents.",
+  "description": "HVAC business management system - employee, customer service and management portals: CRM, service requests, built-in website builder, jobs and dispatch, inventory and trucks, time clock, invoicing, double-entry accounting, training.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "seed": "node db/seed.js"
+    "seed": "node db/seed.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

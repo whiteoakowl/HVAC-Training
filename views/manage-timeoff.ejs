@@ -1,0 +1,13 @@
+<%- include('partials/page-start') %>
+<h1>Time Off Requests</h1>
+<% if (!rows.length) { %><p class="empty">No pending or upcoming time off.</p><% } else { %>
+<table class="data-table"><thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th class="num">Hours</th><th class="num">Balance</th><th>Note</th><th>Status</th></tr></thead><tbody>
+  <% rows.forEach(function(r) { var bal = r.kind === 'sick' ? r.sick_balance_hours : ['vacation','personal'].includes(r.kind) ? r.pto_balance_hours : null; %>
+    <tr><td><%= r.name %></td><td><%= fmt.d(r.start_date) %><%= r.end_date !== r.start_date ? ' to ' + fmt.d(r.end_date) : '' %></td><td><%= fmt.label(r.kind) %></td><td class="num"><%= Number(r.hours) %></td>
+      <td class="num <%= bal !== null && r.status === 'pending' && Number(bal) < Number(r.hours) ? 'priority-emergency' : '' %>"><%= bal === null ? '-' : Number(bal || 0) + ' h' %></td><td class="small"><%= r.reason || '' %></td>
+      <td><% if (r.status === 'pending') { %><form method="POST" action="/manage/time-off/<%= r.id %>" class="inline-fields"><input name="note" placeholder="Note" style="width:120px;" /><button name="decision" value="approve" class="small btn-success">Approve</button><button name="decision" value="deny" class="small btn-danger">Deny</button></form>
+        <% } else { %><span class="status status-<%= r.status === 'denied' ? 'rejected' : r.status %>"><%= r.status %></span> <span class="hint"><%= r.decidedByName || '' %></span><% } %></td></tr>
+  <% }); %>
+</tbody></table>
+<% } %>
+<%- include('partials/page-end') %>

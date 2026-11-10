@@ -1,0 +1,25 @@
+<%- include('partials/public-start') %>
+<div class="doc">
+  <div class="doc-head">
+    <div><h1><%= company.company_name || 'Invoice' %></h1><p class="small" style="margin:0; white-space:pre-wrap;"><%= company.company_address || '' %></p><p class="small" style="margin:0;"><%= [company.company_phone, company.company_email].filter(Boolean).join(' · ') %></p></div>
+    <div style="text-align:right;"><h2 style="margin:0;">INVOICE <%= inv.invoice_number %></h2><p class="small" style="margin:0.3rem 0;">Issued: <%= fmt.d(inv.issue_date) %><br>Due: <%= fmt.d(inv.due_date) %></p></div>
+  </div>
+  <p><strong><%= inv.customerName %></strong><br><%= inv.billing_address || '' %></p>
+  <table class="data-table">
+    <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead>
+    <tbody>
+      <% inv.lines.forEach(function(l) { %><tr><td><%= l.description %></td><td class="num"><%= Number(l.quantity) %></td><td class="num"><%= fmt.money(l.unit_price_cents) %></td><td class="num"><%= fmt.money(l.amount_cents) %></td></tr><% }); %>
+      <tr><td colspan="3" class="num">Subtotal</td><td class="num"><%= fmt.money(inv.subtotal_cents) %></td></tr>
+      <% if (inv.discount_cents) { %><tr><td colspan="3" class="num">Discount</td><td class="num">-<%= fmt.money(inv.discount_cents) %></td></tr><% } %>
+      <tr><td colspan="3" class="num">Tax</td><td class="num"><%= fmt.money(inv.tax_cents) %></td></tr>
+      <tr class="total"><td colspan="3" class="num">Total</td><td class="num"><%= fmt.money(inv.total_cents) %></td></tr>
+      <% if (inv.credited_cents) { %><tr><td colspan="3" class="num">Credits</td><td class="num">-<%= fmt.money(inv.credited_cents) %></td></tr><% } %>
+      <% if (inv.amount_paid_cents) { %><tr><td colspan="3" class="num">Paid</td><td class="num">-<%= fmt.money(inv.amount_paid_cents) %></td></tr><% } %>
+      <tr class="total"><td colspan="3" class="num">Balance due</td><td class="num"><%= fmt.money(Math.max(0, inv.balance)) %></td></tr>
+    </tbody>
+  </table>
+  <% if (company.invoice_payment_instructions) { %><p class="small" style="white-space:pre-wrap;"><strong>How to pay:</strong> <%= company.invoice_payment_instructions %></p><% } %>
+  <% if (inv.notes) { %><p class="small" style="white-space:pre-wrap;"><%= inv.notes %></p><% } %>
+</div>
+<p class="hint mt no-print"><button type="button" class="btn-secondary small" onclick="window.print()">Print / save PDF</button></p>
+</main></body></html>

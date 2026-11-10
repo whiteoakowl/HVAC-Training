@@ -1,0 +1,18 @@
+<div class="page-header">
+  <div><h1><%= title %></h1><p class="hint"><%= subtitle %></p></div>
+  <div class="btn-row no-print">
+    <a class="btn btn-secondary" href="?<%= query %>&format=csv">Export CSV</a>
+    <button type="button" class="btn-secondary" onclick="window.print()">Print / PDF</button>
+    <a class="btn btn-secondary" href="/accounting">Accounting</a>
+  </div>
+</div>
+<form class="toolbar no-print" method="GET">
+  <% if (typeof asOf !== 'undefined') { %>
+    <label>As of <input type="date" name="as_of" value="<%= asOf %>" /></label>
+  <% } else { %>
+    <label>From <input type="date" name="from" value="<%= from %>" /></label>
+    <label>To <input type="date" name="to" value="<%= to %>" /></label>
+  <% } %>
+  <button type="submit">Run</button>
+</form>
+<p class="hint">Calculated from posted ledger transactions. Management report only - not a filed tax return or a reviewed/audited financial statement. Have a qualified accountant review before relying on it for tax or lending.</p>

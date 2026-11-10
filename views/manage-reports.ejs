@@ -1,0 +1,43 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Operations Reports</h1><p class="hint">Jobs completed <%= fmt.d(from) %> to <%= fmt.d(to) %>. Price = invoiced amount (pre-tax), or the quote if not yet invoiced.</p></div>
+  <div class="btn-row no-print"><a class="btn btn-secondary" href="/manage/reports?from=<%= from %>&to=<%= to %>&format=csv">Export CSV</a><button type="button" class="btn-secondary" onclick="window.print()">Print / PDF</button><% if (can('accounting.view')) { %><a class="btn btn-secondary" href="/accounting">Financial statements</a><% } %></div>
+</div>
+<form class="toolbar no-print" method="GET"><label>From <input type="date" name="from" value="<%= from %>" /></label><label>To <input type="date" name="to" value="<%= to %>" /></label><button type="submit">Run</button></form>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Jobs completed</div><div class="stat-value"><%= rows.length %></div></div>
+  <div class="stat"><div class="stat-label">Job revenue</div><div class="stat-value"><%= fmt.money(totals.revenue) %></div></div>
+  <div class="stat"><div class="stat-label">Average job value</div><div class="stat-value"><%= fmt.money(rows.length ? totals.revenue / rows.length : 0) %></div></div>
+  <div class="stat <%= totals.revenue - totals.cost < 0 ? 'bad' : 'good' %>"><div class="stat-label">Gross profit</div><div class="stat-value"><%= fmt.money(totals.revenue - totals.cost) %></div><div class="stat-sub"><%= totals.revenue ? Math.round((totals.revenue - totals.cost) / totals.revenue * 1000) / 10 + '% margin' : '' %></div></div>
+  <div class="stat"><div class="stat-label">Estimate close rate</div><div class="stat-value"><%= estimateStats.decided ? Math.round(estimateStats.won / estimateStats.decided * 100) + '%' : '-' %></div><div class="stat-sub"><%= estimateStats.won %> of <%= estimateStats.decided %> decided · <%= fmt.money(estimateStats.wonValue) %> won</div></div>
+  <div class="stat"><div class="stat-label">Repeat customers</div><div class="stat-value"><%= retention.served ? Math.round(retention.repeat / retention.served * 100) + '%' : '-' %></div><div class="stat-sub"><%= retention.repeat %> of <%= retention.served %> served had prior work</div></div>
+  <div class="stat"><div class="stat-label">Request → job conversion</div><div class="stat-value"><%= requests.total ? Math.round(requests.converted / requests.total * 100) : 0 %>%</div><div class="stat-sub"><%= requests.converted %> of <%= requests.total %> requests</div></div>
+</div>
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+  <div class="card"><h2>By technician</h2>
+    <table class="data-table"><thead><tr><th>Technician</th><th class="num">Jobs</th><th class="num">Revenue</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead><tbody>
+      <% byTech.forEach(function(g) { %><tr><td><%= g.key %></td><td class="num"><%= Math.round(g.jobs * 10) / 10 %></td><td class="num"><%= fmt.money(g.revenue) %></td><td class="num"><%= fmt.money(g.profit) %></td><td class="num"><%= g.margin === null ? '' : g.margin + '%' %></td></tr><% }); %>
+    </tbody></table>
+  </div>
+  <div class="card"><h2>By service type</h2>
+    <table class="data-table"><thead><tr><th>Type</th><th class="num">Jobs</th><th class="num">Revenue</th><th class="num">Avg</th><th class="num">Margin</th></tr></thead><tbody>
+      <% byType.forEach(function(g) { %><tr><td><%= g.key %></td><td class="num"><%= g.jobs %></td><td class="num"><%= fmt.money(g.revenue) %></td><td class="num"><%= fmt.money(g.avg) %></td><td class="num"><%= g.margin === null ? '' : g.margin + '%' %></td></tr><% }); %>
+    </tbody></table>
+  </div>
+</div>
+<div class="card mt"><h2>Labor utilization</h2>
+  <% if (!util.length) { %><p class="empty">No time recorded in this range.</p><% } else { %>
+  <table class="data-table"><thead><tr><th>Employee</th><th class="num">Clocked hours</th><th class="num">On jobs</th><th class="num">Utilization</th></tr></thead><tbody>
+    <% util.forEach(function(u) { %><tr><td><%= u.name %></td><td class="num"><%= fmt.hours(u.total) %></td><td class="num"><%= fmt.hours(u.onJobs) %></td><td class="num"><%= u.total ? Math.round(u.onJobs / u.total * 100) : 0 %>%</td></tr><% }); %>
+  </tbody></table>
+  <% } %>
+</div>
+<div class="card mt"><h2>Job profitability</h2>
+  <% if (!rows.length) { %><p class="empty">No completed jobs in this range.</p><% } else { %>
+  <table class="data-table"><thead><tr><th>Job</th><th>Customer</th><th>Type</th><th class="num">Price</th><th class="num">Materials</th><th class="num">Labor</th><th class="num">Other</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead><tbody>
+    <% rows.forEach(function(r) { %><tr><td><a href="/jobs/<%= r.id %>"><%= r.job_number %></a></td><td><%= r.customerName %></td><td><%= fmt.label(r.job_type) %></td><td class="num"><%= fmt.money(r.price) %><%= r.priceSource === 'quoted' ? '*' : '' %></td><td class="num"><%= fmt.money(r.materials) %></td><td class="num"><%= fmt.money(r.labor) %></td><td class="num"><%= fmt.money(r.equipment + r.subcontractor + r.permit + r.other) %></td><td class="num"><%= fmt.money(r.grossProfit) %></td><td class="num <%= r.margin !== null && r.margin < 20 ? 'priority-high' : '' %>"><%= r.margin === null ? '' : r.margin + '%' %></td></tr><% }); %>
+  </tbody></table>
+  <p class="hint">* quoted price, not yet invoiced.</p>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

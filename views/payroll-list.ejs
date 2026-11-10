@@ -1,0 +1,17 @@
+<%- include('partials/page-start') %>
+<div class="page-header"><div><h1>Payroll</h1><p class="hint">Prepare pay from approved time and paid leave, enter withholdings from your payroll provider, approve (two people), and post to the ledger. Employees then see pay stubs.</p></div></div>
+<div class="alert alert-error" style="background:#fff8e6; color:#7a5200; border-color:#f0d590;">This app does not calculate tax withholding, pay employees, or file payroll taxes. Use a payroll provider (Gusto, ADP, QuickBooks Payroll...) for that, and record its register here. Employer payroll taxes are recorded with a journal entry to 6010.</div>
+<% if (can('payroll.manage')) { %>
+  <form method="POST" action="/payroll" class="card inline-fields" style="margin-bottom:1rem;">
+    <label>Period start <input type="date" name="period_start" value="<%= defaults.start %>" required /></label>
+    <label>Period end <input type="date" name="period_end" value="<%= defaults.end %>" required /></label>
+    <label>Pay date <input type="date" name="pay_date" value="<%= defaults.pay %>" required /></label>
+    <button type="submit">Prepare payroll</button>
+  </form>
+<% } %>
+<% if (!runs.length) { %><p class="empty">No payroll runs yet.</p><% } else { %>
+<table class="data-table"><thead><tr><th>Period</th><th>Pay date</th><th class="num">People</th><th class="num">Gross</th><th class="num">Net</th><th>Status</th></tr></thead><tbody>
+  <% runs.forEach(function(r) { %><tr><td><a href="/payroll/<%= r.id %>"><%= fmt.d(r.period_start) %> to <%= fmt.d(r.period_end) %></a></td><td><%= fmt.d(r.pay_date) %></td><td class="num"><%= r.people %></td><td class="num"><%= fmt.money(r.gross_cents) %></td><td class="num"><%= fmt.money(r.net_cents) %></td><td><span class="status status-<%= r.status === 'posted' ? 'paid' : r.status === 'draft' ? 'draft' : r.status === 'void' ? 'void' : 'approved' %>"><%= r.status %></span></td></tr><% }); %>
+</tbody></table>
+<% } %>
+<%- include('partials/page-end') %>

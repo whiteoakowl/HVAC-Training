@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 const T = require('../utils/training');
 const notifications = require('../utils/notifications');
 
-router.use(requireAuth);
+router.use('/training', requireAuth, requirePermission('training.view', 'training.manage'));
 
 // --- Member-facing player ---
 
@@ -94,15 +94,22 @@ router.post('/training/:assignmentId/retake', async (req, res) => {
 
 // --- Admin/instructor Training Builder ---
 
-router.get('/training/manage', requireRole('instructor'), async (req, res) => {
+// Category and renewal period (training center additions).
+async function saveExtras(id, body) {
+  const db = require('../db');
+  const months = parseInt(body.renewMonths, 10);
+  await db.prepare('UPDATE trainings SET category = ?, renew_months = ? WHERE id = ?').run((body.category || '').trim().slice(0, 100) || null, months > 0 ? Math.min(months, 120) : null, id);
+}
+
+router.get('/training/manage', requirePermission('training.manage'), async (req, res) => {
   res.render('training-manage', { title: 'Manage Training', trainings: await T.listTrainings(), notice: req.query.notice || null });
 });
 
-router.get('/training/manage/new', requireRole('instructor'), (req, res) => {
+router.get('/training/manage/new', requirePermission('training.manage'), (req, res) => {
   res.render('training-form', { title: 'New Training', training: null, error: req.query.error || null });
 });
 
-router.post('/training/manage/new', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/new', requirePermission('training.manage'), async (req, res) => {
   try {
     const id = await T.createTraining({
       title: req.body.title,
@@ -112,13 +119,14 @@ router.post('/training/manage/new', requireRole('instructor'), async (req, res) 
       sequentialLessons: req.body.sequentialLessons === '1',
       requireVideoCompletion: req.body.requireVideoCompletion === '1',
     });
+    await saveExtras(id, req.body);
     res.redirect(`/training/manage/${id}`);
   } catch (e) {
     res.redirect('/training/manage/new?error=' + encodeURIComponent(e.message));
   }
 });
 
-router.get('/training/manage/:id', requireRole('instructor'), async (req, res) => {
+router.get('/training/manage/:id', requirePermission('training.manage'), async (req, res) => {
   const training = await T.getTrainingWithContent(req.params.id);
   if (!training) return res.status(404).render('404', { title: 'Not Found' });
   res.render('training-builder', {
@@ -131,7 +139,7 @@ router.get('/training/manage/:id', requireRole('instructor'), async (req, res) =
   });
 });
 
-router.post('/training/manage/:id/edit', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/edit', requirePermission('training.manage'), async (req, res) => {
   try {
     await T.updateTraining(req.params.id, {
       title: req.body.title,
@@ -141,13 +149,14 @@ router.post('/training/manage/:id/edit', requireRole('instructor'), async (req, 
       sequentialLessons: req.body.sequentialLessons === '1',
       requireVideoCompletion: req.body.requireVideoCompletion === '1',
     });
+    await saveExtras(req.params.id, req.body);
     res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Saved.'));
   } catch (e) {
     res.redirect(`/training/manage/${req.params.id}?error=` + encodeURIComponent(e.message));
   }
 });
 
-router.post('/training/manage/:id/status', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/status', requirePermission('training.manage'), async (req, res) => {
   try {
     await T.setTrainingStatus(req.params.id, req.body.status);
     res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Status updated.'));
@@ -156,12 +165,12 @@ router.post('/training/manage/:id/status', requireRole('instructor'), async (req
   }
 });
 
-router.post('/training/manage/:id/delete', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/delete', requirePermission('training.manage'), async (req, res) => {
   const ok = await T.deleteTraining(req.params.id);
   res.redirect(ok ? '/training/manage' : `/training/manage/${req.params.id}?error=` + encodeURIComponent('Cannot delete a training that already has assignments - archive it instead.'));
 });
 
-router.post('/training/manage/:id/lessons', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/lessons', requirePermission('training.manage'), async (req, res) => {
   try {
     await T.createLesson(req.params.id, { title: req.body.title, description: req.body.description, type: req.body.type, required: req.body.required === '1', videoUrl: req.body.videoUrl, content: req.body.content });
     res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Lesson added.'));
@@ -170,12 +179,12 @@ router.post('/training/manage/:id/lessons', requireRole('instructor'), async (re
   }
 });
 
-router.post('/training/manage/:id/lessons/:lessonId/delete', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/lessons/:lessonId/delete', requirePermission('training.manage'), async (req, res) => {
   await T.deleteLesson(req.params.lessonId);
   res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Lesson removed.'));
 });
 
-router.post('/training/manage/:id/lessons/:lessonId/questions', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/lessons/:lessonId/questions', requirePermission('training.manage'), async (req, res) => {
   const optionTexts = [].concat(req.body.optionText || []);
   const correctIndex = parseInt(req.body.correctIndex, 10);
   const options = optionTexts.map((text, i) => ({ text, correct: i === correctIndex }));
@@ -187,12 +196,12 @@ router.post('/training/manage/:id/lessons/:lessonId/questions', requireRole('ins
   }
 });
 
-router.post('/training/manage/:id/lessons/:lessonId/questions/:questionId/delete', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/lessons/:lessonId/questions/:questionId/delete', requirePermission('training.manage'), async (req, res) => {
   await T.deleteQuizQuestion(req.params.questionId);
   res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Question removed.'));
 });
 
-router.post('/training/manage/:id/assign', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/assign', requirePermission('training.manage'), async (req, res) => {
   const memberIds = [].concat(req.body.memberIds || []).map((id) => parseInt(id, 10));
   const assigned = await T.assignTrainingToMembers(req.params.id, memberIds, req.body.dueAt || null);
   for (const memberId of memberIds) {
@@ -201,7 +210,7 @@ router.post('/training/manage/:id/assign', requireRole('instructor'), async (req
   res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent(`Assigned to ${assigned} member(s).`));
 });
 
-router.post('/training/manage/:id/assignments/:assignmentId/remove', requireRole('instructor'), async (req, res) => {
+router.post('/training/manage/:id/assignments/:assignmentId/remove', requirePermission('training.manage'), async (req, res) => {
   await T.removeAssignment(req.params.assignmentId);
   res.redirect(`/training/manage/${req.params.id}?notice=` + encodeURIComponent('Assignment removed.'));
 });

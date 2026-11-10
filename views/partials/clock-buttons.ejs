@@ -1,0 +1,40 @@
+<%# Clock in/out/break buttons. Location is read ONLY at the moment a
+    button is pressed (if GPS verification is on and the browser allows
+    it) - there is no background tracking. %>
+<% const backTo = typeof back !== 'undefined' ? back : ''; %>
+<% if (!entry) { %>
+  <form method="POST" action="/employee/time/in" class="stack-form clock-form">
+    <input type="hidden" name="back" value="<%= backTo %>" /><input type="hidden" name="lat" /><input type="hidden" name="lng" />
+    <% if (typeof myJobs !== 'undefined' && myJobs.length) { %>
+      <label>Job (optional) <select name="job_id"><option value="">- general / shop time -</option><% myJobs.forEach(function(j) { %><option value="<%= j.id %>"><%= j.job_number %> · <%= j.title %></option><% }); %></select></label>
+    <% } %>
+    <div class="big-actions"><button type="submit" class="btn-success">Clock In</button></div>
+  </form>
+<% } else { %>
+  <p class="clock-state">Clocked in since <%= fmt.dt(entry.clock_in).slice(11) %><%= entry.job_number ? ' on ' + entry.job_number : '' %><%= onBreak ? ' · ON BREAK' : '' %></p>
+  <div class="big-actions">
+    <% if (onBreak) { %>
+      <form method="POST" action="/employee/time/break-end"><input type="hidden" name="back" value="<%= backTo %>" /><button type="submit">End Break</button></form>
+    <% } else { %>
+      <form method="POST" action="/employee/time/break-start"><input type="hidden" name="back" value="<%= backTo %>" /><button type="submit" class="btn-secondary">Start Break</button></form>
+    <% } %>
+    <form method="POST" action="/employee/time/out" class="clock-form"><input type="hidden" name="back" value="<%= backTo %>" /><input type="hidden" name="lat" /><input type="hidden" name="lng" /><button type="submit" class="btn-danger">Clock Out</button></form>
+  </div>
+<% } %>
+<% if (typeof gps !== 'undefined' && gps) { %>
+  <p class="hint">Location verification is on: your location is recorded once when you clock in and once when you clock out - never in between. If you deny location access you can still clock in.</p>
+  <script>
+    (function () {
+      document.querySelectorAll('.clock-form').forEach(function (f) {
+        f.addEventListener('submit', function (e) {
+          if (f.dataset.located || !navigator.geolocation) return;
+          e.preventDefault();
+          var done = function () { f.dataset.located = '1'; f.submit(); };
+          navigator.geolocation.getCurrentPosition(function (p) {
+            f.querySelector('[name=lat]').value = p.coords.latitude; f.querySelector('[name=lng]').value = p.coords.longitude; done();
+          }, done, { timeout: 8000, maximumAge: 60000 });
+        });
+      });
+    })();
+  </script>
+<% } %>

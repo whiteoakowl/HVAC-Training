@@ -42,13 +42,20 @@ The work is ordered by dependency: the foundation first, then the money flow (jo
 | **Timezone** | **Done.** Company timezone setting; times are stored and shown in local time. |
 | **Reports** | **Added:** estimate close rate, repeat-customer rate and maintenance-agreement revenue. |
 
+## Stage 4 – done
+
+| Module | Status |
+| --- | --- |
+| **Built-in website builder** | **Done.** Replaces the Wix integration. |
+| **QuickBooks-style bookkeeping, built in (no outside accounting software)** | **Done.** Accounting overview with a 6-month income vs. expenses chart. Bank and credit card accounts with opening balances. Registers with running balances. Bank statement CSV import with duplicate-proof re-import, then Match / Add / Exclude with undo, plus categorization rules. Transfers between accounts. Monthly reconciliation. Close-the-books lock date. Customer statements. General Ledger, Sales by Customer and Expenses by Vendor reports. The balance sheet splits retained earnings from this year's net income. |
+| **Employee portal home** | **Done.** Added the last paycheck, year-to-date pay and leave balances next to today's jobs, time clock, training due and certifications. |
+
 ## Stage 3 – next (needs a decision or credentials from you)
 
 | Item | Needed from you |
 | --- | --- |
 | Online card payments on invoices (customer portal / invoice link) | A Stripe account (or other processor) and its API keys |
 | Payroll provider integration (Gusto / ADP / QuickBooks Payroll): push hours, pull the register automatically | Which provider, plus API access |
-| Accounting export to QuickBooks / Xero | Which product; OAuth app credentials |
 | Route optimisation / maps on the dispatch board | A Google Maps (or Mapbox) API key |
 | QR codes for authenticator setup | Optional: a small QR library (today the setup key is typed in or opened via a link) |
 | Daily overtime rules (e.g. California) and state-specific leave accrual | Which states you operate in |

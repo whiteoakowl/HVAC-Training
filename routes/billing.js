@@ -36,6 +36,16 @@ router.post('/new', requirePermission('invoices.manage'), action(async (req, res
   flash(res, `/invoices/${id}`, 'notice', 'Draft invoice created. Add lines, then issue it.');
 }, (req) => `/customers/${encodeURIComponent(req.body.customer_id || '')}`));
 
+// Customer statement (printable / PDF via the browser).
+router.get('/statement/:customerId', async (req, res) => {
+  const c = await customers.get(req.params.customerId);
+  if (!c) return res.status(404).render('404', { title: 'Not Found' });
+  const today = fmt.today();
+  const from = fmt.dateOnly(req.query.from) || fmt.addDays(today, -90);
+  const to = fmt.dateOnly(req.query.to) || today;
+  res.render('customer-statement', { title: `Statement - ${c.name}`, c, st: await invoices.statement(c.id, from, to), company: await settings.all(), aging: (await invoices.aging(to)).rows.filter((r) => r.customer_id === c.id) });
+});
+
 async function load(req, res, next) {
   const inv = await invoices.details(req.params.id);
   if (!inv) return res.status(404).render('404', { title: 'Not Found' });

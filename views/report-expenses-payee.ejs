@@ -1,0 +1,12 @@
+<%- include('partials/page-start') %>
+<%- include('partials/report-head', { subtitle: fmt.d(from) + ' to ' + fmt.d(to) + ' · cost of goods and expenses', query: 'from=' + from + '&to=' + to }) %>
+<% if (!rows.length) { %><p class="empty">No expenses in this period.</p><% } else { var tot = rows.reduce(function(s, r) { return s + r.total; }, 0); %>
+<table class="data-table">
+  <thead><tr><th>Vendor / payee</th><th>Categories</th><th class="num">Total</th><th class="num">% of total</th></tr></thead>
+  <tbody>
+    <% rows.forEach(function(r) { %><tr><td><%= r.name %></td><td class="small"><%= Object.keys(r.accounts).map(function(k) { return k + ' ' + fmt.money(r.accounts[k]); }).join(' · ') %></td><td class="num"><%= fmt.money(r.total) %></td><td class="num"><%= tot ? Math.round(r.total / tot * 1000) / 10 : 0 %>%</td></tr><% }); %>
+    <tr class="total"><td colspan="2">Total</td><td class="num"><%= fmt.money(tot) %></td><td class="num">100%</td></tr>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

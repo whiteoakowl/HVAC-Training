@@ -1,6 +1,6 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
-  <div><h1>Accounting</h1><p class="hint">Double-entry ledger. Invoices, payments and inventory post automatically; manual entries for expenses, payroll, owner draws, etc.</p></div>
+  <div><h1>Chart of Accounts</h1><p class="hint"><a href="/accounting">&larr; Accounting overview</a> · Double-entry ledger. Invoices, payments and inventory post automatically; manual entries for expenses, payroll, owner draws, etc.</p></div>
   <div class="btn-row">
     <a class="btn btn-secondary" href="/accounting/journal">General journal</a>
     <% if (can('accounting.manage')) { %><a class="primary-btn" href="/accounting/journal/new">+ Journal entry</a><% } %>
@@ -22,7 +22,7 @@
       <% list.forEach(function(a) { %>
         <tr>
           <td style="width:80px;"><%= a.code %></td>
-          <td><a href="/accounting/journal?account_id=<%= a.id %>&from=2000-01-01"><%= a.name %></a><% if (!a.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
+          <td><a href="/accounting/accounts/<%= a.id %>/register"><%= a.name %></a><%= a.subtype === 'bank' ? ' 🏦' : a.subtype === 'credit_card' ? ' 💳' : '' %><% if (!a.active) { %> <span class="status status-cancelled">inactive</span><% } %></td>
           <td class="num"><%= fmt.money(a.balance) %></td>
           <td style="width:110px;"><% if (can('accounting.manage')) { %><form method="POST" action="/accounting/accounts/<%= a.id %>/active" class="inline-form"><input type="hidden" name="active" value="<%= a.active ? '0' : '1' %>" /><button type="submit" class="btn-secondary small"><%= a.active ? 'Deactivate' : 'Activate' %></button></form><% } %></td>
         </tr>

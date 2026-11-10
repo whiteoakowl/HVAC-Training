@@ -1,0 +1,47 @@
+<%- include('partials/page-start') %>
+<% var open = r.status === 'in_progress' && can('accounting.manage'); %>
+<div class="page-header">
+  <div><h1>Reconcile <%= r.accountName %></h1><p class="hint">Statement ending <%= fmt.d(r.statement_date) %> · <span class="status status-<%= r.status === 'completed' ? 'completed' : r.status === 'undone' ? 'cancelled' : 'pending' %>"><%= fmt.label(r.status) %></span> · <a href="/accounting/banking/<%= r.account_id %>">&larr; Back to account</a></p></div>
+</div>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Beginning balance</div><div class="stat-value"><%= fmt.money(r.beginning_balance_cents) %></div></div>
+  <div class="stat"><div class="stat-label">Statement ending balance</div><div class="stat-value"><%= fmt.money(r.statement_balance_cents) %></div></div>
+  <div class="stat"><div class="stat-label">Cleared balance</div><div class="stat-value" id="cleared"><%= fmt.money(r.clearedBalance) %></div></div>
+  <div class="stat <%= r.difference === 0 ? 'good' : 'bad' %>" id="diffbox"><div class="stat-label">Difference</div><div class="stat-value" id="diff"><%= fmt.money(r.difference) %></div></div>
+</div>
+<p class="hint">Tick every transaction that appears on the bank statement. When the difference is $0.00, finish. Anything not on the books yet? Add it from the bank feed or as an expense first.</p>
+<form method="POST" action="/accounting/reconcile/<%= r.id %>" id="rec">
+  <table class="data-table">
+    <thead><tr><th><% if (open) { %><input type="checkbox" id="all" style="width:auto;" /><% } %></th><th>Date</th><th>Description</th><th class="num"><%= r.subtype === 'credit_card' ? 'Payments / credits' : 'Deposits' %></th><th class="num"><%= r.subtype === 'credit_card' ? 'Charges' : 'Payments' %></th></tr></thead>
+    <tbody>
+      <% if (!r.lines.length) { %><tr><td colspan="5" class="empty">No transactions on or before the statement date.</td></tr><% } %>
+      <% r.lines.forEach(function(l) { var inc = r.subtype === 'credit_card' ? -l.amount : l.amount; %>
+        <tr><td><input type="checkbox" name="line_ids" value="<%= l.id %>" data-amt="<%= l.amount %>" <%= l.reconciliation_id === r.id ? 'checked' : '' %> <%= open ? '' : 'disabled' %> style="width:auto;" /></td>
+          <td><%= fmt.d(l.entry_date) %></td><td><%= fmt.usText(l.memo) %></td>
+          <td class="num"><%= inc > 0 ? fmt.money(inc) : '' %></td><td class="num"><%= inc < 0 ? fmt.money(-inc) : '' %></td></tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% if (open) { %><div class="btn-row mt"><button type="submit" class="btn-secondary">Save for later</button><button type="submit" name="finish" value="1" class="btn-success" id="finish">Finish reconciliation</button></div><% } %>
+</form>
+<% if (r.status === 'completed' && can('accounting.manage')) { %>
+  <form method="POST" action="/accounting/reconcile/<%= r.id %>/undo" class="mt" onsubmit="return confirm('Undo this reconciliation?');"><button class="btn-danger">Undo reconciliation</button></form>
+<% } %>
+<script>
+  (function () {
+    var begin = <%= r.beginning_balance_cents %>, stmt = <%= r.statement_balance_cents %>;
+    var boxes = document.querySelectorAll('input[name=line_ids]');
+    function money(c) { var s = c < 0 ? '-' : ''; c = Math.abs(c); return s + '$' + (Math.floor(c / 100)).toLocaleString('en-US') + '.' + String(c % 100).padStart(2, '0'); }
+    function calc() {
+      var cleared = begin; boxes.forEach(function (b) { if (b.checked) cleared += parseInt(b.dataset.amt, 10); });
+      document.getElementById('cleared').textContent = money(cleared);
+      document.getElementById('diff').textContent = money(stmt - cleared);
+      document.getElementById('diffbox').className = 'stat ' + (stmt === cleared ? 'good' : 'bad');
+      var f = document.getElementById('finish'); if (f) f.disabled = stmt !== cleared;
+    }
+    boxes.forEach(function (b) { b.addEventListener('change', calc); });
+    var all = document.getElementById('all'); if (all) all.addEventListener('change', function () { boxes.forEach(function (b) { b.checked = all.checked; }); calc(); });
+    calc();
+  })();
+</script>
+<%- include('partials/page-end') %>

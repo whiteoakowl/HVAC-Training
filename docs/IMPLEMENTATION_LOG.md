@@ -1,5 +1,25 @@
 # Implementation log
 
+## Built-in bookkeeping (QuickBooks-style, no integration)
+
+No QuickBooks or Xero connection is planned; the books live in the app. Migration `006_banking_and_books` adds:
+* account subtypes (bank, credit card) and registers
+* bank statement import with categorization rules
+* reconciliation
+* a books-closed date that every posting checks
+
+Pages:
+* `/accounting`: overview
+* `/accounting/accounts`: chart of accounts; each account opens its register
+* `/accounting/banking`: accounts, transfers, rules
+* `/accounting/banking/:id`: import a statement, review lines (Match / Add / Exclude, with undo), reconcile
+* `/accounting/reconcile/:id`: reconciliation worksheet
+* `/invoices/statement/:customer`: customer statement
+* New reports: General Ledger, Sales by Customer, Expenses by Vendor/Payee
+
+Tests: `test/books.test.js` (6 scenarios). **48 tests pass on SQLite, and the same suites pass on Postgres 16.**
+
+
 ## Built-in website builder (replaces the Wix integration)
 
 The Wix integration is removed: the webhook endpoint, `WIX_WEBHOOK_SECRET` and the Wix guide are gone. The company website is now built and hosted by this app.

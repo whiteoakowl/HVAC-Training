@@ -124,6 +124,7 @@
         <% invoiceList.forEach(function(i) { %>
           <p style="margin:0.3rem 0;"><a href="/invoices/<%= i.id %>"><%= i.invoice_number %></a> <span class="status status-<%= i.status %>"><%= i.status %></span> <span class="num"><%= fmt.money(i.total_cents) %></span><% if (['issued','partial'].includes(i.status)) { %> <span class="hint">due <%= fmt.d(i.due_date) %></span><% } %></p>
         <% }); %>
+        <p class="small"><a href="/invoices/statement/<%= c.id %>">Customer statement</a></p>
         <% if (payments.length) { %>
           <p class="hint mt">Payments</p>
           <% payments.forEach(function(p) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.d(p.received_on) %> · <%= fmt.money(p.amount_cents) %> · <%= p.method %> · <%= p.invoice_number %></p><% }); %>

@@ -34,9 +34,13 @@ router.get('/', requirePermission('portal.employee'), async (req, res) => {
   ]);
   const onBreak = entry ? await timeclock.openBreak(entry.id) : null;
   const announcements = await require('./team').visibleAnnouncements(req.member, 3);
+  const payroll = require('../utils/payroll');
+  const lastStub = (await payroll.stubsFor(req.member.id))[0] || null;
+  const ytd = await payroll.ytd(req.member.id, today.slice(0, 4));
+  const pendingLeave = await db.prepare("SELECT COUNT(*) AS c FROM time_off_requests WHERE member_id = ? AND status = 'pending'").get(req.member.id);
   const reportDone = await db.prepare('SELECT 1 AS x FROM daily_reports WHERE member_id = ? AND report_date = ?').get(req.member.id, today);
   res.render('employee-home', {
-    announcements, reportDone,
+    announcements, reportDone, lastStub, ytd, pendingLeave: pendingLeave.c,
     title: 'My Day', todayJobs, upcoming: openJobs.filter((j) => !todayJobs.some((t) => t.id === j.id)).slice(0, 10), entry, onBreak, week, truck,
     trainingDue: assignments.filter((a) => a.status !== 'passed'), certs, profile, soon: fmt.addDays(today, 60), today, gps: await settings.getBool('gps_clock_enabled'),
   });

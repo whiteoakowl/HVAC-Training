@@ -1,0 +1,59 @@
+<%- include('partials/page-start') %>
+<% var card = acct.subtype === 'credit_card'; var manage = can('accounting.manage'); %>
+<div class="page-header">
+  <div><h1><%= card ? '💳' : '🏦' %> <%= acct.name %></h1><p class="hint"><%= acct.code %><%= acct.account_last4 ? ' · ···' + acct.account_last4 : '' %> · <%= card ? 'balance owed' : 'balance in books' %> <strong><%= fmt.money(balance) %></strong> · <a href="/accounting/banking">&larr; Banking</a></p></div>
+  <div class="btn-row"><a class="btn btn-secondary" href="/accounting/accounts/<%= acct.id %>/register">Register</a></div>
+</div>
+<% if (manage) { %>
+<details class="card" <%= review.length ? '' : 'open' %> style="margin-bottom:1rem;"><summary><strong>Import a statement (CSV)</strong></summary>
+  <form method="POST" action="/accounting/banking/<%= acct.id %>/import" enctype="multipart/form-data" class="stack-form mt">
+    <input type="file" name="file" accept=".csv,text/csv" required />
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="flip_sign" value="1" style="width:auto;" /> My bank shows <%= card ? 'charges as positive numbers' : 'withdrawals as positive numbers' %> (flip signs)</label>
+    <button type="submit">Import</button>
+    <p class="hint">In your online banking, download transactions as CSV (Excel). Any bank's layout works if it has Date, Description and Amount (or Debit / Credit) columns. Importing the same file twice never creates duplicates.</p>
+  </form>
+</details>
+<% } %>
+
+<h2 id="review">For review (<%= review.length %>)</h2>
+<% if (!review.length) { %><p class="empty">Nothing to review. Import your latest statement.</p><% } else { %><p class="hint">For each line: <strong>Match</strong> it to something already in the books (customer payments and bill payments are recorded on the invoice or bill first, so they're never counted twice), <strong>Add</strong> it with a category, or <strong>Exclude</strong> it (duplicates, personal).</p><% } %>
+<% review.forEach(function(t) { var inflow = t.amount_cents > 0; %>
+  <div class="card" style="margin-bottom:0.5rem;">
+    <div class="grid-box-header"><div><strong><%= fmt.d(t.txn_date) %></strong> · <%= t.description %></div><strong class="<%= inflow ? '' : 'priority-high' %>"><%= inflow ? (card ? 'Payment ' : 'Deposit ') : (card ? 'Charge ' : 'Spent ') %><%= fmt.money(Math.abs(t.amount_cents)) %></strong></div>
+    <% if (manage) { %>
+      <% if (t.matches.length) { %>
+        <form method="POST" action="/accounting/banking/<%= acct.id %>/txn/<%= t.id %>/match" class="inline-fields" style="background:#eaf6ea; padding:0.4rem; border-radius:6px; margin-bottom:0.4rem;">
+          <label>Match to what's already in the books <select name="line_id"><% t.matches.forEach(function(m) { %><option value="<%= m.id %>"><%= fmt.d(m.entry_date) %> · <%= fmt.usText(m.memo) %></option><% }); %></select></label>
+          <button type="submit" class="btn-success">Match</button>
+        </form>
+      <% } %>
+      <form method="POST" action="/accounting/banking/<%= acct.id %>/txn/<%= t.id %>/add" class="inline-fields">
+        <label>Category <select name="category_id"><% categories.forEach(function(a) { %><option value="<%= a.id %>" <%= t.rule ? (t.rule.account_id === a.id ? 'selected' : '') : (inflow ? (a.code === '4000' ? 'selected' : '') : (a.code === '6900' ? 'selected' : '')) %>><%= a.code %> <%= a.name %></option><% }); %></select></label>
+        <label>Payee <input name="payee" value="<%= t.rule && t.rule.payee ? t.rule.payee : '' %>" /></label>
+        <label>Memo <input name="memo" value="<%= t.description %>" /></label>
+        <button type="submit" class="<%= t.matches.length ? 'btn-secondary' : '' %>">Add</button>
+        <label class="small" style="flex-direction:row; align-items:center; gap:0.3rem; font-weight:400;"><input type="checkbox" name="make_rule" value="1" style="width:auto;" /> always for <input name="rule_text" value="<%= t.description.split(/\s+/).slice(0, 2).join(' ') %>" style="width:120px;" /></label>
+      </form>
+      <% if (t.rule) { %><p class="hint" style="margin:0.2rem 0;">Category suggested by rule "<%= t.rule.match_text %>".</p><% } %>
+      <form method="POST" action="/accounting/banking/<%= acct.id %>/txn/<%= t.id %>/exclude" class="inline-form"><button class="btn-secondary small" type="submit" title="Duplicate or personal - not for the books">Exclude</button></form>
+    <% } %>
+  </div>
+<% }); %>
+
+<div class="two-col mt">
+  <div class="card" id="handled"><h2>Recently handled</h2>
+    <% if (!handled.length) { %><p class="empty">None yet.</p><% } %>
+    <% handled.forEach(function(t) { %><p class="small" style="margin:0.2rem 0;"><%= fmt.d(t.txn_date) %> · <%= t.description %> · <%= fmt.money(t.amount_cents) %> · <span class="status status-<%= t.status === 'excluded' ? 'cancelled' : 'completed' %>"><%= t.status %></span><%= t.byName ? ' · ' + t.byName : '' %>
+      <% if (manage) { %><form method="POST" action="/accounting/banking/<%= acct.id %>/txn/<%= t.id %>/undo" class="inline-form"><button class="btn-secondary small">Undo</button></form><% } %></p><% }); %>
+  </div>
+  <div class="card" id="reconcile"><h2>Reconcile</h2>
+    <% if (manage) { %>
+      <form method="POST" action="/accounting/banking/<%= acct.id %>/reconcile" class="stack-form">
+        <div class="inline-fields"><label>Statement ending date <input type="date" name="statement_date" required /></label><label>Ending balance <input name="statement_balance" inputmode="decimal" required placeholder="From your statement" /></label></div>
+        <button type="submit">Start reconciling</button>
+      </form>
+    <% } %>
+    <% history.forEach(function(r) { %><p class="small" style="margin:0.25rem 0;"><a href="/accounting/reconcile/<%= r.id %>">Through <%= fmt.d(r.statement_date) %></a> · <%= fmt.money(r.statement_balance_cents) %> · <span class="status status-<%= r.status === 'completed' ? 'completed' : r.status === 'undone' ? 'cancelled' : 'pending' %>"><%= fmt.label(r.status) %></span><%= r.byName ? ' · ' + r.byName : '' %></p><% }); %>
+  </div>
+</div>
+<%- include('partials/page-end') %>

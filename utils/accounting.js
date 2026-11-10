@@ -31,6 +31,13 @@ async function post(tx, { date, memo, sourceType = 'manual', sourceId = null, li
     const accountId = l.accountId || (await accountByCode(l.code, tx)).id;
     clean.push({ accountId, debit, credit, description: l.description || null });
   }
+  // Closed books: nothing may be posted on or before the closing date
+  // (change or clear the date under Accounting -> Close the books).
+  const entryDate = fmt.dateOnly(date) || fmt.today();
+  const closed = await tx.prepare("SELECT value FROM settings WHERE key = 'books_closed_through'").get();
+  if (closed && closed.value && entryDate <= closed.value) {
+    throw new Error(`The books are closed through ${fmt.d(closed.value)}. Use a later date, or have an accountant reopen the period.`);
+  }
   const dr = clean.reduce((s, l) => s + l.debit, 0);
   const cr = clean.reduce((s, l) => s + l.credit, 0);
   if (!clean.length || dr === 0) throw new Error('A journal entry needs at least one non-zero line.');
@@ -118,10 +125,65 @@ async function balanceSheet(asOf) {
   const assets = sumType(rows, 'asset');
   const liabilities = sumType(rows, 'liability');
   const equity = sumType(rows, 'equity');
-  // Income statement accounts aren't closed into retained earnings by a
-  // year-end entry here; their cumulative net is shown as current earnings.
+  // As in QuickBooks, income and expenses roll into equity automatically:
+  // earlier years show as Retained Earnings, this year as Net Income.
   const earnings = sumType(rows, 'income') - sumType(rows, 'cogs') - sumType(rows, 'expense');
-  return { asOf, rows: rows.filter((r) => ['asset', 'liability', 'equity'].includes(r.type)), assets, liabilities, equity, earnings, balanced: assets === liabilities + equity + earnings };
+  const yearStart = String(asOf).slice(0, 4) + '-01-01';
+  const prior = (await balances({ to: fmt.addDays(yearStart, -1) })).filter((r) => ['income', 'cogs', 'expense'].includes(r.type));
+  const priorEarnings = sumType(prior, 'income') - sumType(prior, 'cogs') - sumType(prior, 'expense');
+  return {
+    asOf, rows: rows.filter((r) => ['asset', 'liability', 'equity'].includes(r.type)), assets, liabilities, equity, earnings,
+    priorEarnings, currentEarnings: earnings - priorEarnings, balanced: assets === liabilities + equity + earnings,
+  };
+}
+
+// Every account with activity in the range, each with its lines and
+// running balance (QuickBooks "General Ledger" report).
+async function generalLedger(from, to) {
+  const active = await db
+    .prepare('SELECT DISTINCT jl.account_id FROM journal_lines jl JOIN journal_entries je ON je.id = jl.entry_id WHERE je.entry_date >= ? AND je.entry_date <= ?')
+    .all(from, to);
+  const banking = require('./banking');
+  const out = [];
+  for (const a of (await listAccounts()).filter((x) => active.some((r) => r.account_id === x.id))) out.push(await banking.register(a.id, { from, to }));
+  return out;
+}
+
+// Income by customer, from issued invoices (net of discounts and credits, before tax).
+async function salesByCustomer(from, to) {
+  const rows = await db
+    .prepare(`SELECT c.id, c.name, COUNT(i.id) AS invoices, COALESCE(SUM(i.subtotal_cents - i.discount_cents), 0) AS sales, COALESCE(SUM(i.credited_cents), 0) AS credits, COALESCE(SUM(i.total_cents - i.amount_paid_cents - i.credited_cents), 0) AS open
+      FROM invoices i JOIN customers c ON c.id = i.customer_id WHERE i.status IN ('issued','partial','paid') AND i.issue_date >= ? AND i.issue_date <= ? GROUP BY c.id, c.name ORDER BY sales DESC`)
+    .all(from, to);
+  return rows.map((r) => ({ ...r, invoices: Number(r.invoices), sales: Number(r.sales), credits: Number(r.credits), net: Number(r.sales) - Number(r.credits), open: Number(r.open) }));
+}
+
+// Spending by payee: expenses, vendor bills, payroll and categorized bank
+// transactions that hit cost or expense accounts.
+async function expensesByPayee(from, to) {
+  const lines = await db
+    .prepare(`SELECT jl.debit_cents - jl.credit_cents AS amount, a.name AS "accountName", je.source_type, je.source_id, je.memo
+      FROM journal_lines jl JOIN journal_entries je ON je.id = jl.entry_id JOIN accounts a ON a.id = jl.account_id
+      WHERE a.type IN ('expense','cogs') AND je.entry_date >= ? AND je.entry_date <= ?`)
+    .all(from, to);
+  const payees = {};
+  for (const l of lines) {
+    let name = 'Other (journal entries)';
+    if (l.source_type === 'expense') name = ((await db.prepare('SELECT payee FROM expenses WHERE id = ?').get(l.source_id)) || {}).payee || name;
+    else if (l.source_type === 'vendor_bill') name = ((await db.prepare('SELECT v.name FROM vendor_bills b JOIN vendors v ON v.id = b.vendor_id WHERE b.id = ?').get(l.source_id)) || {}).name || name;
+    else if (l.source_type === 'payroll') name = 'Payroll';
+    else if (l.source_type === 'bank_feed') name = String(l.memo || '').split(' - ')[0] || name;
+    else if (['job_material', 'inventory_tx'].includes(l.source_type)) name = 'Materials used / inventory';
+    const p = (payees[name] = payees[name] || { name, total: 0, accounts: {} });
+    p.total += Number(l.amount);
+    p.accounts[l.accountName] = (p.accounts[l.accountName] || 0) + Number(l.amount);
+  }
+  return Object.values(payees).sort((a, b) => b.total - a.total);
+}
+
+async function closedThrough() {
+  const r = await db.prepare("SELECT value FROM settings WHERE key = 'books_closed_through'").get();
+  return r && r.value ? r.value : null;
 }
 
 async function trialBalance(asOf) {
@@ -154,4 +216,4 @@ async function cashFlow(from, to) {
   return { from, to, rows: rows.map((r) => ({ ...r, amount: Number(r.amount) })), opening, closing, inflows, outflows, net: closing - opening };
 }
 
-module.exports = { TYPES, DEBIT_NORMAL, listAccounts, accountByCode, post, reverse, getEntry, listEntries, balances, profitAndLoss, balanceSheet, trialBalance, cashFlow };
+module.exports = { generalLedger, salesByCustomer, expensesByPayee, closedThrough, TYPES, DEBIT_NORMAL, listAccounts, accountByCode, post, reverse, getEntry, listEntries, balances, profitAndLoss, balanceSheet, trialBalance, cashFlow };

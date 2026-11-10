@@ -42,7 +42,8 @@ Demo logins all use the password `password123`.
 | Employee portal | `/employee` (my day), `/employee/jobs`, `/employee/time`, `/employee/truck`, `/employee/parts` |
 | Customer service | `/service`, `/customers`, `/requests` |
 | Operations | `/jobs`, `/jobs/:id`, `/dispatch`, `/inventory`, `/trucks`, `/inventory/parts-requests` |
-| Management | `/manage`, `/manage/reports`, `/manage/timesheets`, `/manage/employees`, `/invoices`, `/accounting` (+ reports) |
+| Management | `/manage`, `/manage/reports`, `/manage/timesheets`, `/manage/employees`, `/invoices` |
+| Bookkeeping (built in, QuickBooks-style) | `/accounting` overview, `/accounting/banking` (statement import, matching, rules, reconciliation), `/accounting/accounts` (registers), reports incl. P&L, balance sheet, general ledger, sales by customer, expenses by vendor |
 | Sales & billing | `/estimates`, `/agreements`, `/invoices` (credits, refunds, deposits) |
 | Purchasing & costs | `/purchasing`, `/vendors`, `/bills`, `/expenses`, `/payroll`, `/assets` |
 | Team | `/announcements`, `/messages`, `/employee/time-off`, `/employee/pay`, `/employee/report`, `/manage/time-off`, `/manage/daily-reports`, `/training/center` |

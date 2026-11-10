@@ -370,6 +370,35 @@ async function byToken(token) {
   return row ? details(row.id) : null;
 }
 
+// Customer statement: opening balance, every invoice / payment / credit /
+// refund in the period, and the closing balance owed.
+async function statement(customerId, from, to) {
+  const before = await db
+    .prepare("SELECT COALESCE(SUM(total_cents), 0) AS t FROM invoices WHERE customer_id = ? AND status NOT IN ('draft','void') AND issue_date < ?")
+    .get(customerId, from);
+  const paidBefore = await db.prepare('SELECT COALESCE(SUM(amount_cents), 0) AS t FROM payments WHERE customer_id = ? AND received_on < ?').get(customerId, from);
+  const creditBefore = await db.prepare("SELECT COALESCE(SUM(cn.amount_cents), 0) AS t FROM credit_notes cn JOIN invoices i ON i.id = cn.invoice_id WHERE i.customer_id = ? AND substr(cn.created_at, 1, 10) < ?").get(customerId, from);
+  const refundBefore = await db.prepare('SELECT COALESCE(SUM(r.amount_cents), 0) AS t FROM refunds r JOIN invoices i ON i.id = r.invoice_id WHERE i.customer_id = ? AND r.refunded_on < ?').get(customerId, from);
+  const opening = Number(before.t) - Number(paidBefore.t) - Number(creditBefore.t) + Number(refundBefore.t);
+  const items = [];
+  for (const i of await db.prepare("SELECT * FROM invoices WHERE customer_id = ? AND status NOT IN ('draft','void') AND issue_date >= ? AND issue_date <= ?").all(customerId, from, to)) {
+    items.push({ date: i.issue_date, type: 'Invoice', ref: i.invoice_number, detail: `due ${fmt.d(i.due_date)}`, amount: i.total_cents });
+  }
+  for (const p of await db.prepare('SELECT p.*, i.invoice_number FROM payments p JOIN invoices i ON i.id = p.invoice_id WHERE p.customer_id = ? AND p.received_on >= ? AND p.received_on <= ?').all(customerId, from, to)) {
+    items.push({ date: p.received_on, type: 'Payment', ref: p.invoice_number, detail: p.method + (p.reference ? ' #' + p.reference : ''), amount: -p.amount_cents });
+  }
+  for (const c of await db.prepare('SELECT cn.*, i.invoice_number FROM credit_notes cn JOIN invoices i ON i.id = cn.invoice_id WHERE i.customer_id = ? AND substr(cn.created_at, 1, 10) >= ? AND substr(cn.created_at, 1, 10) <= ?').all(customerId, from, to)) {
+    items.push({ date: c.created_at.slice(0, 10), type: 'Credit', ref: c.invoice_number, detail: c.reason, amount: -c.amount_cents });
+  }
+  for (const r of await db.prepare('SELECT r.*, i.invoice_number FROM refunds r JOIN invoices i ON i.id = r.invoice_id WHERE i.customer_id = ? AND r.refunded_on >= ? AND r.refunded_on <= ?').all(customerId, from, to)) {
+    items.push({ date: r.refunded_on, type: 'Refund', ref: r.invoice_number, detail: r.reason, amount: r.amount_cents });
+  }
+  items.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  let bal = opening;
+  for (const it of items) { bal += it.amount; it.balance = bal; }
+  return { from, to, opening, items, closing: bal };
+}
+
 // Accounts receivable aging as of a date, from open invoices.
 async function aging(asOf = fmt.today()) {
   const rows = await db
@@ -388,5 +417,5 @@ async function aging(asOf = fmt.today()) {
 
 module.exports = {
   KINDS, METHODS, get, details, list, createFromJob, createBlank, createDeposit, createForAgreement, editDraft, addDraftLine, removeDraftLine,
-  issue, recordPayment, applyCredit, refund, voidInvoice, aging, recalc, byToken, statusFor,
+  issue, recordPayment, applyCredit, refund, voidInvoice, aging, recalc, byToken, statusFor, statement,
 };

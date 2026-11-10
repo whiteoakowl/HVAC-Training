@@ -5,7 +5,7 @@
     <h3><%= s[1] %></h3>
     <table class="data-table"><tbody>
       <% list.forEach(function(r) { %><tr><td><%= r.code %> <%= r.name %></td><td class="num"><%= fmt.money(r.balance) %></td></tr><% }); %>
-      <% if (s[0] === 'equity') { %><tr><td>Current earnings (net income to date, not yet closed)</td><td class="num"><%= fmt.money(bs.earnings) %></td></tr><% } %>
+      <% if (s[0] === 'equity') { %><tr><td>Retained earnings (prior years)</td><td class="num"><%= fmt.money(bs.priorEarnings) %></td></tr><tr><td>Net income (this year)</td><td class="num"><%= fmt.money(bs.currentEarnings) %></td></tr><% } %>
       <tr class="total"><td>Total <%= s[1].toLowerCase() %></td><td class="num"><%= fmt.money(s[0] === 'equity' ? s[2] + bs.earnings : s[2]) %></td></tr>
     </tbody></table>
   <% }); %>

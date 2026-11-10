@@ -49,6 +49,12 @@
     </div>
   <% } %>
   <div class="card">
+    <div class="grid-box-header"><h2>My pay</h2><a href="/employee/pay">Pay stubs</a></div>
+    <% if (lastStub) { %><p>Last paycheck <strong><%= fmt.money(lastStub.net_cents) %></strong> on <%= fmt.d(lastStub.pay_date) %><br><span class="hint">gross <%= fmt.money(lastStub.gross_cents) %> · period <%= fmt.d(lastStub.period_start) %> to <%= fmt.d(lastStub.period_end) %></span></p><% } else { %><p class="empty">No pay stubs yet.</p><% } %>
+    <p class="hint"><%= fmt.today().slice(0, 4) %> so far: <%= fmt.money(ytd.gross) %> gross · <%= fmt.money(ytd.net) %> net</p>
+    <p class="small">Leave balance: PTO <strong><%= Number((profile && profile.pto_balance_hours) || 0) %> h</strong> · Sick <strong><%= Number((profile && profile.sick_balance_hours) || 0) %> h</strong><%= pendingLeave ? ' · ' + pendingLeave + ' request(s) pending' : '' %> · <a href="/employee/time-off">Time off</a></p>
+  </div>
+  <div class="card">
     <h2>My certifications</h2>
     <% if (!certs.length) { %><p class="empty">None on file.</p><% } %>
     <% certs.forEach(function(c) { %>

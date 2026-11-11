@@ -39,7 +39,7 @@ router.post('/roles/:key', requirePermission('roles.manage'), action(async (req,
 const SETTING_FIELDS = [
   ['company_timezone', 'timezone'], ['company_name', 'text'], ['company_phone', 'text'], ['company_email', 'text'], ['company_address', 'text'],
   ['labor_rate_cents', 'money'], ['default_tax_rate_bp', 'percent'], ['invoice_terms_days', 'int'], ['invoice_footer', 'text'], ['invoice_payment_instructions', 'text'],
-  ['overtime_weekly_hours', 'int'], ['pto_hours_per_day', 'int'], ['estimate_valid_days', 'int'], ['estimate_terms', 'text'], ['estimate_warranty', 'text'], ['maintenance_job_lead_days', 'int'], ['gps_clock_enabled', 'bool'], ['allow_registration', 'bool'],
+  ['overtime_weekly_hours', 'int'], ['pto_hours_per_day', 'int'], ['estimate_valid_days', 'int'], ['estimate_terms', 'text'], ['estimate_warranty', 'text'], ['maintenance_job_lead_days', 'int'], ['gps_clock_enabled', 'bool'], ['allow_registration', 'bool'], ['meeting_video_domain', 'domain'],
   ...Object.keys(automation.RULES).map((k) => [k, 'bool']),
 ];
 
@@ -70,6 +70,9 @@ router.post('/settings', requirePermission('settings.manage'), action(async (req
     } else if (type === 'timezone') {
       v = String(v || '').trim();
       if (!fmt.validTimezone(v)) throw new Error('Timezone must be an IANA name such as America/Chicago.');
+    } else if (type === 'domain') {
+      v = String(v || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || 'meet.jit.si';
+      if (!require('../utils/meetings').validDomain(v)) throw new Error('Video meeting server must be a host name such as meet.jit.si.');
     } else v = fmt.clean(v, 2000) || '';
     if ((await settings.get(key, null)) !== v) changed.push(key);
     await settings.set(key, v);

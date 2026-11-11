@@ -40,14 +40,14 @@ Demo logins all use the password `password123`.
 
 | Area | Routes |
 | --- | --- |
-| Employee portal | `/employee` (my day), `/employee/jobs`, `/employee/time`, `/employee/truck`, `/employee/parts`, `/training/mine` (Training tab) |
+| Employee portal | `/employee` (my day), `/employee/jobs`, `/employee/time`, `/employee/truck`, `/employee/parts`, and the tabs `/training/mine`, `/meetings` (list or calendar, join the video call), `/documents`, `/checklists` |
 | Customer service | `/service`, `/customers`, `/requests` |
 | Operations | `/jobs`, `/jobs/:id`, `/dispatch`, `/inventory`, `/trucks`, `/inventory/parts-requests` |
 | Management | `/manage`, `/manage/reports`, `/manage/timesheets`, `/manage/employees`, `/invoices` |
 | Bookkeeping (built in, QuickBooks-style) | `/accounting` overview, `/accounting/banking` (statement import, matching, rules, reconciliation), `/accounting/accounts` (registers), reports incl. P&L, balance sheet, general ledger, sales by customer, expenses by vendor |
 | Sales & billing | `/estimates`, `/agreements`, `/invoices` (credits, refunds, deposits) |
 | Purchasing & costs | `/purchasing`, `/vendors`, `/bills`, `/expenses`, `/payroll`, `/assets` |
-| Training (management) | `/training/center` (completion matrix, required courses by role, renewals), `/training/manage` (build courses, lessons, quizzes; assign to employees) |
+| Team Management | `/meetings/manage` (schedule, edit, cancel meetings), `/documents/manage`, `/checklists/manage` (create checklists by topic, see who finished), `/training/center` (completion matrix, required courses by role, renewals), `/training/manage` (build courses, lessons, quizzes; assign to employees) |
 | Team | `/announcements`, `/messages`, `/employee/time-off`, `/employee/pay`, `/employee/report`, `/manage/time-off`, `/manage/daily-reports` |
 | Customer-facing (no staff login) | `/my` (customer portal), `/e/:token` (approve estimate), `/i/:token` (view invoice) |
 | Admin | `/portal/members` (users), `/admin/roles`, `/admin/settings`, `/admin/audit`, `/admin/checklists`, `/account` (password, two-step verification) |
@@ -74,6 +74,7 @@ Roles and permissions are configurable (`/admin/roles`). Every page and action c
    * `SEED_PASSWORD`: the password for the original demo accounts. **Change or deactivate those accounts** once your real users exist.
    * Optional: `RESEND_API_KEY` + `MAIL_FROM`, `TWILIO_*` (see docs/IMPLEMENTATION_LOG.md).
    * Optional: `APP_TIMEZONE` overrides the timezone in Company Settings.
+   * Video meetings use free Jitsi Meet rooms (`meet.jit.si`) with no setup or keys. Managers can paste a Zoom / Google Meet / Teams link instead. A self-hosted Jitsi server can be set in Company Settings.
    * Optional: `APP_BASE_URL` (e.g. `https://yourapp.netlify.app`) is used for links in automated reminder emails. Netlify's `URL` is used if it isn't set.
    * Daily automations run from the scheduled function `netlify/functions/daily.js` (schedule in `netlify.toml`). There is nothing to set up beyond deploying.
 3. Redeploy. On first boot, migrations upgrade the existing database in place. Demo *business* data is never loaded in production.

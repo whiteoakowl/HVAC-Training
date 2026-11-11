@@ -1,0 +1,62 @@
+<%- include('partials/page-start') %>
+<%
+var base = manage ? '/meetings/manage' : '/meetings';
+var PHASE = { upcoming: 'Scheduled', soon: 'Starting soon', live: 'In progress', ended: 'Ended', cancelled: 'Cancelled' };
+var PHASE_CLASS = { upcoming: 'scheduled', soon: 'pending', live: 'in_progress', ended: 'completed', cancelled: 'cancelled' };
+%>
+<div class="page-header">
+  <div><h1><%= manage ? 'Manage Meetings' : 'Meetings' %></h1><p class="hint"><%= manage ? 'Every scheduled meeting. Schedule, edit or cancel; invitees are notified.' : 'Meetings you are invited to. Open one and press Join video call.' %> Times are <%= fmt.tzName() %>.</p></div>
+  <div class="btn-row">
+    <% if (can('meetings.manage')) { %>
+      <a class="btn" href="/meetings/new">+ Schedule a meeting</a>
+      <% if (!manage) { %><a class="btn btn-secondary" href="/meetings/manage">All meetings</a><% } else { %><a class="btn btn-secondary" href="/meetings">My meetings</a><% } %>
+    <% } %>
+  </div>
+</div>
+<div class="btn-row" style="margin-bottom:0.75rem;" role="tablist">
+  <a class="btn <%= view === 'list' ? '' : 'btn-secondary' %>" href="<%= base %>?view=list" aria-selected="<%= view === 'list' %>">List</a>
+  <a class="btn <%= view === 'calendar' ? '' : 'btn-secondary' %>" href="<%= base %>?view=calendar&month=<%= month %>" aria-selected="<%= view === 'calendar' %>">Calendar</a>
+</div>
+
+<% if (view === 'calendar') { %>
+  <div class="grid-box-header" style="margin-bottom:0.5rem;">
+    <a class="btn btn-secondary small" href="<%= base %>?view=calendar&month=<%= prev %>">&larr; Previous</a>
+    <h2 style="margin:0;"><%= monthName %></h2>
+    <a class="btn btn-secondary small" href="<%= base %>?view=calendar&month=<%= next %>">Next &rarr;</a>
+  </div>
+  <div class="cal" role="grid">
+    <% ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(dn) { %><div class="cal-head" role="columnheader"><%= dn %></div><% }); %>
+    <% weeks.forEach(function(week) { week.forEach(function(day) { %>
+      <div class="cal-day<%= day.inMonth ? '' : ' cal-out' %><%= day.date === today ? ' cal-today' : '' %>" role="gridcell">
+        <div class="cal-date"><%= Number(day.date.slice(8, 10)) %><% if (can('meetings.manage') && day.inMonth && day.date >= today) { %> <a class="cal-add" href="/meetings/new?date=<%= day.date %>" title="Schedule on <%= fmt.d(day.date) %>">+</a><% } %></div>
+        <% day.meetings.forEach(function(m) { %>
+          <a class="cal-item cal-<%= m.phase %>" href="/meetings/<%= m.id %>"><%= fmt.time(m.starts_at) %> <%= m.title %></a>
+        <% }); %>
+      </div>
+    <% }); }); %>
+  </div>
+<% } else { %>
+  <h2>Upcoming</h2>
+  <% if (!upcoming.length) { %><p class="empty">No upcoming meetings.</p><% } %>
+  <% upcoming.forEach(function(m) { %>
+    <div class="card meeting-row" style="margin-bottom:0.5rem;">
+      <div>
+        <a href="/meetings/<%= m.id %>"><strong><%= m.title %></strong></a>
+        <span class="status status-<%= PHASE_CLASS[m.phase] %>"><%= PHASE[m.phase] %></span><br>
+        <span class="hint"><%= fmt.d(m.starts_at) %> · <%= fmt.time(m.starts_at) %>–<%= fmt.time(m.endsAt) %><%= m.video_kind === 'none' ? (m.location ? ' · ' + m.location : ' · In person') : ' · Video call' %><%= manage ? ' · by ' + (m.createdByName || '') : '' %></span>
+      </div>
+      <div class="btn-row">
+        <% if (m.joinUrl) { %><a class="btn <%= m.phase === 'upcoming' ? 'btn-secondary' : 'btn-success' %>" href="<%= m.joinUrl %>" target="_blank" rel="noopener">Join video call</a><% } %>
+        <a class="btn btn-secondary" href="/meetings/<%= m.id %>">Details</a>
+      </div>
+    </div>
+  <% }); %>
+  <% if (past.length) { %>
+    <details class="mt"><summary><strong>Past &amp; cancelled (<%= past.length %>)</strong></summary>
+      <% past.forEach(function(m) { %>
+        <p class="small" style="margin:0.3rem 0;"><a href="/meetings/<%= m.id %>"><%= m.title %></a> · <%= fmt.dt(m.starts_at) %> · <span class="status status-<%= PHASE_CLASS[m.phase] %>"><%= PHASE[m.phase] %></span></p>
+      <% }); %>
+    </details>
+  <% } %>
+<% } %>
+<%- include('partials/page-end') %>

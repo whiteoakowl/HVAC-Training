@@ -1,0 +1,23 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Checklists</h1><p class="hint">Checklists your managers have shared with you. Tick items off as you go; your progress is saved.</p></div>
+  <% if (can('team_checklists.manage')) { %><div class="btn-row"><a class="btn" href="/checklists/new">+ New checklist</a><a class="btn btn-secondary" href="/checklists/manage">Manage checklists</a></div><% } %>
+</div>
+<% if (topics.length > 1) { %>
+  <div class="btn-row" style="margin-bottom:0.75rem;">
+    <a class="btn small <%= topic ? 'btn-secondary' : '' %>" href="/checklists">All topics</a>
+    <% topics.forEach(function(t) { %><a class="btn small <%= topic === t ? '' : 'btn-secondary' %>" href="/checklists?topic=<%= encodeURIComponent(t) %>"><%= t %></a><% }); %>
+  </div>
+<% } %>
+<% if (!lists.length) { %><p class="empty">No checklists for you right now.</p><% } %>
+<div class="card-grid">
+  <% lists.forEach(function(l) { var p = prog[l.id]; var pct = p.total ? Math.round(100 * p.done / p.total) : 0; var done = p.total && p.done >= p.total; %>
+    <a class="card" href="/checklists/<%= l.id %>" style="text-decoration:none; color:inherit;">
+      <p class="hint" style="margin:0;"><%= l.topic || 'General' %></p>
+      <h3 style="margin:0.2rem 0;"><%= done ? '✅ ' : '' %><%= l.title %></h3>
+      <div class="progress" aria-label="<%= p.done %> of <%= p.total %> done"><span style="width:<%= pct %>%"></span></div>
+      <p class="hint"><%= p.done %> of <%= p.total %> done<% if (l.due_date) { %> · <span class="<%= !done && l.due_date < today ? 'priority-high' : '' %>">due <%= fmt.d(l.due_date) %></span><% } %></p>
+    </a>
+  <% }); %>
+</div>
+<%- include('partials/page-end') %>

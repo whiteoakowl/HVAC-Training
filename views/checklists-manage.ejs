@@ -1,0 +1,24 @@
+<%- include('partials/page-start') %>
+<div class="page-header">
+  <div><h1>Manage Checklists</h1><p class="hint">Create checklists for any topic and choose who they're for. Everyone ticks off their own copy; you see who has finished.</p></div>
+  <div class="btn-row"><a class="btn" href="/checklists/new">+ New checklist</a><a class="btn btn-secondary" href="/checklists">My checklists</a></div>
+</div>
+<% if (!lists.length) { %><p class="empty">No checklists yet. Create one for onboarding, safety, truck inspections, opening/closing the shop, and so on.</p><% } else { %>
+<table class="data-table">
+  <thead><tr><th>Checklist</th><th>Topic</th><th>For</th><th>Items</th><th>Finished</th><th>Due</th><th></th></tr></thead>
+  <tbody>
+    <% lists.forEach(function(l) { %>
+      <tr<%- l.active ? '' : ' style="opacity:0.6;"' %>>
+        <td><a href="/checklists/<%= l.id %>"><%= l.title %></a><%= l.active ? '' : ' (archived)' %></td>
+        <td><%= l.topic || 'General' %></td>
+        <td class="small"><%= l.audienceText %></td>
+        <td><%= l.total %></td>
+        <td><span class="status status-<%= l.peopleCount && l.finished >= l.peopleCount ? 'completed' : l.finished ? 'in_progress' : 'pending' %>"><%= l.finished %> of <%= l.peopleCount %></span></td>
+        <td><%= l.due_date ? fmt.d(l.due_date) : '' %></td>
+        <td><a class="btn btn-secondary small" href="/checklists/<%= l.id %>/edit">Edit</a></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+<%- include('partials/page-end') %>

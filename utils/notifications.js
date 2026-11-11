@@ -20,6 +20,8 @@ const TYPES = {
   parts_request: 'Parts Request',
   timesheet: 'Timesheet',
   certification: 'Certification Expiring',
+  meeting: 'Meeting',
+  checklist: 'Checklist',
 };
 
 async function notify(memberId, typeKey, { title, body = null, linkUrl = null } = {}) {

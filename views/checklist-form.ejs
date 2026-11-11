@@ -1,0 +1,25 @@
+<%- include('partials/page-start') %>
+<p><a href="<%= l.id ? '/checklists/' + l.id : '/checklists/manage' %>">&larr; Back</a></p>
+<h1><%= l.id ? 'Edit checklist' : 'New checklist' %></h1>
+<form method="POST" action="<%= l.id ? '/checklists/' + l.id : '/checklists' %>" class="card form-grid">
+  <label class="full">Title <input name="title" required maxlength="200" value="<%= l.title || '' %>" placeholder="New hire first week" /></label>
+  <label>Topic <input name="topic" list="topics" maxlength="100" value="<%= l.topic || '' %>" placeholder="Onboarding, Safety, Truck..." />
+    <datalist id="topics"><% topics.forEach(function(t) { %><option value="<%= t %>"></option><% }); %></datalist></label>
+  <label>Due date (optional) <input type="date" name="due_date" value="<%= l.due_date || '' %>" /></label>
+  <label class="full">Instructions (optional) <textarea name="description" style="min-height:60px;"><%= l.description || '' %></textarea></label>
+  <label class="full">Items, one per line <textarea name="items" required style="min-height:200px;" placeholder="Read the safety handbook&#10;Get fitted for PPE&#10;Ride along with a lead tech"><%= itemText %></textarea></label>
+  <% if (l.id) { %><p class="hint full">Editing the text of an item resets its ticks; items you leave unchanged keep everyone's progress.</p><% } %>
+
+  <fieldset class="full" style="border:1px solid var(--border); border-radius:8px; padding:0.6rem;">
+    <legend>Who it's for</legend>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="all" style="width:auto;" <%= l.audience === 'all' ? 'checked' : '' %> /> All staff</label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="role" style="width:auto;" <%= l.audience === 'role' ? 'checked' : '' %> /> Everyone with the role
+      <select name="audience_role" style="width:auto;"><% roles.forEach(function(r) { %><option value="<%= r.key %>" <%= l.audience_role === r.key ? 'selected' : '' %>><%= r.name %></option><% }); %></select></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="people" style="width:auto;" <%= l.audience === 'people' ? 'checked' : '' %> /> Only these people:</label>
+    <div class="people-pick">
+      <% staff.forEach(function(s) { %><label style="flex-direction:row; align-items:center; gap:0.3rem; font-weight:400;"><input type="checkbox" name="people" value="<%= s.id %>" style="width:auto;" <%= picked.indexOf(s.id) !== -1 ? 'checked' : '' %> /> <%= s.name %></label><% }); %>
+    </div>
+  </fieldset>
+  <div class="full"><button type="submit"><%= l.id ? 'Save changes' : 'Create & notify' %></button></div>
+</form>
+<%- include('partials/page-end') %>

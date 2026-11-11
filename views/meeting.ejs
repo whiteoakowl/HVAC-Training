@@ -1,0 +1,45 @@
+<%- include('partials/page-start') %>
+<%
+var PHASE = { upcoming: 'Scheduled', soon: 'Starting soon', live: 'In progress', ended: 'Ended', cancelled: 'Cancelled' };
+var PHASE_CLASS = { upcoming: 'scheduled', soon: 'pending', live: 'in_progress', ended: 'completed', cancelled: 'cancelled' };
+%>
+<p><a href="/meetings">&larr; Meetings</a></p>
+<div class="page-header">
+  <div>
+    <h1><%= m.title %></h1>
+    <p><span class="status status-<%= PHASE_CLASS[m.phase] %>"><%= PHASE[m.phase] %></span></p>
+  </div>
+  <% if (can('meetings.manage') && m.status !== 'cancelled') { %>
+    <div class="btn-row">
+      <a class="btn btn-secondary" href="/meetings/<%= m.id %>/edit">Edit</a>
+      <form method="POST" action="/meetings/<%= m.id %>/cancel" class="inline-form" onsubmit="return confirm('Cancel this meeting? Everyone invited will be notified.');"><button class="btn-secondary" type="submit">Cancel meeting</button></form>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <p><strong>When:</strong> <%= fmt.d(m.starts_at) %>, <%= fmt.time(m.starts_at) %> – <%= fmt.time(m.endsAt) %> (<%= m.duration_minutes %> min) <span class="hint"><%= fmt.tzName() %></span></p>
+  <p><strong>Who:</strong> <%= audienceLabel %></p>
+  <% if (m.location) { %><p><strong>Where:</strong> <%= m.location %></p><% } %>
+  <p><strong>Organizer:</strong> <%= m.createdByName || '—' %></p>
+  <% if (m.description) { %><p style="white-space:pre-wrap;"><%= m.description %></p><% } %>
+</div>
+
+<div class="card mt">
+  <h2>Video call</h2>
+  <% if (m.status === 'cancelled') { %>
+    <p class="empty">This meeting was cancelled.</p>
+  <% } else if (!videoUrl) { %>
+    <p class="empty">In-person meeting; no video call.</p>
+  <% } else { %>
+    <p><a class="btn <%= m.phase === 'upcoming' ? '' : 'btn-success' %>" style="font-size:1.1rem; padding:0.7rem 1.4rem;" href="/meetings/<%= m.id %>/join" target="_blank" rel="noopener">🎥 Join video call</a></p>
+    <% if (m.phase === 'upcoming') { %><p class="hint">You can join any time; the meeting starts <%= fmt.dt(m.starts_at) %>. The button turns green <%= joinEarly %> minutes before.</p><% } %>
+    <% if (m.phase === 'ended') { %><p class="hint">This meeting has ended, but the room still opens if you need it.</p><% } %>
+    <% if (m.video_kind === 'builtin') { %>
+      <p class="hint">Opens in a new tab in your browser (phone, tablet or computer) — allow camera and microphone when asked. On a phone you may be offered the free Jitsi Meet app. The first person to join may be asked to sign in to start the room.</p>
+    <% } else { %>
+      <p class="hint">Opens the meeting link the organizer provided.</p>
+    <% } %>
+  <% } %>
+</div>
+<%- include('partials/page-end') %>

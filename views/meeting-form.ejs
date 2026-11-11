@@ -1,0 +1,31 @@
+<%- include('partials/page-start') %>
+<p><a href="<%= m.id ? '/meetings/' + m.id : '/meetings/manage' %>">&larr; Back</a></p>
+<h1><%= m.id ? 'Edit meeting' : 'Schedule a meeting' %></h1>
+<form method="POST" action="<%= m.id ? '/meetings/' + m.id : '/meetings' %>" class="card form-grid">
+  <label class="full">Title <input name="title" required maxlength="200" value="<%= m.title || '' %>" placeholder="Weekly team meeting" /></label>
+  <label>Date &amp; time (<%= fmt.tzName() %>) <input type="datetime-local" name="starts_at" required value="<%= fmt.toLocalInput(m.starts_at) %>" /></label>
+  <label>Length <select name="duration_minutes"><% durations.forEach(function(d) { %><option value="<%= d %>" <%= Number(m.duration_minutes) === d ? 'selected' : '' %>><%= d < 60 ? d + ' minutes' : (d / 60) + (d === 60 ? ' hour' : ' hours') %></option><% }); %></select></label>
+  <label class="full">Agenda / notes <textarea name="description" style="min-height:80px;"><%= m.description || '' %></textarea></label>
+
+  <fieldset class="full" style="border:1px solid var(--border); border-radius:8px; padding:0.6rem;">
+    <legend>Who's invited</legend>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="all" style="width:auto;" <%= m.audience === 'all' ? 'checked' : '' %> /> All staff</label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="role" style="width:auto;" <%= m.audience === 'role' ? 'checked' : '' %> /> Everyone with the role
+      <select name="audience_role" style="width:auto;"><% roles.forEach(function(r) { %><option value="<%= r.key %>" <%= m.audience_role === r.key ? 'selected' : '' %>><%= r.name %></option><% }); %></select></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="audience" value="people" style="width:auto;" <%= m.audience === 'people' ? 'checked' : '' %> /> Only these people:</label>
+    <div class="people-pick">
+      <% staff.forEach(function(s) { %><label style="flex-direction:row; align-items:center; gap:0.3rem; font-weight:400;"><input type="checkbox" name="people" value="<%= s.id %>" style="width:auto;" <%= invited.indexOf(s.id) !== -1 ? 'checked' : '' %> /> <%= s.name %></label><% }); %>
+    </div>
+  </fieldset>
+
+  <fieldset class="full" style="border:1px solid var(--border); border-radius:8px; padding:0.6rem;">
+    <legend>Video call</legend>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="video_kind" value="builtin" style="width:auto;" <%= m.video_kind === 'builtin' ? 'checked' : '' %> /> Create a private video room automatically (free Jitsi Meet room on <%= domain %>)</label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="video_kind" value="link" style="width:auto;" <%= m.video_kind === 'link' ? 'checked' : '' %> /> Use my own link (Zoom, Google Meet, Teams…)</label>
+    <label>Meeting link <input name="video_url" inputmode="url" value="<%= m.video_url || '' %>" placeholder="https://..." /></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="radio" name="video_kind" value="none" style="width:auto;" <%= m.video_kind === 'none' ? 'checked' : '' %> /> In person only (no video)</label>
+    <label>Location (optional) <input name="location" maxlength="300" value="<%= m.location || '' %>" placeholder="Shop break room" /></label>
+  </fieldset>
+  <div class="full"><button type="submit"><%= m.id ? 'Save changes' : 'Schedule & notify' %></button></div>
+</form>
+<%- include('partials/page-end') %>

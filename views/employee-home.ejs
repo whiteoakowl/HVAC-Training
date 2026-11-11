@@ -12,6 +12,17 @@
   <% if (can('training.view')) { %><a class="btn btn-secondary" href="/training/mine">My training<%= trainingDue.length ? ' (' + trainingDue.length + ' due)' : '' %></a><% } %>
   <% if (can('messages.use')) { %><a class="btn btn-secondary" href="/messages">Messages</a><% } %>
 </div>
+<% if (meetings.length) { %>
+  <div class="card" style="margin-bottom:0.75rem;">
+    <div class="grid-box-header"><h2>Next meetings</h2><a href="/meetings">All</a></div>
+    <% meetings.forEach(function(m) { %>
+      <div class="meeting-row" style="margin:0.3rem 0;">
+        <span><a href="/meetings/<%= m.id %>"><strong><%= m.title %></strong></a><br><span class="hint"><%= fmt.d(m.starts_at) === fmt.d(today) ? 'Today' : fmt.d(m.starts_at) %> <%= fmt.time(m.starts_at) %><%= m.phase === 'live' ? ' · in progress' : '' %></span></span>
+        <% if (m.video_kind !== 'none') { %><a class="btn small <%= m.phase === 'upcoming' ? 'btn-secondary' : 'btn-success' %>" href="/meetings/<%= m.id %>/join" target="_blank" rel="noopener">Join</a><% } %>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
 <% if (can('timeclock.use')) { %>
   <div class="card">
     <h2>Time clock</h2>

@@ -1,0 +1,68 @@
+<%- include('partials/page-start') %>
+<p><a href="<%= can('team_checklists.manage') && !forMe ? '/checklists/manage' : '/checklists' %>">&larr; Checklists</a></p>
+<div class="page-header">
+  <div>
+    <p class="hint" style="margin:0;"><%= l.topic || 'General' %></p>
+    <h1><%= l.title %></h1>
+    <p class="hint">For: <%= audienceText %><%= l.due_date ? ' · due ' + fmt.d(l.due_date) : '' %><%= l.active ? '' : ' · ARCHIVED' %></p>
+  </div>
+  <% if (can('team_checklists.manage')) { %>
+    <div class="btn-row">
+      <a class="btn btn-secondary" href="/checklists/<%= l.id %>/edit">Edit</a>
+      <form method="POST" action="/checklists/<%= l.id %>/archive" class="inline-form"><button class="btn-secondary" type="submit"><%= l.active ? 'Archive' : 'Restore' %></button></form>
+    </div>
+  <% } %>
+</div>
+<% if (l.description) { %><div class="card" style="white-space:pre-wrap; margin-bottom:0.75rem;"><%= l.description %></div><% } %>
+
+<% if (forMe) { %>
+  <form method="POST" action="/checklists/<%= l.id %>/check" class="card checklist-form" id="my-list">
+    <h2>My checklist <span class="hint" id="count"><%= mine.size %> of <%= its.length %> done</span></h2>
+    <% its.forEach(function(it) { %>
+      <label class="check-item">
+        <input type="checkbox" name="item" value="<%= it.id %>" <%= mine.has(it.id) ? 'checked' : '' %> />
+        <span><%= it.label %></span>
+        <% if (mine.has(it.id)) { %><span class="hint"><%= fmt.dt(mine.get(it.id)) %></span><% } %>
+      </label>
+    <% }); %>
+    <div class="mt"><button type="submit">Save progress</button> <span class="hint">Changes save automatically when you tick a box.</span></div>
+  </form>
+  <script>
+    (function () {
+      var form = document.getElementById('my-list');
+      form.addEventListener('change', function (e) {
+        if (e.target && e.target.type === 'checkbox') form.submit();
+      });
+    })();
+  </script>
+<% } else if (!board) { %>
+  <p class="empty">This checklist isn't assigned to you.</p>
+<% } else { %>
+  <div class="card">
+    <h2>Items</h2>
+    <ol><% its.forEach(function(it) { %><li><%= it.label %></li><% }); %></ol>
+  </div>
+<% } %>
+
+<% if (board) { %>
+  <h2 class="mt">Who's done (<%= board.filter(function(b) { return its.length && b.count >= its.length; }).length %> of <%= board.length %>)</h2>
+  <% if (!board.length) { %><p class="empty">No one is assigned yet.</p><% } else { %>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead><tr><th>Person</th><th>Progress</th><% its.forEach(function(it, i) { %><th class="small" title="<%= it.label %>"><%= i + 1 %></th><% }); %><th>Last update</th></tr></thead>
+      <tbody>
+        <% board.forEach(function(b) { var all = its.length && b.count >= its.length; %>
+          <tr>
+            <td><%= b.name %></td>
+            <td><span class="status status-<%= all ? 'completed' : b.count ? 'in_progress' : 'pending' %>"><%= b.count %>/<%= its.length %></span></td>
+            <% its.forEach(function(it) { %><td><%= b.done.has(it.id) ? '✓' : '' %></td><% }); %>
+            <td class="small"><%= b.last ? fmt.dt(b.last) : '—' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Column numbers match the item numbers<%= forMe ? ' in your list above' : ' above' %>.</p>
+  <% } %>
+<% } %>
+<%- include('partials/page-end') %>

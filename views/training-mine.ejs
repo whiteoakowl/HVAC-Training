@@ -4,6 +4,7 @@
 <body>
 <%- include('partials/portal-nav') %>
   <h1>My Training</h1>
+  <p class="hint">Courses assigned to you by your manager. Required courses for your role are added automatically.</p>
   <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
 
   <% if (assignments.length === 0) { %>

@@ -102,7 +102,7 @@ async function saveExtras(id, body) {
 }
 
 router.get('/training/manage', requirePermission('training.manage'), async (req, res) => {
-  res.render('training-manage', { title: 'Manage Training', trainings: await T.listTrainings(), notice: req.query.notice || null });
+  res.render('training-manage', { title: 'Training Courses', trainings: await T.listTrainings(), notice: req.query.notice || null });
 });
 
 router.get('/training/manage/new', requirePermission('training.manage'), (req, res) => {

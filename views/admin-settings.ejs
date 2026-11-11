@@ -32,7 +32,8 @@
     <label>Paid-leave hours per day <input name="pto_hours_per_day" inputmode="numeric" value="<%= s.pto_hours_per_day || '8' %>" /></label>
     <label>Weekly overtime threshold (hours) <input name="overtime_weekly_hours" inputmode="numeric" value="<%= s.overtime_weekly_hours || '40' %>" /></label>
     <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="gps_clock_enabled" value="1" <%= s.gps_clock_enabled === '1' ? 'checked' : '' %> style="width:auto;" /> Record GPS location at clock-in/out (only at those moments; tell employees and follow your state's notice rules)</label>
-    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="allow_registration" value="1" <%= s.allow_registration === '1' ? 'checked' : '' %> style="width:auto;" /> Allow public self-registration as Trainee (original training portal feature; recommended OFF for a business)</label>
+    <label>Video meeting server <input name="meeting_video_domain" value="<%= s.meeting_video_domain || 'meet.jit.si' %>" /><span class="hint">Meetings with an automatic video room use Jitsi Meet on this server. The free public server is meet.jit.si; enter your own Jitsi server here if you host one.</span></label>
+    <label style="flex-direction:row; align-items:center; gap:0.4rem; font-weight:400;"><input type="checkbox" name="allow_registration" value="1" <%= s.allow_registration === '1' ? 'checked' : '' %> style="width:auto;" /> Allow public self-registration as Trainee (they get the employee portal with the Training tab; recommended OFF for a business)</label>
   </div>
   <div class="card">
     <h2>Automations</h2>

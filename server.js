@@ -115,6 +115,8 @@ app.use('/', require('./routes/team'));
 app.use('/', require('./routes/customerPortal'));
 app.use('/', require('./routes/files'));
 app.use('/', require('./routes/trainingCenter'));
+app.use('/', require('./routes/meetings'));
+app.use('/', require('./routes/teamChecklists'));
 
 app.use('/website', require('./routes/website'));
 // Public website: "/" (the published home page, otherwise the staff

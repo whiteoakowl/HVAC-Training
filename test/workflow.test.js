@@ -302,18 +302,31 @@ test('security: privilege escalation, lockout, open redirect, audit trail', asyn
   }
 });
 
-test('original training portal features still work for trainees', async () => {
+test('training lives in the employee portal; managers run it; no standalone training portal', async () => {
   const s = new Client(ctx.base);
   const home = await s.login('student@hvactraining.test');
-  assert.match(home.url, /\/portal$/);
-  for (const url of ['/events', '/training/mine', '/member-directory', '/forums', '/documents', '/notifications']) {
+  assert.match(home.url, /\/employee$/, 'trainees land on the employee portal');
+  assert.match(home.text, /href="\/training\/mine"[^>]*>[\s\S]*?Training/, 'Training tab in the employee portal');
+  assert.doesNotMatch(home.text, /Training Home|Today's jobs/, 'no standalone training home; no job list without job access');
+  assert.match((await s.get('/portal')).url, /\/employee$/, 'old /portal bookmark goes home');
+  for (const url of ['/events', '/training/mine', '/member-directory', '/forums', '/documents', '/notifications', '/employee/pay', '/employee/time-off']) {
     assert.strictEqual((await s.get(url)).status, 200, url);
   }
-  for (const url of ['/customers', '/jobs', '/employee', '/inventory', '/manage', '/training/manage']) {
+  for (const url of ['/customers', '/jobs', '/inventory', '/manage', '/training/manage', '/training/center', '/employee/time']) {
     assert.strictEqual((await s.get(url)).status, 403, `trainee blocked from ${url}`);
   }
+  // Managers control training from the Training section.
+  for (const email of ['office@hvacdemo.test', 'servicemgr@hvacdemo.test', 'gm@hvacdemo.test', 'instructor@hvactraining.test']) {
+    const m = new Client(ctx.base);
+    const h = await m.login(email);
+    assert.match(h.text, /href="\/training\/manage"/, `${email} sees Courses in the nav`);
+    for (const url of ['/training/manage', '/training/manage/new']) assert.strictEqual((await m.get(url)).status, 200, `${email} ${url}`);
+  }
+  const instr = new Client(ctx.base);
+  assert.match((await instr.login('instructor@hvactraining.test')).url, /\/employee$/);
+  assert.strictEqual((await instr.get('/training/center')).status, 200, 'instructor runs the completion matrix');
   const reg = new Client(ctx.base);
   const r = await reg.post('/register', { name: 'New Trainee', email: 'new.trainee@example.com', password: 'longenough1' });
-  assert.match(r.url, /\/portal$/);
+  assert.match(r.url, /\/employee$/);
   assert.strictEqual((await db.prepare("SELECT role FROM members WHERE email = 'new.trainee@example.com'").get()).role, 'student');
 });

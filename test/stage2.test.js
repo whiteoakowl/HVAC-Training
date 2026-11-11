@@ -261,7 +261,8 @@ test('time off, messaging, announcements', async () => {
   await sm.post('/announcements', { title: 'Safety stand-down Friday', body: 'Ladder safety at 7am.' });
   assert.match((await t.get('/employee')).text, /Safety stand-down Friday/);
   const st = await login('student@hvactraining.test');
-  assert.strictEqual((await st.get('/announcements')).status, 403);
+  // Trainees are employees now (employee portal), so they see company announcements.
+  assert.match((await st.get('/announcements')).text, /Safety stand-down Friday/);
 });
 
 test('customer portal shows only the customer own records', async () => {

@@ -2,9 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requirePermission } = require('../middleware/auth');
 const db = require('../db');
-const events = require('../utils/events');
-const training = require('../utils/training');
-const notifications = require('../utils/notifications');
 const permissions = require('../utils/permissions');
 const audit = require('../utils/audit');
 const { findById, findByEmail, hashPassword, createMember } = require('../utils/auth');
@@ -13,15 +10,10 @@ router.use(['/portal', '/home'], requireAuth);
 
 router.get('/home', (req, res) => res.redirect(res.locals.homeHref));
 
-// Original training/events home page - still the landing page for the
-// Trainee and Instructor roles, and linked from every other portal.
-router.get('/portal', async (req, res) => {
-  if (req.can('portal.customer') && !req.can('training.view')) return res.redirect('/my');
-  const upcomingEvents = req.can('events.view', 'events.manage') ? (await events.listUpcoming()).slice(0, 3) : [];
-  const myTraining = (await training.myAssignments(req.member.id)).filter((a) => a.status !== 'passed').slice(0, 3);
-  const recentNotifications = (await notifications.listForMember(req.member.id)).slice(0, 5);
-  res.render('portal-home', { title: 'My Portal', upcomingEvents, myTraining, recentNotifications });
-});
+// The old standalone training home is gone: training now lives in the
+// employee portal (Training tab) and the management portal (Training
+// Center). Old bookmarks to /portal go to the member's own home.
+router.get('/portal', (req, res) => res.redirect(res.locals.homeHref));
 
 // Roles that carry owner-level power can only be granted - and accounts
 // holding them can only be edited - by an owner, so a manager with

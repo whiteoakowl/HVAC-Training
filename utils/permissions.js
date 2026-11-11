@@ -78,7 +78,8 @@ function homeFor(can) {
   if (can('portal.management')) return '/manage';
   if (can('portal.service')) return '/service';
   if (can('portal.employee')) return '/employee';
-  return '/portal';
+  if (can('training.view')) return '/training/mine';
+  return '/account';
 }
 
 module.exports = { permissionsForRole, makeChecker, roleCan, membersWith, listRoles, listPermissions, getRole, setRolePermissions, invalidate, homeFor };

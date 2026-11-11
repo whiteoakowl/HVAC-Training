@@ -17,7 +17,7 @@ async function loadSession(req, res, next) {
     res.locals.currentPath = req.path;
     res.locals.fmt = fmt;
     res.locals.can = DENY;
-    res.locals.homeHref = '/portal';
+    res.locals.homeHref = '/';
     req.can = DENY;
     const id = req.session && req.session.memberId;
     if (!id) return next();

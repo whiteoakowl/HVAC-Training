@@ -6,7 +6,7 @@
     <div class="auth-card">
       <h1>Not Found</h1>
       <p class="hint">That page doesn't exist.</p>
-      <a class="btn-secondary" href="/portal">Back to Portal</a>
+      <a class="btn-secondary" href="<%= typeof homeHref !== 'undefined' ? homeHref : '/' %>">Back to Home</a>
     </div>
   </div>
 </body>

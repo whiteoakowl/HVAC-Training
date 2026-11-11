@@ -1,9 +1,10 @@
 <%- include('partials/page-start') %>
 <div class="page-header">
   <div><h1>Training Center</h1><p class="hint">Who has completed what. Required courses are assigned automatically by role; courses with a renewal period re-open when they expire.</p></div>
-  <div class="btn-row"><% if (can('training.manage')) { %><a class="btn btn-secondary" href="/training/manage">Course builder</a><form method="POST" action="/training/center/sync" class="inline-form"><button type="submit" class="btn-secondary">Assign required &amp; renewals now</button></form><% } %></div>
+  <div class="btn-row"><% if (can('training.manage')) { %><form method="POST" action="/training/center/sync" class="inline-form"><button type="submit" class="btn-secondary">Assign required &amp; renewals now</button></form><% } %></div>
 </div>
-<% if (!m.trainings.length) { %><p class="empty">No published courses yet. Build one in the course builder.</p><% } else { %>
+<%- include('partials/training-tabs', { active: 'center' }) %>
+<% if (!m.trainings.length) { %><p class="empty">No published courses yet. <% if (can('training.manage')) { %><a href="/training/manage/new">Build one</a>.<% } %></p><% } else { %>
 <div style="overflow-x:auto;">
 <table class="data-table" style="white-space:nowrap;">
   <thead><tr><th>Employee</th><% m.trainings.forEach(function(t) { %><th class="small" title="<%= t.category || '' %>"><%= t.title %><%= t.renew_months ? ' (' + t.renew_months + ' mo)' : '' %></th><% }); %></tr></thead>

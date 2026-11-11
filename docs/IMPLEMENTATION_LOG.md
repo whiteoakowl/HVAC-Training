@@ -1,5 +1,49 @@
 # Implementation log
 
+## Meetings, Documents and Checklists tabs
+
+Migration `008_meetings_and_checklists` adds tables (`meetings`, `meeting_attendees`, `team_checklists`, `team_checklist_items`, `team_checklist_people`, `team_checklist_checks`) and permissions. It only adds; no existing data changes.
+* `meetings.view` and `team_checklists.use` go to every staff role.
+* `meetings.manage` and `team_checklists.manage` go to General Manager, Office Manager, Service Manager and Training Instructor.
+* The old `checklists.manage` permission was relabelled "job inspection checklists" to avoid confusion.
+
+**Meetings** (`/meetings`, `/meetings/manage`)
+* Two views: a list (upcoming plus past and cancelled) and a Sunday-first month calendar. Managers can add a meeting from a day in the calendar.
+* Invite all staff, one role, or chosen people. Invitees get notifications when a meeting is scheduled, moved or cancelled.
+* **Video:** "Join video call" goes through `/meetings/:id/join`, which checks that the person is invited and then redirects. The destination is one of:
+  * a private Jitsi Meet room with a random 24-hex-character name, on `meet.jit.si` or the server set in Company Settings → Video meeting server;
+  * the organizer's own https link (Zoom, Google Meet, Teams); other link schemes are rejected;
+  * nothing, for an in-person meeting.
+* The call opens in a new tab rather than inside the app. Jitsi limits embedded calls on its free server, and a new tab gives the full app on phones.
+* **Known limitations:**
+  * On the public `meet.jit.si` server, the first person into a room may be asked to sign in (Google, GitHub, etc.) to start it.
+  * There are no recordings and no calendar invites by email (.ics) yet.
+
+**Documents** are now a tab in My Work (`/documents`) and in Team Management (`/documents/manage`). The pages are the existing ones.
+
+**Checklists** (`/checklists`, `/checklists/manage`)
+* Managers create checklists with a topic, an optional due date and items (one per line), for all staff, a role or chosen people.
+* Each person has their own copy; ticking a box saves straight away.
+* Managers see a person × item grid showing who finished.
+* Editing keeps ticks on unchanged items. Archiving hides a checklist without deleting its history.
+
+Tests: `test/team.test.js` (6 scenarios). **54 tests pass on SQLite; each suite passes on a fresh Postgres 16 database.**
+
+## Training moved into the portals (no separate training portal)
+
+* **Employees**: My Work → **Training** (`/training/mine`) in the employee portal, plus a "My training (n due)" button and the Training due card on My Day. Course player and quizzes are unchanged.
+* **Managers**: a **Training** section in the sidebar with two tabs:
+  * **Training Center** (`/training/center`): completion matrix, required courses by role, renewals.
+  * **Courses** (`/training/manage`): build courses, lessons and quizzes, publish, assign to employees.
+  * Access is by permission: `training.manage` controls courses; `employees.view` alone can see the matrix.
+* The old standalone training home `/portal` is removed; the address redirects to each person's home so bookmarks keep working. Error pages link "Back to Home".
+* Migration `007_training_in_portals` (adds permissions only, no data changes):
+  * Trainee and Training Instructor roles get the employee portal, so they land on My Day.
+  * Office Manager gets `training.manage`. General Manager and Service Manager already had it.
+  * If you customized those roles, adjust them in Role Permissions.
+* People without job access (e.g. trainees) no longer see an empty "Today's jobs" list.
+* Tests: the trainee test in `test/workflow.test.js` was rewritten. It checks that trainees land on the employee portal with a Training tab, can't reach training management, and that managers and instructors can. **48 tests pass on SQLite; each suite passes on a fresh Postgres 16 database.**
+
 ## Built-in bookkeeping (QuickBooks-style, no integration)
 
 No QuickBooks or Xero connection is planned; the books live in the app. Migration `006_banking_and_books` adds:

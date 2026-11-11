@@ -1,0 +1,5 @@
+<%# Tabs across the management side of training. `active` is center|courses. %>
+<div class="btn-row" style="margin-bottom:0.75rem;">
+  <% if (can('training.manage', 'employees.view')) { %><a class="btn <%= active === 'center' ? '' : 'btn-secondary' %>" href="/training/center">Completion &amp; required courses</a><% } %>
+  <% if (can('training.manage')) { %><a class="btn <%= active === 'courses' ? '' : 'btn-secondary' %>" href="/training/manage">Courses &amp; assignments</a><% } %>
+</div>

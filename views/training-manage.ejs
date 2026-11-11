@@ -4,9 +4,11 @@
 <body>
 <%- include('partials/portal-nav') %>
   <div class="grid-box-header">
-    <h1>Manage Training</h1>
-    <a class="primary-btn" href="/training/manage/new">+ New Training</a>
+    <h1>Training: Courses</h1>
+    <a class="primary-btn" href="/training/manage/new">+ New Course</a>
   </div>
+  <%- include('partials/training-tabs', { active: 'courses' }) %>
+  <p class="hint">Build courses here, then assign them to employees from each course page, or make them required for a role in the Training Center. Employees take them from the Training tab of their portal.</p>
   <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
 
   <table class="data-table">

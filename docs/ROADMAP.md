@@ -48,6 +48,7 @@ The work is ordered by dependency: the foundation first, then the money flow (jo
 | --- | --- |
 | **Built-in website builder** | **Done.** Replaces the Wix integration. |
 | **QuickBooks-style bookkeeping, built in (no outside accounting software)** | **Done.** Accounting overview with a 6-month income vs. expenses chart. Bank and credit card accounts with opening balances. Registers with running balances. Bank statement CSV import with duplicate-proof re-import, then Match / Add / Exclude with undo, plus categorization rules. Transfers between accounts. Monthly reconciliation. Close-the-books lock date. Customer statements. General Ledger, Sales by Customer and Expenses by Vendor reports. The balance sheet splits retained earnings from this year's net income. |
+| **Training inside the portals** | **Done.** No separate training portal. Employees: Training tab in the employee portal. Managers (GM, office manager, service manager, training instructor): Training section with the completion matrix, required courses by role and the course builder. Trainees and instructors now land on the employee portal. |
 | **Employee portal home** | **Done.** Added the last paycheck, year-to-date pay and leave balances next to today's jobs, time clock, training due and certifications. |
 
 ## Stage 3 – next (needs a decision or credentials from you)

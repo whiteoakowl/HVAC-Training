@@ -1,8 +1,10 @@
 <%
 // Navigation is built from the signed-in member's permissions, grouped
 // by portal: My Work (employee portal), Customer Service, Operations,
-// Business (management portal), Team (the original training portal
-// features) and Admin. A section only appears if the member can use at
+// Business (management portal), Training (managing courses), Team
+// (events, chat, documents, directory) and Admin. Training is not a
+// separate portal: employees take it from My Work, managers run it from
+// the Training section. A section only appears if the member can use at
 // least one link in it, and every link points at a working page.
 const sections = [];
 function section(title, links) {
@@ -25,6 +27,7 @@ section('My Work', [
   { href: '/employee/time-off', icon: 'calendar', label: 'Time Off', show: can('portal.employee') },
   { href: '/employee/pay', icon: 'dollar', label: 'Pay Stubs', show: can('portal.employee') },
   { href: '/employee/report', icon: 'file-text', label: 'End-of-Day Report', show: can('portal.employee') },
+  { href: '/training/mine', icon: 'graduation-cap', label: 'Training', show: can('training.view') },
 ]);
 section('Customer Service', [
   { href: '/service', icon: 'phone', label: 'Service Desk', show: can('portal.service') },
@@ -56,11 +59,12 @@ section('Business', [
   { href: '/manage/time-off', icon: 'calendar', label: 'Time-Off Approvals', show: can('timeoff.approve') },
   { href: '/manage/daily-reports', icon: 'file-text', label: 'End-of-Day Reports', show: can('dailyreports.view') },
   { href: '/manage/employees', icon: 'user', label: 'Employees', show: can('employees.view') },
+]);
+section('Training', [
   { href: '/training/center', icon: 'graduation-cap', label: 'Training Center', show: can('training.manage', 'employees.view') },
+  { href: '/training/manage', icon: 'graduation-cap', label: 'Courses', show: can('training.manage') },
 ]);
 section('Team', [
-  { href: '/portal', icon: 'graduation-cap', label: 'Training Home', show: homeHref !== '/portal' && can('training.view') },
-  { href: '/training/mine', icon: 'graduation-cap', label: 'Training', show: can('training.view') },
   { href: '/events', icon: 'calendar', label: 'Events', show: can('events.view', 'events.manage') },
   { href: '/forums', icon: 'users', label: 'Chat', show: can('forums.use', 'forums.moderate') },
   { href: '/documents', icon: 'file-text', label: 'Documents', show: can('documents.view', 'documents.manage') },
@@ -68,7 +72,6 @@ section('Team', [
 ]);
 section('Admin', [
   { href: '/events/manage', icon: 'calendar', label: 'Manage Events', show: can('events.manage') },
-  { href: '/training/manage', icon: 'graduation-cap', label: 'Manage Training', show: can('training.manage') },
   { href: '/documents/manage', icon: 'upload', label: 'Manage Documents', show: can('documents.manage') },
   { href: '/portal/members', icon: 'gear', label: 'Users & Roles', show: can('users.manage') },
   { href: '/admin/roles', icon: 'shield', label: 'Role Permissions', show: can('roles.manage') },

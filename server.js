@@ -77,12 +77,13 @@ app.use((req, res, next) => {
 
 // Signed-in users with a temporary password must set their own first.
 app.use((req, res, next) => {
-  if (req.member && req.member.must_change_password && !/^\/(account|logout|css|js|login)/.test(req.path)) {
+  if (req.member && req.member.must_change_password && !/^\/(account|logout|css|js|icons|login|manifest\.webmanifest|sw\.js|offline\.html)/.test(req.path)) {
     return res.redirect('/account?error=' + encodeURIComponent('Please choose a new password to continue.'));
   }
   next();
 });
 
+app.use('/', require('./routes/pwa'));
 app.use('/', require('./routes/public'));
 app.use('/api', require('./routes/api'));
 app.use('/', require('./routes/auth'));

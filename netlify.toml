@@ -24,3 +24,11 @@
 # the function itself skips a second run on the same company-local date.
 [functions."daily"]
   schedule = "0 11 * * *"
+
+# Installable app: browsers must re-check the service worker on every
+# visit so updates reach installed phones promptly.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Service-Worker-Allowed = "/"
